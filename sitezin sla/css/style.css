@@ -1558,7 +1558,6 @@ button {
   grid-auto-flow: column;
   gap: 3px;
   width: max-content;
-  min-width: 100%;
 }
 
 .contribution-weekdays {
@@ -1586,7 +1585,6 @@ button {
   gap: 3px;
   margin-bottom: 6px;
   width: max-content;
-  min-width: 100%;
 }
 
 .contribution-month-label {
