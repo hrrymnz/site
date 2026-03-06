@@ -31,10 +31,16 @@ const Storage = {
     return !!supabase;
   },
 
-  setUser(userId) {
+  setUser(userId, workspacesEnabled = false) {
     this.currentUserId = userId;
-    const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
-    this.currentWorkspace = workspaceFromStorage || "default";
+
+    if (workspacesEnabled) {
+      const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
+      this.currentWorkspace = workspaceFromStorage || "default";
+    } else {
+      this.currentWorkspace = "default";
+    }
+
     this.applyKeyPrefix();
     this.migrateLegacyKeysIfNeeded();
   },
@@ -85,10 +91,15 @@ const Storage = {
     ];
 
     legacyMap.forEach(([nextKey, legacyKey]) => {
-      if (localStorage.getItem(nextKey) !== null) return;
       const legacyValue = localStorage.getItem(legacyKey);
-      if (legacyValue !== null) {
+      const nextValue = localStorage.getItem(nextKey);
+
+      if (!legacyValue) return;
+
+      // Idempotente: promove legado quando destino nao existe ou parece menos completo.
+      if (!nextValue || legacyValue.length > nextValue.length) {
         localStorage.setItem(nextKey, legacyValue);
+        localStorage.setItem(`${legacyKey}_migrated_at`, new Date().toISOString());
       }
     });
   },
@@ -306,7 +317,18 @@ const Storage = {
 
       // Compatibilidade com escopo legado (antes do workspace no scope).
       if (!state && this.currentWorkspace === 'default' && this.currentUserId) {
-        state = await loadByScope(this.currentUserId);
+        const legacyState = await loadByScope(this.currentUserId);
+        if (legacyState) {
+          state = legacyState;
+
+          // Migra escopo legado -> novo sem apagar o antigo.
+          await supabase
+            .from('app_state')
+            .upsert(
+              { scope: this.STATE_SCOPE, state: legacyState, updated_at: new Date().toISOString() },
+              { onConflict: 'scope' }
+            );
+        }
       }
 
       if (!state) return false;

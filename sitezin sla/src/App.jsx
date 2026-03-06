@@ -34,7 +34,7 @@ function App() {
 
       if (cancelled) return;
 
-      Storage.setUser(user.id);
+      Storage.setUser(user.id, ENABLE_WORKSPACES);
       if (ENABLE_WORKSPACES) {
         const activeWorkspace = localStorage.getItem(`${user.id}_activeWorkspace`) || 'default';
         Storage.setWorkspace(activeWorkspace);
