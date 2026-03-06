@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   /*
     Mapa rapido do CSS:
     1) Variaveis e tema por era
@@ -1830,7 +1830,7 @@ button {
 }
 
 .github-graph-header {
-  /* Cabeçalho do bloco: total de contribuições + filtros de período */
+  /* CabeÃ§alho do bloco: total de contribuiÃ§Ãµes + filtros de perÃ­odo */
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -1846,7 +1846,7 @@ button {
 }
 
 .contribution-body {
-  /* Corpo do calendário: coluna de dias + grade rolável */
+  /* Corpo do calendÃ¡rio: coluna de dias + grade rolÃ¡vel */
   display: flex;
   gap: 8px;
   min-width: 0;
@@ -1854,7 +1854,7 @@ button {
 }
 
 .contribution-graph-wrap {
-  /* Responsável pelo scroll horizontal quando período é grande (ex.: 365d) */
+  /* ResponsÃ¡vel pelo scroll horizontal quando perÃ­odo Ã© grande (ex.: 365d) */
   min-width: 0;
   flex: 1 1 auto;
   overflow-x: auto;
@@ -1879,7 +1879,7 @@ button {
   /*
     Grade principal do "heatmap":
     - 7 linhas fixas (dias da semana)
-    - N colunas dinâmicas (semanas) em --graph-columns
+    - N colunas dinÃ¢micas (semanas) em --graph-columns
   */
   --graph-columns: 53;
   display: grid;
@@ -1910,7 +1910,7 @@ button {
 .contribution-weekdays .weekday-fri { grid-row: 6; }
 
 .contribution-months {
-  /* Linha de rótulos de mês alinhada à mesma malha de colunas do heatmap */
+  /* Linha de rÃ³tulos de mÃªs alinhada Ã  mesma malha de colunas do heatmap */
   --graph-columns: 53;
   display: grid;
   grid-template-columns: repeat(var(--graph-columns), 10px);
@@ -2254,4 +2254,101 @@ button {
 .logout-btn svg {
   width: 16px;
   height: 16px;
+}
+/* ===== TOPBAR QUICK FILTERS + WORKSPACE ===== */
+.topbar-filters {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.quick-filter-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quick-filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.topbar-tag-filter {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.workspace-switcher-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workspace-switcher-wrap label {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.workspace-switcher {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+/* ===== LOCAL VERSIONING ===== */
+.local-versions-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.local-version-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.local-version-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.local-version-meta strong {
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.local-version-meta small,
+.local-version-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+  .topbar-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js';
+﻿import { supabase } from '../lib/supabase.js';
 
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
@@ -16,8 +16,11 @@ const Storage = {
   GITHUB_PREFS_KEY: "githubDashboardPrefs",
   GITHUB_CACHE_KEY: "githubDashboardCache",
   PROFILE_SETTINGS_KEY: "swiftProfileSettings",
+  UI_PREFS_KEY: "swiftUiPrefs",
+  LOCAL_VERSIONS_KEY: "swiftLocalVersions",
   STATE_SCOPE: "default",
   currentUserId: null,
+  currentWorkspace: "default",
   syncTimer: null,
   versionTimer: null,
   lastVersionAt: 0,
@@ -30,9 +33,25 @@ const Storage = {
 
   setUser(userId) {
     this.currentUserId = userId;
-    this.STATE_SCOPE = userId || "default";
-    // Prefix localStorage keys per user to isolate data
-    const prefix = userId ? userId.slice(0, 8) + "_" : "";
+    const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
+    this.currentWorkspace = workspaceFromStorage || "default";
+    this.applyKeyPrefix();
+  },
+
+  setWorkspace(workspaceId) {
+    this.currentWorkspace = workspaceId || "default";
+    if (this.currentUserId) {
+      localStorage.setItem(`${this.currentUserId}_activeWorkspace`, this.currentWorkspace);
+    }
+    this.applyKeyPrefix();
+  },
+
+  applyKeyPrefix() {
+    const userPrefix = this.currentUserId ? this.currentUserId.slice(0, 8) : "anon";
+    const workspacePrefix = this.currentWorkspace || "default";
+    const prefix = `${userPrefix}_${workspacePrefix}_`;
+
+    this.STATE_SCOPE = `${this.currentUserId || "default"}:${workspacePrefix}`;
     this.KEY = prefix + "swiftItems";
     this.ORDER_KEY = prefix + "swiftItemsOrder";
     this.FEARLESS_SEED_KEY = prefix + "fearlessDefaultSeeded";
@@ -41,6 +60,8 @@ const Storage = {
     this.GITHUB_CACHE_KEY = prefix + "githubDashboardCache";
     this.PROFILE_SETTINGS_KEY = prefix + "swiftProfileSettings";
     this.AVATAR_KEY = prefix + "swiftAvatar";
+    this.UI_PREFS_KEY = prefix + "swiftUiPrefs";
+    this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
   },
 
   DEFAULT_FEARLESS_CARDS: [
@@ -76,6 +97,8 @@ const Storage = {
       githubPrefs: JSON.parse(localStorage.getItem(this.GITHUB_PREFS_KEY)) || {},
       githubCache: JSON.parse(localStorage.getItem(this.GITHUB_CACHE_KEY)) || {},
       profileSettings: this.getProfileSettings(),
+      uiPrefs: this.getUiPrefs(),
+      workspace: this.currentWorkspace || "default",
       fearlessSeeded: localStorage.getItem(this.FEARLESS_SEED_KEY) === "1",
       avatar: this.getAvatar() || null
     };
@@ -110,6 +133,10 @@ const Storage = {
 
     if (data.profileSettings && typeof data.profileSettings === "object") {
       localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(data.profileSettings));
+    }
+
+    if (data.uiPrefs && typeof data.uiPrefs === "object") {
+      localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(data.uiPrefs));
     }
 
     if (data.fearlessSeeded === true) {
@@ -284,11 +311,63 @@ const Storage = {
     }
   },
 
-  save(items) {
+  save(items, label = "change") {
     localStorage.setItem(this.KEY, JSON.stringify(items));
     this.scheduleSync();
+    this.createLocalVersion(label);
   },
 
+
+  getUiPrefs() {
+    return JSON.parse(localStorage.getItem(this.UI_PREFS_KEY)) || {
+      quickFilter: "all",
+      tag: "__all__"
+    };
+  },
+
+  saveUiPrefs(prefs = {}) {
+    const merged = { ...this.getUiPrefs(), ...prefs };
+    localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(merged));
+    this.scheduleSync();
+    return merged;
+  },
+
+  listLocalVersions() {
+    return JSON.parse(localStorage.getItem(this.LOCAL_VERSIONS_KEY)) || [];
+  },
+
+  createLocalVersion(label = "auto-local", snapshot = null) {
+    const state = snapshot || this.getSnapshot();
+    const signature = this.buildSnapshotSignature(state);
+    const versions = this.listLocalVersions();
+
+    if (versions.length && versions[0].signature === signature) {
+      return versions;
+    }
+
+    const entry = {
+      id: `${Date.now()}`,
+      label,
+      createdAt: new Date().toISOString(),
+      signature,
+      state
+    };
+
+    const next = [entry, ...versions].slice(0, 10);
+    localStorage.setItem(this.LOCAL_VERSIONS_KEY, JSON.stringify(next));
+    return next;
+  },
+
+  restoreLocalVersion(versionId) {
+    const versions = this.listLocalVersions();
+    const selected = versions.find((v) => String(v.id) === String(versionId));
+    if (!selected || !selected.state) throw new Error("Versao local nao encontrada");
+
+    this.applySnapshot(selected.state);
+    this.scheduleSync();
+    this.createLocalVersion(`restore-local-${versionId}`, this.getSnapshot());
+    return selected;
+  },
   // ===== 1) CRUD BASICO =====
   addItem(data) {
     const items = this.getAll();
@@ -408,12 +487,14 @@ const Storage = {
     orders[category] = orderedIds;
     localStorage.setItem(this.ORDER_KEY, JSON.stringify(orders));
     this.scheduleSync();
+    this.createLocalVersion("reorder");
   },
 
   // ===== 6) BACKUP =====
   exportData() {
     // Exporta dados do app em um unico JSON de backup.
     const data = { ...this.getSnapshot(), exportedAt: new Date().toISOString() };
+    this.createLocalVersion("export-manual", data);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -440,6 +521,7 @@ const Storage = {
     const merged = { ...current, ...profileData };
     localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(merged));
     this.scheduleSync();
+    this.createLocalVersion("profile-update");
     return merged;
   },
 

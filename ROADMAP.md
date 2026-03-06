@@ -2,6 +2,13 @@
 
 ## Visão: Site pessoal robusto, rápido e sem fricção
 
+## **Assumptions oficiais do ciclo**
+
+- React gradual é a estratégia oficial do ciclo.
+- Workspace switcher é opcional-condicional (não automático).
+- Analytics permanece backlog neste ciclo.
+- Foto pós-import está resolvida e tratada como baseline estável.
+
 ---
 
 ## **SEMANA 1-2: Foundation Fixes**
@@ -10,6 +17,7 @@
 - [x] Login/logout funcionando
 - [x] Confirmação de email testada (fluxo end-to-end)
 - [x] RLS protegendo dados por usuário
+- [x] Bug da foto pós-import corrigido (sync imediato da UI)
 - [ ] Senha reset via email (Supabase default)
 - [ ] Session timeout + refresh automático
 
@@ -73,7 +81,7 @@
 
 ---
 
-## **SEMANA 9-10: Workspace Switcher** (opcional)
+## **SEMANA 9-10: Workspace Switcher** (opcional-condicional)
 
 ### Goal: Suportar "modo público" ou "múltiplas views"
 
@@ -89,21 +97,15 @@
 
 ---
 
-## **SEMANA 11-12: Analytics + Refinements**
+## **SEMANA 11-12: Stabilization + Refinements**
 
-### Goal: Entender como você usa o site
+### Goal: Fechar ciclo estável para release
 
-**Lightweight analytics:**
-- [ ] Quais categorias você mais acessa
-- [ ] Qual era você mais navega
-- [ ] Tags mais usadas
-- [ ] Tendências (o que cresceu em acesso)
-
-**Visual dashboard simples:** gráficos no "Debut" ou "Settings"
+**Lightweight analytics:** mover para backlog planejado deste ciclo.
 
 **Tempo estimado:** 4-6 horas
 **Dificuldade:** Baixa
-**Value:** Médio (curioso, não essencial)
+**Value:** Alto (confiabilidade final antes de novos escopos)
 
 ---
 
@@ -114,6 +116,7 @@
 - ❌ API pública
 - ❌ Migração de todas as tabelas para relacional
 - ❌ Admin panel
+- ❌ Analytics neste ciclo (mantido em backlog)
 
 ---
 

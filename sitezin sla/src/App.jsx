@@ -1,14 +1,22 @@
 ﻿import { useEffect } from 'react';
 import './styles/style.css';
-import Storage from './legacy/storage.js';
-import { initLegacyApp } from './legacy/app.js';
-import { initRepositorios } from './legacy/repositorios.js';
-import initShellInteractions from './legacy/bootstrap.js';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
 
+const ENABLE_WORKSPACES = import.meta.env.VITE_ENABLE_WORKSPACES === 'true';
+
 function App() {
-  const { user, loading, signIn, signUp, signOut } = useAuth();
+  const {
+    user,
+    loading,
+    authStatus,
+    isRecoveryMode,
+    signIn,
+    signUp,
+    signOut,
+    requestPasswordReset,
+    updatePassword
+  } = useAuth();
 
   useEffect(() => {
     if (loading) return;
@@ -16,9 +24,22 @@ function App() {
 
     let cancelled = false;
 
-    Storage.setUser(user.id);
-
     const boot = async () => {
+      const [{ default: Storage }, { initLegacyApp }, { initRepositorios }, { default: initShellInteractions }] = await Promise.all([
+        import('./legacy/storage.js'),
+        import('./legacy/app.js'),
+        import('./legacy/repositorios.js'),
+        import('./legacy/bootstrap.js')
+      ]);
+
+      if (cancelled) return;
+
+      Storage.setUser(user.id);
+      if (ENABLE_WORKSPACES) {
+        const activeWorkspace = localStorage.getItem(`${user.id}_activeWorkspace`) || 'dev';
+        Storage.setWorkspace(activeWorkspace);
+      }
+
       await Storage.bootstrapPersistence();
       if (cancelled) return;
 
@@ -38,11 +59,20 @@ function App() {
   }, [user, loading]);
 
   if (loading) {
-    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando...</p></div></div>;
+    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;
   }
 
   if (!user) {
-    return <LoginPage signIn={signIn} signUp={signUp} />;
+    return (
+      <LoginPage
+        signIn={signIn}
+        signUp={signUp}
+        requestPasswordReset={requestPasswordReset}
+        updatePassword={updatePassword}
+        isRecoveryMode={isRecoveryMode}
+        authStatus={authStatus}
+      />
+    );
   }
 
   return (
@@ -54,13 +84,13 @@ function App() {
         </div>
         <nav className="menu">
           <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Debut</a>
-          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Fearless</a>
+          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Fearless</a>
           <a href="#" className="era-link" data-target="speak-now" data-era-color="speak-now"><span className="menu-icon"><i data-lucide="mic-2"></i></span>Speak Now</a>
-          <a href="#" className="era-link" data-target="red" data-era-color="red"><span className="menu-icon"><img src="imagens, icons/Sidebar/scarf.png" alt="Red" className="sidebar-custom-icon" /></span>Red</a>
-          <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>1989</a>
-          <a href="#" className="era-link" data-target="reputation" data-era-color="reputation"><span className="menu-icon"><img src="imagens, icons/Sidebar/snake.png" alt="Reputation" className="sidebar-custom-icon" /></span>Reputation</a>
-          <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
-          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
+          <a href="#" className="era-link" data-target="red" data-era-color="red"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/scarf.png" alt="Red" className="sidebar-custom-icon" /></span>Red</a>
+          <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>1989</a>
+          <a href="#" className="era-link" data-target="reputation" data-era-color="reputation"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/snake.png" alt="Reputation" className="sidebar-custom-icon" /></span>Reputation</a>
+          <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
+          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
           <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Settings</a>
         </nav>
@@ -75,15 +105,34 @@ function App() {
           <h2 id="topbar-title">Debut</h2>
           <div className="topbar-right">
             <div className="search">
-              <span className="search-icon"><img src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
+              <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
               <input type="text" className="search-input" id="search-input" placeholder="Pesquisar algo..." autoComplete="off" />
               <div className="search-results" id="search-results"></div>
             </div>
+            {ENABLE_WORKSPACES && (
+              <div className="workspace-switcher-wrap">
+                <label htmlFor="workspace-switcher">Workspace</label>
+                <select id="workspace-switcher" className="workspace-switcher" defaultValue="dev">
+                  <option value="dev">Dev</option>
+                  <option value="reading">Reading</option>
+                  <option value="ideas">Ideas</option>
+                </select>
+              </div>
+            )}
             <div className="topbar-icons">
-              <a href="#" className="icon topbar-settings-btn"><img src="imagens, icons/topbar/settings.svg" alt="Configuracoes" /></a>
-              <a href="#" className="icon"><img src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
-              <a href="#" className="icon profile-icon"><img src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
+              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configuracoes" /></a>
+              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
+              <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
+          </div>
+          <div className="topbar-filters" id="topbar-filters">
+            <button type="button" className="quick-filter-btn active" data-filter="all">All</button>
+            <button type="button" className="quick-filter-btn" data-filter="pinned">Pinned</button>
+            <button type="button" className="quick-filter-btn" data-filter="recent">Recent</button>
+            <button type="button" className="quick-filter-btn" data-filter="most-accessed">Most accessed</button>
+            <select id="topbar-tag-filter" className="topbar-tag-filter" defaultValue="__all__">
+              <option value="__all__">Todas as tags</option>
+            </select>
           </div>
         </header>
 
@@ -204,7 +253,7 @@ function App() {
           <section className="profile-page">
             <div className="profile-header">
               <div className="profile-avatar-large">
-                <img src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
+                <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
               </div>
               <div className="profile-header-info">
                 <h2 id="profile-name">Seu Nome</h2>
@@ -284,8 +333,8 @@ function App() {
               <div className="tab-content active" id="tab-profile">
                 <div className="settings-form-layout">
                   <div className="profile-avatar">
-                    <img src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
-                    <button className="avatar-edit" id="avatar-edit-btn"><img src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
+                    <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
+                    <button className="avatar-edit" id="avatar-edit-btn"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
                     <button className="avatar-remove" id="avatar-remove-btn" title="Remover foto" style={{ display: 'none' }}>&times;</button>
                     <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
                   </div>
@@ -320,6 +369,18 @@ function App() {
                     </div>
                   </div>
                   <p className="import-status" id="import-status"></p>
+                </div>
+
+                <div className="settings-section">
+                  <h4>Historico local</h4>
+                  <p className="settings-desc">Ultimas 10 versoes locais para restauracao rapida.</p>
+                  <div className="settings-actions-row">
+                    <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+                  </div>
+                  <ul id="local-versions-list" className="local-versions-list">
+                    <li className="local-version-empty">Nenhuma versao local encontrada.</li>
+                  </ul>
+                  <p className="import-status" id="versions-status"></p>
                 </div>
               </div>
 

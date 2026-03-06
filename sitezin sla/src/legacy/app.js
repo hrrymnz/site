@@ -113,11 +113,96 @@ const App = {
     this.setupSearch();
     this.setupModal();
     this.setupAddButtons();
+
+    const prefs = Storage.getUiPrefs ? Storage.getUiPrefs() : {};
+    this.quickFilter = prefs.quickFilter || "all";
+    this.topbarTagFilter = prefs.tag || "__all__";
+
+    this.setupQuickFilters();
     Storage.ensureFearlessDefaults();
     this.renderAllEras();
     this.renderDebutHighlights();
+    this.renderQuickFiltersState();
   },
 
+
+  updateQuickFilterTags() {
+    const tagSelect = document.getElementById("topbar-tag-filter");
+    if (!tagSelect) return;
+
+    const tags = new Set();
+    Storage.getAll().forEach((item) => (item.tags || []).forEach((tag) => tags.add(tag)));
+    const options = ['<option value="__all__">Todas as tags</option>'];
+    [...tags].sort().forEach((tag) => {
+      options.push('<option value="' + this.escapeHtml(tag) + '">' + this.escapeHtml(tag) + '</option>');
+    });
+    tagSelect.innerHTML = options.join('');
+  },
+
+  setupQuickFilters() {
+    const container = document.getElementById("topbar-filters");
+    const tagSelect = document.getElementById("topbar-tag-filter");
+    if (!container || !tagSelect) return;
+
+    this.updateQuickFilterTags();
+
+    if (container.dataset.boundQuickFilters === "1") {
+      this.renderQuickFiltersState();
+      return;
+    }
+    container.dataset.boundQuickFilters = "1";
+
+    container.querySelectorAll('.quick-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.quickFilter = btn.dataset.filter || 'all';
+        Storage.saveUiPrefs({ quickFilter: this.quickFilter });
+        this.renderAllEras();
+        this.renderDebutHighlights();
+        this.renderQuickFiltersState();
+      });
+    });
+
+    tagSelect.addEventListener('change', () => {
+      this.topbarTagFilter = tagSelect.value || '__all__';
+      Storage.saveUiPrefs({ tag: this.topbarTagFilter });
+      this.renderAllEras();
+      this.renderDebutHighlights();
+      this.renderQuickFiltersState();
+    });
+  },
+  renderQuickFiltersState() {
+    document.querySelectorAll('.quick-filter-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.filter === this.quickFilter);
+    });
+    const tagSelect = document.getElementById('topbar-tag-filter');
+    if (tagSelect) {
+      tagSelect.value = this.topbarTagFilter || '__all__';
+    }
+  },
+
+  applyQuickFilters(items) {
+    let result = [...items];
+
+    if (this.topbarTagFilter && this.topbarTagFilter !== '__all__') {
+      result = result.filter((item) => (item.tags || []).includes(this.topbarTagFilter));
+    }
+
+    if (this.quickFilter === 'pinned') {
+      result = result.filter((item) => !!item.pinned);
+    }
+
+    if (this.quickFilter === 'recent') {
+      result = result
+        .filter((item) => !!item.lastAccessed)
+        .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
+    }
+
+    if (this.quickFilter === 'most-accessed') {
+      result = result.sort((a, b) => (b.accessCount || 0) - (a.accessCount || 0));
+    }
+
+    return result;
+  },
   // ===== SEARCH =====
   // Controle da busca global no topo e renderizacao dos resultados.
   // Busca em: paginas da SPA + itens do Storage.
@@ -296,6 +381,7 @@ const App = {
   // ===== RENDER ERA PAGES =====
   // Renderizacao dos conteudos por era, incluindo tags e estados vazios.
   renderAllEras() {
+    this.updateQuickFilterTags();
     ["fearless", "speak-now", "red", "1989", "reputation", "lover", "folklore"].forEach(era => this.renderEra(era));
   },
 
@@ -307,11 +393,11 @@ const App = {
     // A era Fearless possui um layout de card diferente (estilo repositorio principal).
     container.classList.toggle("fearless-layout", era === "fearless");
 
-    let items = Storage.getByCategory(era);
+    let items = this.applyQuickFilters(Storage.getByCategory(era));
 
     if (era === "fearless" && items.length === 0) {
       Storage.ensureFearlessDefaults();
-      items = Storage.getByCategory(era);
+      items = this.applyQuickFilters(Storage.getByCategory(era));
     }
 
     const allEraItems = [...items];

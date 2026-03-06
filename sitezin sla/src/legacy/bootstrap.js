@@ -59,6 +59,34 @@
     });
   });
 
+
+  const workspaceSwitcher = document.getElementById('workspace-switcher');
+  if (workspaceSwitcher && window.Storage) {
+    const initialWorkspace = window.Storage.currentWorkspace || 'dev';
+    workspaceSwitcher.value = initialWorkspace;
+
+    if (workspaceSwitcher.dataset.boundChange !== '1') {
+      workspaceSwitcher.dataset.boundChange = '1';
+      workspaceSwitcher.addEventListener('change', async () => {
+        const nextWorkspace = workspaceSwitcher.value || 'dev';
+        window.Storage.setWorkspace(nextWorkspace);
+        await window.Storage.bootstrapPersistence();
+
+        if (window.App && typeof window.App.renderAllEras === 'function') {
+          window.App.renderAllEras();
+        }
+        if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+          window.App.renderDebutHighlights();
+        }
+        if (typeof window.renderizarRecentes === 'function') {
+          window.renderizarRecentes();
+        }
+        if (typeof window.updateProfilePage === 'function') {
+          window.updateProfilePage();
+        }
+      });
+    }
+  }
   const DEFAULT_AVATAR = 'imagens, icons/Sidebar/user 3 1.svg';
   const avatarImg = document.getElementById('avatar-img');
   const topbarIcon = document.querySelector('.profile-icon');
@@ -90,6 +118,69 @@
     else resetAvatar();
   }
 
+
+  function refreshLocalVersions() {
+    const versionsList = document.getElementById('local-versions-list');
+    const versionsStatus = document.getElementById('versions-status');
+    if (!versionsList || !window.Storage || typeof window.Storage.listLocalVersions !== 'function') return;
+
+    const versions = window.Storage.listLocalVersions();
+    if (!versions.length) {
+      versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versao local encontrada.</li>';
+      return;
+    }
+
+    versionsList.innerHTML = versions.map((v) => {
+      const label = v.label || 'auto-local';
+      const when = new Date(v.createdAt).toLocaleString('pt-BR');
+      return '<li class="local-version-item">' +
+        '<div class="local-version-meta"><strong>' + label + '</strong><small>' + when + '</small></div>' +
+        '<button type="button" class="btn-import local-restore-btn" data-version-id="' + v.id + '">Restaurar</button>' +
+      '</li>';
+    }).join('');
+
+    versionsList.querySelectorAll('.local-restore-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const versionId = btn.dataset.versionId;
+        try {
+          window.Storage.restoreLocalVersion(versionId);
+
+          if (window.App && typeof window.App.renderAllEras === 'function') {
+            window.App.renderAllEras();
+          }
+          if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+            window.App.renderDebutHighlights();
+          }
+          if (typeof window.renderizarRecentes === 'function') {
+            window.renderizarRecentes();
+          }
+          if (typeof window.updateProfilePage === 'function') {
+            window.updateProfilePage();
+          }
+
+          const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
+  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
+    refreshVersionsBtn.dataset.boundClick = '1';
+    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
+  }
+
+  refreshAvatar();
+  refreshLocalVersions();
+          refreshLocalVersions();
+
+          if (versionsStatus) {
+            versionsStatus.textContent = 'Versao restaurada com sucesso.';
+            versionsStatus.className = 'import-status success';
+          }
+        } catch {
+          if (versionsStatus) {
+            versionsStatus.textContent = 'Nao foi possivel restaurar essa versao.';
+            versionsStatus.className = 'import-status error';
+          }
+        }
+      });
+    });
+  }
   const btnExport = document.getElementById('btn-export');
   if (btnExport && btnExport.dataset.boundClick !== '1') {
     btnExport.dataset.boundClick = '1';
@@ -122,7 +213,14 @@
           window.renderizarRecentes();
         }
 
-        refreshAvatar();
+        const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
+  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
+    refreshVersionsBtn.dataset.boundClick = '1';
+    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
+  }
+
+  refreshAvatar();
+  refreshLocalVersions();
 
         if (status) {
           status.textContent = count + ' itens importados com sucesso!';
@@ -138,7 +236,14 @@
     });
   }
 
+  const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
+  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
+    refreshVersionsBtn.dataset.boundClick = '1';
+    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
+  }
+
   refreshAvatar();
+  refreshLocalVersions();
 
   if (editBtn && fileInput && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';
@@ -235,6 +340,8 @@
             await window.Storage.createServerVersion('settings-profile-save');
           }
         }
+        refreshLocalVersions();
+
         if (saveStatus) {
           saveStatus.textContent = 'Perfil e dados gerais salvos com sucesso!';
           saveStatus.className = 'import-status success';
