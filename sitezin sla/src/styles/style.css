@@ -2093,3 +2093,165 @@ button {
   font-size: 0.82rem;
   text-align: center;
 }
+
+/* ===== LOGIN PAGE ===== */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f7ff;
+  font-family: "Inter", sans-serif;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.login-brand {
+  font-family: "Mont", "Syne", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-align: center;
+  margin-bottom: 4px;
+  color: #22263b;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: #8a93b2;
+  font-size: 0.95rem;
+  margin-bottom: 28px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #22263b;
+  margin-bottom: 6px;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e8ecff;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: "Inter", sans-serif;
+  background: #f9faff;
+  color: #22263b;
+  transition: border-color 0.2s;
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: #3349ff;
+  background: #fff;
+}
+
+.login-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.login-success {
+  color: #27ae60;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #3349ff;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-btn:hover { background: #2538cc; }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.login-toggle {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #8a93b2;
+}
+
+.login-toggle button {
+  background: none;
+  border: none;
+  color: #3349ff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: "Inter", sans-serif;
+}
+
+.login-toggle button:hover { text-decoration: underline; }
+
+/* ===== SIDEBAR BOTTOM (logout) ===== */
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-email {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.logout-btn:hover {
+  color: #c0392b;
+  background: #fce4e4;
+}
+
+.logout-btn svg {
+  width: 16px;
+  height: 16px;
+}

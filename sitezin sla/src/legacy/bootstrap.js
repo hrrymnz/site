@@ -59,6 +59,37 @@
     });
   });
 
+  const DEFAULT_AVATAR = 'imagens, icons/Sidebar/user 3 1.svg';
+  const avatarImg = document.getElementById('avatar-img');
+  const topbarIcon = document.querySelector('.profile-icon');
+  const topbarImg = document.querySelector('.profile-icon img');
+  const editBtn = document.getElementById('avatar-edit-btn');
+  const removeBtn = document.getElementById('avatar-remove-btn');
+  const fileInput = document.getElementById('avatar-input');
+
+  function applyAvatar(dataUrl) {
+    if (!avatarImg || !removeBtn) return;
+    avatarImg.src = dataUrl;
+    if (topbarImg) topbarImg.src = dataUrl;
+    if (topbarIcon) topbarIcon.classList.add('has-avatar');
+    removeBtn.style.display = 'flex';
+  }
+
+  function resetAvatar() {
+    if (!avatarImg || !removeBtn) return;
+    avatarImg.src = DEFAULT_AVATAR;
+    if (topbarImg) topbarImg.src = DEFAULT_AVATAR;
+    if (topbarIcon) topbarIcon.classList.remove('has-avatar');
+    removeBtn.style.display = 'none';
+  }
+
+  function refreshAvatar() {
+    if (!window.Storage) return;
+    const saved = window.Storage.getAvatar();
+    if (saved) applyAvatar(saved);
+    else resetAvatar();
+  }
+
   const btnExport = document.getElementById('btn-export');
   if (btnExport && btnExport.dataset.boundClick !== '1') {
     btnExport.dataset.boundClick = '1';
@@ -91,6 +122,8 @@
           window.renderizarRecentes();
         }
 
+        refreshAvatar();
+
         if (status) {
           status.textContent = count + ' itens importados com sucesso!';
           status.className = 'import-status success';
@@ -105,34 +138,7 @@
     });
   }
 
-  const DEFAULT_AVATAR = 'imagens, icons/Sidebar/user 3 1.svg';
-  const avatarImg = document.getElementById('avatar-img');
-  const topbarIcon = document.querySelector('.profile-icon');
-  const topbarImg = document.querySelector('.profile-icon img');
-  const editBtn = document.getElementById('avatar-edit-btn');
-  const removeBtn = document.getElementById('avatar-remove-btn');
-  const fileInput = document.getElementById('avatar-input');
-
-  function applyAvatar(dataUrl) {
-    if (!avatarImg || !removeBtn) return;
-    avatarImg.src = dataUrl;
-    if (topbarImg) topbarImg.src = dataUrl;
-    if (topbarIcon) topbarIcon.classList.add('has-avatar');
-    removeBtn.style.display = 'flex';
-  }
-
-  function resetAvatar() {
-    if (!avatarImg || !removeBtn) return;
-    avatarImg.src = DEFAULT_AVATAR;
-    if (topbarImg) topbarImg.src = DEFAULT_AVATAR;
-    if (topbarIcon) topbarIcon.classList.remove('has-avatar');
-    removeBtn.style.display = 'none';
-  }
-
-  if (window.Storage) {
-    const saved = window.Storage.getAvatar();
-    if (saved) applyAvatar(saved);
-  }
+  refreshAvatar();
 
   if (editBtn && fileInput && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';

@@ -4,10 +4,19 @@ import Storage from './legacy/storage.js';
 import { initLegacyApp } from './legacy/app.js';
 import { initRepositorios } from './legacy/repositorios.js';
 import initShellInteractions from './legacy/bootstrap.js';
+import { useAuth } from './hooks/useAuth.js';
+import LoginPage from './components/LoginPage.jsx';
 
 function App() {
+  const { user, loading, signIn, signUp, signOut } = useAuth();
+
   useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+
     let cancelled = false;
+
+    Storage.setUser(user.id);
 
     const boot = async () => {
       await Storage.bootstrapPersistence();
@@ -26,7 +35,15 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user, loading]);
+
+  if (loading) {
+    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando...</p></div></div>;
+  }
+
+  if (!user) {
+    return <LoginPage signIn={signIn} signUp={signUp} />;
+  }
 
   return (
     <main className="dashboard">
@@ -47,6 +64,10 @@ function App() {
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
           <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Settings</a>
         </nav>
+        <div className="sidebar-bottom">
+          <span className="sidebar-email">{user.email}</span>
+          <button className="logout-btn" onClick={signOut}><i data-lucide="log-out"></i>Sair</button>
+        </div>
       </aside>
 
       <section className="content">
