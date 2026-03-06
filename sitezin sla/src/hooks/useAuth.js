@@ -1,11 +1,10 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 export function useAuth() {
   const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authStatus, setAuthStatus] = useState('loading');
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -21,7 +20,6 @@ export function useAuth() {
     let idleTimer = null;
 
     const syncFromSession = (nextSession, status = null) => {
-      setSession(nextSession ?? null);
       setUser(nextSession?.user ?? null);
       hasUserRef.current = !!nextSession?.user;
       if (status) {
@@ -124,7 +122,6 @@ export function useAuth() {
 
   return {
     user,
-    session,
     loading,
     authStatus,
     isRecoveryMode,
@@ -135,3 +132,4 @@ export function useAuth() {
     updatePassword
   };
 }
+

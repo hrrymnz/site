@@ -1,4 +1,4 @@
-﻿function initShellInteractions() {
+function initShellInteractions() {
   document.querySelectorAll('.era-link').forEach((link) => {
     if (link.dataset.boundClick === '1') return;
     link.dataset.boundClick = '1';
@@ -162,15 +162,9 @@
             window.updateProfilePage();
           }
 
-          const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
-  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
-    refreshVersionsBtn.dataset.boundClick = '1';
-    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
-  }
-
-  refreshAvatar();
-  refreshLocalVersions();
+          refreshAvatar();
           refreshLocalVersions();
+
 
           if (versionsStatus) {
             versionsStatus.textContent = 'Versao restaurada com sucesso.';
@@ -217,14 +211,9 @@
           window.renderizarRecentes();
         }
 
-        const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
-  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
-    refreshVersionsBtn.dataset.boundClick = '1';
-    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
-  }
+        refreshAvatar();
+        refreshLocalVersions();
 
-  refreshAvatar();
-  refreshLocalVersions();
 
         if (status) {
           status.textContent = count + ' itens importados com sucesso!';
@@ -554,3 +543,4 @@
 }
 
 export default initShellInteractions;
+

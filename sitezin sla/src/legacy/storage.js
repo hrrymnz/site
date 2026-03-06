@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase.js';
+import { supabase } from '../lib/supabase.js';
 
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
@@ -246,6 +246,8 @@ const Storage = {
     this.lastVersionSignature = this.buildSnapshotSignature(state);
   },
 
+  // @deprecated Mantido para evolucao futura de restore remoto por versao.
+  // Nao ha consumo ativo na UI atual (ciclo atual usa historico local).
   async listServerVersions(limit = 30) {
     if (!this.hasSupabase) return [];
 
@@ -260,6 +262,8 @@ const Storage = {
     return data;
   },
 
+  // @deprecated Mantido para evolucao futura de restore remoto por versao.
+  // Nao ha consumo ativo na UI atual (ciclo atual usa historico local).
   async restoreServerVersion(versionId) {
     if (!this.hasSupabase) throw new Error("Supabase nao configurado");
 
@@ -642,4 +646,6 @@ const Storage = {
 
 window.Storage = Storage;
 export default Storage;
+
+
 
