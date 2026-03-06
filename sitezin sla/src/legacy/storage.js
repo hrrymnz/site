@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase.js';
+
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
 // 1) Leitura/escrita de itens no localStorage
@@ -15,17 +17,30 @@ const Storage = {
   GITHUB_CACHE_KEY: "githubDashboardCache",
   PROFILE_SETTINGS_KEY: "swiftProfileSettings",
   STATE_SCOPE: "default",
+  currentUserId: null,
   syncTimer: null,
   versionTimer: null,
   lastVersionAt: 0,
   lastVersionSignature: "",
   AUTO_VERSION_INTERVAL_MS: 5 * 60 * 1000,
 
-  get API_BASE_URL() {
-    if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL) {
-      return import.meta.env.VITE_API_URL;
-    }
-    return "http://localhost:3001";
+  get hasSupabase() {
+    return !!supabase;
+  },
+
+  setUser(userId) {
+    this.currentUserId = userId;
+    this.STATE_SCOPE = userId || "default";
+    // Prefix localStorage keys per user to isolate data
+    const prefix = userId ? userId.slice(0, 8) + "_" : "";
+    this.KEY = prefix + "swiftItems";
+    this.ORDER_KEY = prefix + "swiftItemsOrder";
+    this.FEARLESS_SEED_KEY = prefix + "fearlessDefaultSeeded";
+    this.REPOS_RECENTES_KEY = prefix + "reposRecentes";
+    this.GITHUB_PREFS_KEY = prefix + "githubDashboardPrefs";
+    this.GITHUB_CACHE_KEY = prefix + "githubDashboardCache";
+    this.PROFILE_SETTINGS_KEY = prefix + "swiftProfileSettings";
+    this.AVATAR_KEY = prefix + "swiftAvatar";
   },
 
   DEFAULT_FEARLESS_CARDS: [
@@ -152,85 +167,85 @@ const Storage = {
   },
 
   async createServerVersion(label = "manual", snapshot = null) {
+    if (!this.hasSupabase) return null;
     const state = snapshot || this.getSnapshot();
-    const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE) + "/versions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state, label })
-    });
 
-    if (!response.ok) {
-      throw new Error("Falha ao criar versao no servidor");
-    }
+    const { error } = await supabase
+      .from('app_state_versions')
+      .insert({ scope: this.STATE_SCOPE, state, label });
+
+    if (error) throw new Error("Falha ao criar versao: " + error.message);
 
     this.lastVersionAt = Date.now();
     this.lastVersionSignature = this.buildSnapshotSignature(state);
-    return response.json();
   },
 
   async listServerVersions(limit = 30) {
-    const response = await fetch(
-      this.API_BASE_URL +
-      "/api/state/" +
-      encodeURIComponent(this.STATE_SCOPE) +
-      "/versions?limit=" +
-      encodeURIComponent(String(limit))
-    );
+    if (!this.hasSupabase) return [];
 
-    if (!response.ok) {
-      throw new Error("Falha ao listar versoes");
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('app_state_versions')
+      .select('id, scope, label, created_at')
+      .eq('scope', this.STATE_SCOPE)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw new Error("Falha ao listar versoes: " + error.message);
+    return data;
   },
 
   async restoreServerVersion(versionId) {
-    const response = await fetch(
-      this.API_BASE_URL +
-      "/api/state/" +
-      encodeURIComponent(this.STATE_SCOPE) +
-      "/versions/" +
-      encodeURIComponent(String(versionId)) +
-      "/restore",
-      {
-        method: "POST"
-      }
-    );
+    if (!this.hasSupabase) throw new Error("Supabase nao configurado");
 
-    if (!response.ok) {
-      throw new Error("Falha ao restaurar versao");
-    }
+    const { data: version, error: fetchErr } = await supabase
+      .from('app_state_versions')
+      .select('state')
+      .eq('scope', this.STATE_SCOPE)
+      .eq('id', versionId)
+      .single();
 
-    const payload = await response.json();
-    if (payload && payload.state) {
-      this.applySnapshot(payload.state);
-    }
-    return payload;
+    if (fetchErr || !version) throw new Error("Versao nao encontrada");
+
+    // Upsert estado atual com a versao restaurada
+    await supabase
+      .from('app_state')
+      .upsert({ scope: this.STATE_SCOPE, state: version.state, updated_at: new Date().toISOString() }, { onConflict: 'scope' });
+
+    // Registra restauracao no historico
+    await supabase
+      .from('app_state_versions')
+      .insert({ scope: this.STATE_SCOPE, state: version.state, label: 'restore-from-' + versionId });
+
+    this.applySnapshot(version.state);
+    return version;
   },
 
   async pushStateToServer() {
+    if (!this.hasSupabase) return;
     const snapshot = this.getSnapshot();
-    const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE), {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: snapshot })
-    });
 
-    if (!response.ok) {
-      throw new Error("Falha ao salvar estado no servidor");
-    }
+    const { error } = await supabase
+      .from('app_state')
+      .upsert({ scope: this.STATE_SCOPE, state: snapshot, updated_at: new Date().toISOString() }, { onConflict: 'scope' });
+
+    if (error) throw new Error("Falha ao salvar estado: " + error.message);
 
     this.maybeScheduleVersion(snapshot, "auto");
   },
 
   async hydrateFromServer() {
+    if (!this.hasSupabase) return false;
     try {
-      const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE));
-      if (response.status === 404) return false;
-      if (!response.ok) return false;
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('scope', this.STATE_SCOPE)
+        .single();
 
-      const payload = await response.json();
-      if (payload && payload.state) {
-        this.applySnapshot(payload.state);
+      if (error || !data) return false;
+
+      if (data.state) {
+        this.applySnapshot(data.state);
         return true;
       }
       return false;
