@@ -273,7 +273,7 @@ const App = {
                 '<span class="search-result-type">' + this.typeIcon(item.type) + '</span>' +
                 '<div class="search-result-info">' +
                   '<strong>' + this.highlightText(this.escapeHtml(item.title), query) + '</strong>' +
-                  '<small>' + this.escapeHtml(item.category) + (item.tags.length ? ' Â· ' + this.escapeHtml(item.tags.join(", ")) : '') + '</small>' +
+                  '<small>' + this.escapeHtml(item.category) + (item.tags.length ? ' &middot; ' + this.escapeHtml(item.tags.join(", ")) : '') + '</small>' +
                 '</div>' +
               '</a>';
             }).join("");
