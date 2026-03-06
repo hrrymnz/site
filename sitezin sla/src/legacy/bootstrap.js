@@ -61,14 +61,18 @@
 
 
   const workspaceSwitcher = document.getElementById('workspace-switcher');
+  const workspaceSwitchStatus = document.getElementById('workspace-switch-status');
   if (workspaceSwitcher && window.Storage) {
     const initialWorkspace = window.Storage.currentWorkspace || 'dev';
     workspaceSwitcher.value = initialWorkspace;
+
+    if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = "Workspace: " + initialWorkspace;
 
     if (workspaceSwitcher.dataset.boundChange !== '1') {
       workspaceSwitcher.dataset.boundChange = '1';
       workspaceSwitcher.addEventListener('change', async () => {
         const nextWorkspace = workspaceSwitcher.value || 'dev';
+        if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = 'Trocando...';
         window.Storage.setWorkspace(nextWorkspace);
         await window.Storage.bootstrapPersistence();
 

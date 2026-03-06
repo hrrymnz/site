@@ -2352,3 +2352,9 @@ button {
     align-items: stretch;
   }
 }
+
+.workspace-switch-status {
+  min-height: 14px;
+  font-size: 0.68rem;
+  color: var(--muted);
+}

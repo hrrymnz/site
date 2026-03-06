@@ -117,6 +117,7 @@ function App() {
                   <option value="reading">Reading</option>
                   <option value="ideas">Ideas</option>
                 </select>
+                <small id="workspace-switch-status" className="workspace-switch-status"></small>
               </div>
             )}
             <div className="topbar-icons">

@@ -13,14 +13,27 @@ const GITHUB_USER = "hrrymnz";
 const GITHUB_URL = `https://github.com/${GITHUB_USER}`;
 const GITHUB_EVENTS_API = `https://api.github.com/users/${GITHUB_USER}/events`;
 const GITHUB_CONTRIB_API = `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}`;
-const GITHUB_CACHE_KEY = "githubDashboardCache";
-const GITHUB_PREFS_KEY = "githubDashboardPrefs";
 const GITHUB_CACHE_TTL_MS = 15 * 60 * 1000;
 
 const githubState = {
   periodoDias: 90,
   limiteCommits: 8
 };
+
+function getReposRecentesKey() {
+  if (typeof Storage !== "undefined" && Storage.REPOS_RECENTES_KEY) return Storage.REPOS_RECENTES_KEY;
+  return "reposRecentes";
+}
+
+function getGithubPrefsKey() {
+  if (typeof Storage !== "undefined" && Storage.GITHUB_PREFS_KEY) return Storage.GITHUB_PREFS_KEY;
+  return "githubDashboardPrefs";
+}
+
+function getGithubCacheKey() {
+  if (typeof Storage !== "undefined" && Storage.GITHUB_CACHE_KEY) return Storage.GITHUB_CACHE_KEY;
+  return "githubDashboardCache";
+}
 
 // ===== 2) CARDS FIXOS E RECENTES =====
 // Repositorios fixados (aparecem como cards na pagina Debut).
@@ -30,7 +43,7 @@ const reposPinned = [
 ];
 
 // Historico local de acessos recentes a repositorios.
-let reposRecentes = JSON.parse(localStorage.getItem("reposRecentes")) || [];
+let reposRecentes = JSON.parse(localStorage.getItem(getReposRecentesKey())) || [];
 
 function sincronizarEstadoPersistido() {
   if (typeof Storage !== "undefined" && typeof Storage.scheduleSync === "function") {
@@ -43,7 +56,7 @@ function abrirRepositorio(nome) {
   reposRecentes = reposRecentes.filter(r => r !== nome);
   reposRecentes.unshift(nome);
   if (reposRecentes.length > 10) reposRecentes.pop();
-  localStorage.setItem("reposRecentes", JSON.stringify(reposRecentes));
+  localStorage.setItem(getReposRecentesKey(), JSON.stringify(reposRecentes));
   sincronizarEstadoPersistido();
   window.open(url, "_blank");
 }
@@ -232,13 +245,13 @@ function formatarData(isoString) {
 
 // ===== 4) CACHE E PREFERENCIAS =====
 function carregarPreferenciasGithub() {
-  const salvas = JSON.parse(localStorage.getItem(GITHUB_PREFS_KEY)) || {};
+  const salvas = JSON.parse(localStorage.getItem(getGithubPrefsKey())) || {};
   githubState.periodoDias = [30, 90, 365].includes(Number(salvas.periodoDias)) ? Number(salvas.periodoDias) : 90;
   githubState.limiteCommits = [3, 5, 8, 12].includes(Number(salvas.limiteCommits)) ? Number(salvas.limiteCommits) : 8;
 }
 
 function salvarPreferenciasGithub() {
-  localStorage.setItem(GITHUB_PREFS_KEY, JSON.stringify({
+  localStorage.setItem(getGithubPrefsKey(), JSON.stringify({
     periodoDias: githubState.periodoDias,
     limiteCommits: githubState.limiteCommits
   }));
@@ -246,11 +259,11 @@ function salvarPreferenciasGithub() {
 }
 
 function lerCacheGithub() {
-  return JSON.parse(localStorage.getItem(GITHUB_CACHE_KEY)) || {};
+  return JSON.parse(localStorage.getItem(getGithubCacheKey())) || {};
 }
 
 function salvarCacheGithub(cache) {
-  localStorage.setItem(GITHUB_CACHE_KEY, JSON.stringify(cache));
+  localStorage.setItem(getGithubCacheKey(), JSON.stringify(cache));
   sincronizarEstadoPersistido();
 }
 
