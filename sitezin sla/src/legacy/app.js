@@ -282,7 +282,7 @@ const App = {
           results.innerHTML = html;
         }
         results.classList.add("visible");
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       }, 200);
     });
 
@@ -489,7 +489,7 @@ const App = {
 
     this.setupItemEvents(container, era);
     this.setupDragDrop(container, era);
-    lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
   },
 
   setupItemEvents(container, era) {
@@ -638,10 +638,10 @@ const App = {
             this.navigateToEra(btn.dataset.era);
           });
         });
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       } else {
         pinnedContainer.innerHTML = '<li><span><i data-lucide="pin"></i></span><b class="plus">Fixe itens nas eras</b></li>';
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       }
     }
 
@@ -677,10 +677,10 @@ const App = {
             this.navigateToEra(btn.dataset.era);
           });
         });
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       } else {
         accessedContainer.innerHTML = '<li><span><i data-lucide="bar-chart-3"></i></span><b class="plus">Acesse itens para ver aqui</b></li>';
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       }
     }
   }

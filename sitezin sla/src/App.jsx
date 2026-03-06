@@ -56,7 +56,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [user, loading]);
+  }, [user?.id, loading]);
 
   if (loading) {
     return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;

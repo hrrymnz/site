@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
@@ -9,6 +9,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [authStatus, setAuthStatus] = useState('loading');
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const hasUserRef = useRef(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -22,6 +23,7 @@ export function useAuth() {
     const syncFromSession = (nextSession, status = null) => {
       setSession(nextSession ?? null);
       setUser(nextSession?.user ?? null);
+      hasUserRef.current = !!nextSession?.user;
       if (status) {
         setAuthStatus(status);
       } else {
@@ -38,7 +40,7 @@ export function useAuth() {
 
     const resetIdleTimer = () => {
       clearIdleTimer();
-      if (!user) return;
+      if (!hasUserRef.current) return;
       idleTimer = setTimeout(async () => {
         try {
           setAuthStatus('expired');
@@ -49,15 +51,20 @@ export function useAuth() {
       }, SESSION_IDLE_TIMEOUT_MS);
     };
 
-    const activityEvents = ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'];
+    const activityEvents = ['click', 'keydown', 'touchstart'];
     const onActivity = () => resetIdleTimer();
     activityEvents.forEach((eventName) => window.addEventListener(eventName, onActivity, { passive: true }));
 
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      syncFromSession(currentSession);
-      setLoading(false);
-      resetIdleTimer();
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session: currentSession } }) => {
+        syncFromSession(currentSession);
+        setLoading(false);
+        resetIdleTimer();
+      })
+      .catch(() => {
+        setLoading(false);
+        setAuthStatus('unauthenticated');
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -82,7 +89,7 @@ export function useAuth() {
       clearIdleTimer();
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, onActivity));
     };
-  }, [user]);
+  }, []);
 
   const signUp = async (email, password) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
