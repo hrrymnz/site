@@ -1,0 +1,490 @@
+// ===== STORAGE MODULE =====
+// Mapa rapido deste arquivo:
+// 1) Leitura/escrita de itens no localStorage
+// 2) Seeds da era Fearless
+// 3) CRUD + filtros + busca
+// 4) Estatisticas (acessos, pins, tags)
+// 5) Ordenacao manual por era
+// 6) Exportacao/importacao de backup
+const Storage = {
+  KEY: "swiftItems",
+  ORDER_KEY: "swiftItemsOrder",
+  FEARLESS_SEED_KEY: "fearlessDefaultSeeded",
+  REPOS_RECENTES_KEY: "reposRecentes",
+  GITHUB_PREFS_KEY: "githubDashboardPrefs",
+  GITHUB_CACHE_KEY: "githubDashboardCache",
+  PROFILE_SETTINGS_KEY: "swiftProfileSettings",
+  STATE_SCOPE: "default",
+  syncTimer: null,
+  versionTimer: null,
+  lastVersionAt: 0,
+  lastVersionSignature: "",
+  AUTO_VERSION_INTERVAL_MS: 5 * 60 * 1000,
+
+  get API_BASE_URL() {
+    if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL;
+    }
+    return "http://localhost:3001";
+  },
+
+  DEFAULT_FEARLESS_CARDS: [
+    {
+      type: "repo",
+      title: "HtmlAnalyzer",
+      url: "https://github.com/hrrymnz/HtmlAnalyzer",
+      content: "Teste tecnico",
+      tags: ["principal"],
+      category: "fearless",
+      pinned: true
+    },
+    {
+      type: "repo",
+      title: "Quiz",
+      url: "https://github.com/hrrymnz/Quiz",
+      content: "Codigo feito com objetivo academico",
+      tags: ["principal"],
+      category: "fearless",
+      pinned: false
+    }
+  ],
+
+  getAll() {
+    return JSON.parse(localStorage.getItem(this.KEY)) || [];
+  },
+
+  getSnapshot() {
+    return {
+      items: this.getAll(),
+      orders: JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {},
+      reposRecentes: JSON.parse(localStorage.getItem(this.REPOS_RECENTES_KEY)) || [],
+      githubPrefs: JSON.parse(localStorage.getItem(this.GITHUB_PREFS_KEY)) || {},
+      githubCache: JSON.parse(localStorage.getItem(this.GITHUB_CACHE_KEY)) || {},
+      profileSettings: this.getProfileSettings(),
+      fearlessSeeded: localStorage.getItem(this.FEARLESS_SEED_KEY) === "1",
+      avatar: this.getAvatar() || null
+    };
+  },
+
+  applySnapshot(data) {
+    if (!data || typeof data !== "object") return;
+
+    const importedItems = Array.isArray(data.items)
+      ? data.items
+      : (Array.isArray(data.swiftItems) ? data.swiftItems : null);
+
+    if (importedItems) {
+      localStorage.setItem(this.KEY, JSON.stringify(importedItems));
+    }
+
+    if (data.orders && typeof data.orders === "object") {
+      localStorage.setItem(this.ORDER_KEY, JSON.stringify(data.orders));
+    }
+
+    if (Array.isArray(data.reposRecentes)) {
+      localStorage.setItem(this.REPOS_RECENTES_KEY, JSON.stringify(data.reposRecentes));
+    }
+
+    if (data.githubPrefs && typeof data.githubPrefs === "object") {
+      localStorage.setItem(this.GITHUB_PREFS_KEY, JSON.stringify(data.githubPrefs));
+    }
+
+    if (data.githubCache && typeof data.githubCache === "object") {
+      localStorage.setItem(this.GITHUB_CACHE_KEY, JSON.stringify(data.githubCache));
+    }
+
+    if (data.profileSettings && typeof data.profileSettings === "object") {
+      localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(data.profileSettings));
+    }
+
+    if (data.fearlessSeeded === true) {
+      localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, "avatar")) {
+      if (data.avatar) {
+        localStorage.setItem(this.AVATAR_KEY, data.avatar);
+      } else {
+        localStorage.removeItem(this.AVATAR_KEY);
+      }
+    }
+  },
+
+  snapshotScore(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return 0;
+    const itemsCount = Array.isArray(snapshot.items) ? snapshot.items.length : 0;
+    const recentCount = Array.isArray(snapshot.reposRecentes) ? snapshot.reposRecentes.length : 0;
+    const prefsCount = snapshot.githubPrefs && typeof snapshot.githubPrefs === "object"
+      ? Object.keys(snapshot.githubPrefs).length
+      : 0;
+    const profileCount = snapshot.profileSettings && typeof snapshot.profileSettings === "object"
+      ? Object.values(snapshot.profileSettings).filter(Boolean).length
+      : 0;
+    const hasAvatar = snapshot.avatar ? 1 : 0;
+    return itemsCount * 10 + recentCount * 3 + prefsCount * 2 + profileCount * 2 + hasAvatar;
+  },
+
+  scheduleSync() {
+    clearTimeout(this.syncTimer);
+    this.syncTimer = setTimeout(() => {
+      this.pushStateToServer().catch(() => {
+        // Mantem funcionamento offline/local mesmo sem backend disponivel.
+      });
+    }, 300);
+  },
+
+  buildSnapshotSignature(snapshot) {
+    return JSON.stringify(snapshot);
+  },
+
+  maybeScheduleVersion(snapshot, label = "auto") {
+    const signature = this.buildSnapshotSignature(snapshot);
+    const now = Date.now();
+    if (signature === this.lastVersionSignature) return;
+    if (now - this.lastVersionAt < this.AUTO_VERSION_INTERVAL_MS) return;
+
+    clearTimeout(this.versionTimer);
+    this.versionTimer = setTimeout(() => {
+      this.createServerVersion(label, snapshot).catch(() => {
+        // Falha de rede nao interrompe o uso local.
+      });
+    }, 400);
+  },
+
+  async createServerVersion(label = "manual", snapshot = null) {
+    const state = snapshot || this.getSnapshot();
+    const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE) + "/versions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state, label })
+    });
+
+    if (!response.ok) {
+      throw new Error("Falha ao criar versao no servidor");
+    }
+
+    this.lastVersionAt = Date.now();
+    this.lastVersionSignature = this.buildSnapshotSignature(state);
+    return response.json();
+  },
+
+  async listServerVersions(limit = 30) {
+    const response = await fetch(
+      this.API_BASE_URL +
+      "/api/state/" +
+      encodeURIComponent(this.STATE_SCOPE) +
+      "/versions?limit=" +
+      encodeURIComponent(String(limit))
+    );
+
+    if (!response.ok) {
+      throw new Error("Falha ao listar versoes");
+    }
+    return response.json();
+  },
+
+  async restoreServerVersion(versionId) {
+    const response = await fetch(
+      this.API_BASE_URL +
+      "/api/state/" +
+      encodeURIComponent(this.STATE_SCOPE) +
+      "/versions/" +
+      encodeURIComponent(String(versionId)) +
+      "/restore",
+      {
+        method: "POST"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Falha ao restaurar versao");
+    }
+
+    const payload = await response.json();
+    if (payload && payload.state) {
+      this.applySnapshot(payload.state);
+    }
+    return payload;
+  },
+
+  async pushStateToServer() {
+    const snapshot = this.getSnapshot();
+    const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: snapshot })
+    });
+
+    if (!response.ok) {
+      throw new Error("Falha ao salvar estado no servidor");
+    }
+
+    this.maybeScheduleVersion(snapshot, "auto");
+  },
+
+  async hydrateFromServer() {
+    try {
+      const response = await fetch(this.API_BASE_URL + "/api/state/" + encodeURIComponent(this.STATE_SCOPE));
+      if (response.status === 404) return false;
+      if (!response.ok) return false;
+
+      const payload = await response.json();
+      if (payload && payload.state) {
+        this.applySnapshot(payload.state);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
+
+  async bootstrapPersistence() {
+    const localBeforeHydrate = this.getSnapshot();
+    const localScore = this.snapshotScore(localBeforeHydrate);
+
+    const loaded = await this.hydrateFromServer();
+
+    if (loaded) {
+      const serverScore = this.snapshotScore(this.getSnapshot());
+      if (localScore > serverScore) {
+        this.applySnapshot(localBeforeHydrate);
+        this.scheduleSync();
+        this.createServerVersion("recover-local-priority", localBeforeHydrate).catch(() => {
+          // Evita quebrar bootstrap por falha de rede.
+        });
+      }
+    }
+
+    this.ensureFearlessDefaults();
+
+    const currentSnapshot = this.getSnapshot();
+    this.lastVersionSignature = this.buildSnapshotSignature(currentSnapshot);
+
+    if (!loaded) {
+      this.scheduleSync();
+      this.createServerVersion("bootstrap-init", currentSnapshot).catch(() => {
+        // Ignora erro para manter bootstrap resiliente.
+      });
+    }
+  },
+
+  save(items) {
+    localStorage.setItem(this.KEY, JSON.stringify(items));
+    this.scheduleSync();
+  },
+
+  // ===== 1) CRUD BASICO =====
+  addItem(data) {
+    const items = this.getAll();
+    const newItem = {
+      id: crypto.randomUUID(),
+      type: data.type || "link",
+      title: data.title || "",
+      url: data.url || "",
+      content: data.content || "",
+      tags: data.tags || [],
+      category: data.category || "debut",
+      pinned: data.pinned || false,
+      accessCount: 0,
+      createdAt: new Date().toISOString(),
+      lastAccessed: ""
+    };
+    items.push(newItem);
+    this.save(items);
+    return newItem;
+  },
+
+  // ===== 2) SEED INICIAL =====
+  ensureFearlessDefaults() {
+    const allItems = this.getAll();
+    const fearlessItems = allItems.filter(item => item.category === "fearless");
+
+    // If Fearless is empty, repopulate the default repository cards.
+    if (fearlessItems.length === 0) {
+      this.DEFAULT_FEARLESS_CARDS.forEach(card => this.addItem(card));
+      localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
+      return;
+    }
+
+    if (localStorage.getItem(this.FEARLESS_SEED_KEY) !== "1") {
+      localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
+      this.scheduleSync();
+    }
+  },
+
+  // ===== 3) ATUALIZACAO/REMOCAO/FILTROS =====
+  updateItem(id, updates) {
+    const items = this.getAll();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return null;
+    items[idx] = { ...items[idx], ...updates };
+    this.save(items);
+    return items[idx];
+  },
+
+  deleteItem(id) {
+    this.save(this.getAll().filter(i => i.id !== id));
+  },
+
+  getByCategory(category) {
+    const items = this.getAll().filter(i => i.category === category);
+    const order = this.getOrder(category);
+    if (!order.length) return items;
+    const ordered = [];
+    order.forEach(id => {
+      const item = items.find(i => i.id === id);
+      if (item) ordered.push(item);
+    });
+    items.forEach(i => {
+      if (!order.includes(i.id)) ordered.push(i);
+    });
+    return ordered;
+  },
+
+  search(query) {
+    const q = query.toLowerCase().trim();
+    if (!q) return [];
+    return this.getAll().filter(i =>
+      i.title.toLowerCase().includes(q) ||
+      i.url.toLowerCase().includes(q) ||
+      i.tags.some(t => t.toLowerCase().includes(q)) ||
+      (i.content || "").toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q)
+    );
+  },
+
+  // ===== 4) METRICAS E TAGS =====
+  trackAccess(id) {
+    const items = this.getAll();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    items[idx].accessCount = (items[idx].accessCount || 0) + 1;
+    items[idx].lastAccessed = new Date().toISOString();
+    this.save(items);
+  },
+
+  getTagsByCategory(category) {
+    const tags = new Set();
+    this.getByCategory(category).forEach(i => (i.tags || []).forEach(t => tags.add(t)));
+    return [...tags].sort();
+  },
+
+  getPinned() {
+    return this.getAll().filter(i => i.pinned).sort((a, b) => b.accessCount - a.accessCount);
+  },
+
+  getMostAccessed(limit = 5) {
+    return this.getAll()
+      .filter(i => i.accessCount > 0)
+      .sort((a, b) => b.accessCount - a.accessCount)
+      .slice(0, limit);
+  },
+
+  // ===== 5) ORDENACAO POR ERA =====
+  getOrder(category) {
+    // Ordem customizada por era: { fearless: [id1, id2...], red: [...] }
+    const orders = JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {};
+    return orders[category] || [];
+  },
+
+  saveOrder(category, orderedIds) {
+    const orders = JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {};
+    orders[category] = orderedIds;
+    localStorage.setItem(this.ORDER_KEY, JSON.stringify(orders));
+    this.scheduleSync();
+  },
+
+  // ===== 6) BACKUP =====
+  exportData() {
+    // Exporta dados do app em um unico JSON de backup.
+    const data = { ...this.getSnapshot(), exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "taylorswift-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+
+    this.createServerVersion("export-manual", data).catch(() => {
+      // Export local continua funcionando mesmo sem backend.
+    });
+  },
+
+  // ===== 7) FOTO DE PERFIL =====
+  AVATAR_KEY: "swiftAvatar",
+
+  // ===== 8) SETTINGS PROFILE =====
+  getProfileSettings() {
+    return JSON.parse(localStorage.getItem(this.PROFILE_SETTINGS_KEY)) || {};
+  },
+
+  saveProfileSettings(profileData) {
+    const current = this.getProfileSettings();
+    const merged = { ...current, ...profileData };
+    localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(merged));
+    this.scheduleSync();
+    return merged;
+  },
+
+  async saveProfileAndAllData(profileData) {
+    // Salva perfil localmente e sincroniza um snapshot completo do app.
+    this.saveProfileSettings(profileData);
+    const snapshot = this.getSnapshot();
+    await this.pushStateToServer();
+    await this.createServerVersion("settings-profile-save", snapshot);
+    return snapshot;
+  },
+
+  getAvatar() {
+    return localStorage.getItem(this.AVATAR_KEY) || "";
+  },
+
+  saveAvatar(dataUrl) {
+    localStorage.setItem(this.AVATAR_KEY, dataUrl);
+    this.scheduleSync();
+  },
+
+  removeAvatar() {
+    localStorage.removeItem(this.AVATAR_KEY);
+    this.scheduleSync();
+  },
+
+  importData(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const beforeImport = this.getSnapshot();
+          this.createServerVersion("pre-import", beforeImport).catch(() => {
+            // Sem bloqueio em caso de falha.
+          });
+
+          // Import parcial tolerante:
+          // se um bloco nao existir no arquivo, os demais ainda podem ser aplicados.
+          const data = JSON.parse(e.target.result);
+          const importedItems = Array.isArray(data.items)
+            ? data.items
+            : (Array.isArray(data.swiftItems) ? data.swiftItems : null);
+
+          this.applySnapshot(data);
+          this.scheduleSync();
+          await this.createServerVersion("import-backup", this.getSnapshot()).catch(() => {
+            // Import nao falha caso o versionamento remoto falhe.
+          });
+
+          resolve(importedItems ? importedItems.length : 0);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+};
+
+window.Storage = Storage;
+export default Storage;
+

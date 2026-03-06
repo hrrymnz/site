@@ -1,0 +1,5 @@
+/* Importa fonts do Google */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700&display=swap');
+
+/* Importa o CSS original completo */
+@import './css/style.css';
