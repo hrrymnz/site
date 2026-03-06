@@ -6,7 +6,7 @@
     "enabled": true
   },
   "assets": {
-    "directory": "sitezin sla"
+    "directory": "sitezin sla/dist"
   },
   "compatibility_flags": [
     "nodejs_compat"
