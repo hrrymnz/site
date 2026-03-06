@@ -36,6 +36,7 @@ const Storage = {
     const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
     this.currentWorkspace = workspaceFromStorage || "default";
     this.applyKeyPrefix();
+    this.migrateLegacyKeysIfNeeded();
   },
 
   setWorkspace(workspaceId) {
@@ -44,6 +45,7 @@ const Storage = {
       localStorage.setItem(`${this.currentUserId}_activeWorkspace`, this.currentWorkspace);
     }
     this.applyKeyPrefix();
+    this.migrateLegacyKeysIfNeeded();
   },
 
   applyKeyPrefix() {
@@ -64,6 +66,32 @@ const Storage = {
     this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
   },
 
+
+  migrateLegacyKeysIfNeeded() {
+    if (!this.currentUserId) return;
+    if ((this.currentWorkspace || "default") !== "default") return;
+
+    const userPrefix = this.currentUserId.slice(0, 8) + "_";
+    const legacyMap = [
+      [this.KEY, userPrefix + "swiftItems"],
+      [this.ORDER_KEY, userPrefix + "swiftItemsOrder"],
+      [this.FEARLESS_SEED_KEY, userPrefix + "fearlessDefaultSeeded"],
+      [this.REPOS_RECENTES_KEY, userPrefix + "reposRecentes"],
+      [this.GITHUB_PREFS_KEY, userPrefix + "githubDashboardPrefs"],
+      [this.GITHUB_CACHE_KEY, userPrefix + "githubDashboardCache"],
+      [this.PROFILE_SETTINGS_KEY, userPrefix + "swiftProfileSettings"],
+      [this.AVATAR_KEY, userPrefix + "swiftAvatar"],
+      [this.UI_PREFS_KEY, userPrefix + "swiftUiPrefs"]
+    ];
+
+    legacyMap.forEach(([nextKey, legacyKey]) => {
+      if (localStorage.getItem(nextKey) !== null) return;
+      const legacyValue = localStorage.getItem(legacyKey);
+      if (legacyValue !== null) {
+        localStorage.setItem(nextKey, legacyValue);
+      }
+    });
+  },
   DEFAULT_FEARLESS_CARDS: [
     {
       type: "repo",
@@ -263,19 +291,27 @@ const Storage = {
   async hydrateFromServer() {
     if (!this.hasSupabase) return false;
     try {
-      const { data, error } = await supabase
-        .from('app_state')
-        .select('state')
-        .eq('scope', this.STATE_SCOPE)
-        .single();
+      const loadByScope = async (scope) => {
+        const { data, error } = await supabase
+          .from('app_state')
+          .select('state')
+          .eq('scope', scope)
+          .single();
 
-      if (error || !data) return false;
+        if (error || !data || !data.state) return null;
+        return data.state;
+      };
 
-      if (data.state) {
-        this.applySnapshot(data.state);
-        return true;
+      let state = await loadByScope(this.STATE_SCOPE);
+
+      // Compatibilidade com escopo legado (antes do workspace no scope).
+      if (!state && this.currentWorkspace === 'default' && this.currentUserId) {
+        state = await loadByScope(this.currentUserId);
       }
-      return false;
+
+      if (!state) return false;
+      this.applySnapshot(state);
+      return true;
     } catch {
       return false;
     }

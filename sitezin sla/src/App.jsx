@@ -36,7 +36,7 @@ function App() {
 
       Storage.setUser(user.id);
       if (ENABLE_WORKSPACES) {
-        const activeWorkspace = localStorage.getItem(`${user.id}_activeWorkspace`) || 'dev';
+        const activeWorkspace = localStorage.getItem(`${user.id}_activeWorkspace`) || 'default';
         Storage.setWorkspace(activeWorkspace);
       }
 
@@ -112,7 +112,8 @@ function App() {
             {ENABLE_WORKSPACES && (
               <div className="workspace-switcher-wrap">
                 <label htmlFor="workspace-switcher">Workspace</label>
-                <select id="workspace-switcher" className="workspace-switcher" defaultValue="dev">
+                <select id="workspace-switcher" className="workspace-switcher" defaultValue="default">
+                  <option value="default">Main</option>
                   <option value="dev">Dev</option>
                   <option value="reading">Reading</option>
                   <option value="ideas">Ideas</option>
@@ -125,15 +126,6 @@ function App() {
               <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
               <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
-          </div>
-          <div className="topbar-filters" id="topbar-filters">
-            <button type="button" className="quick-filter-btn active" data-filter="all">All</button>
-            <button type="button" className="quick-filter-btn" data-filter="pinned">Pinned</button>
-            <button type="button" className="quick-filter-btn" data-filter="recent">Recent</button>
-            <button type="button" className="quick-filter-btn" data-filter="most-accessed">Most accessed</button>
-            <select id="topbar-tag-filter" className="topbar-tag-filter" defaultValue="__all__">
-              <option value="__all__">Todas as tags</option>
-            </select>
           </div>
         </header>
 
