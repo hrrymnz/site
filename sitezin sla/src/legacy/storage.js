@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js';
+﻿import { supabase } from '../lib/supabase.js';
 
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
@@ -70,6 +70,7 @@ const Storage = {
     this.GITHUB_CACHE_KEY = prefix + "githubDashboardCache";
     this.PROFILE_SETTINGS_KEY = prefix + "swiftProfileSettings";
     this.AVATAR_KEY = prefix + "swiftAvatar";
+    this.HEADER_KEY = prefix + "swiftProfileHeader";
     this.UI_PREFS_KEY = prefix + "swiftUiPrefs";
     this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
   },
@@ -90,6 +91,7 @@ const Storage = {
       [this.GITHUB_CACHE_KEY, userPrefix + "githubDashboardCache"],
       [this.PROFILE_SETTINGS_KEY, userPrefix + "swiftProfileSettings"],
       [this.AVATAR_KEY, userPrefix + "swiftAvatar"],
+      [this.HEADER_KEY, userPrefix + "swiftProfileHeader"],
       [this.UI_PREFS_KEY, userPrefix + "swiftUiPrefs"]
     ];
 
@@ -144,7 +146,8 @@ const Storage = {
       uiPrefs: this.getUiPrefs(),
       workspace: this.currentWorkspace || "default",
       fearlessSeeded: localStorage.getItem(this.FEARLESS_SEED_KEY) === "1",
-      avatar: this.getAvatar() || null
+      avatar: this.getAvatar() || null,
+      profileHeader: this.getProfileHeader() || null
     };
   },
 
@@ -198,6 +201,13 @@ const Storage = {
         localStorage.removeItem(this.AVATAR_KEY);
       }
     }
+    if (Object.prototype.hasOwnProperty.call(data, "profileHeader")) {
+      if (data.profileHeader) {
+        localStorage.setItem(this.HEADER_KEY, data.profileHeader);
+      } else {
+        localStorage.removeItem(this.HEADER_KEY);
+      }
+    }
   },
 
   snapshotScore(snapshot) {
@@ -212,7 +222,8 @@ const Storage = {
       ? Object.values(snapshot.profileSettings).filter(Boolean).length
       : 0;
     const hasAvatar = snapshot.avatar ? 1 : 0;
-    return itemsCount * 10 + pinnedReposCount * 4 + recentCount * 3 + prefsCount * 2 + profileCount * 2 + hasAvatar;
+    const hasHeader = snapshot.profileHeader ? 1 : 0;
+    return itemsCount * 10 + pinnedReposCount * 4 + recentCount * 3 + prefsCount * 2 + profileCount * 2 + hasAvatar + hasHeader;
   },
 
   scheduleSync() {
@@ -498,6 +509,9 @@ const Storage = {
       createdAt: new Date().toISOString(),
       lastAccessed: ""
     };
+    if (newItem.type === "checklist") {
+      newItem.checklistItems = Array.isArray(data.checklistItems) ? data.checklistItems : [];
+    }
     items.push(newItem);
     this.save(items);
     return newItem;
@@ -622,6 +636,7 @@ const Storage = {
 
   // ===== 7) FOTO DE PERFIL =====
   AVATAR_KEY: "swiftAvatar",
+  HEADER_KEY: "swiftProfileHeader",
 
   // ===== 8) SETTINGS PROFILE =====
   getProfileSettings() {
@@ -660,6 +675,20 @@ const Storage = {
     this.scheduleSync();
   },
 
+
+  getProfileHeader() {
+    return localStorage.getItem(this.HEADER_KEY) || "";
+  },
+
+  saveProfileHeader(dataUrl) {
+    localStorage.setItem(this.HEADER_KEY, dataUrl);
+    this.scheduleSync();
+  },
+
+  removeProfileHeader() {
+    localStorage.removeItem(this.HEADER_KEY);
+    this.scheduleSync();
+  },
   importData(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -696,6 +725,8 @@ const Storage = {
 
 window.Storage = Storage;
 export default Storage;
+
+
 
 
 

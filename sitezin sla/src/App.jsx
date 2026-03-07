@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -92,7 +92,7 @@ function App() {
   }, [user?.id, loading]);
 
   if (loading) {
-    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;
+    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessão...</p></div></div>;
   }
 
   if (!user) {
@@ -127,7 +127,7 @@ function App() {
           <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
           <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
-          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Settings</a>
+          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
         </nav>
         <div className="sidebar-bottom">
           <span className="sidebar-email">{user.email}</span>
@@ -146,19 +146,19 @@ function App() {
             </div>
             {ENABLE_WORKSPACES && (
               <div className="workspace-switcher-wrap">
-                <label htmlFor="workspace-switcher">Workspace</label>
+                <label htmlFor="workspace-switcher">Espaço de trabalho</label>
                 <select id="workspace-switcher" className="workspace-switcher" defaultValue="default">
-                  <option value="default">Main</option>
+                  <option value="default">Principal</option>
                   <option value="dev">Dev</option>
-                  <option value="reading">Reading</option>
-                  <option value="ideas">Ideas</option>
+                  <option value="reading">Leitura</option>
+                  <option value="ideas">Ideias</option>
                 </select>
                 <small id="workspace-switch-status" className="workspace-switch-status"></small>
               </div>
             )}
             <div className="topbar-icons">
-              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configuracoes" /></a>
-              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
+              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
+              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificações" /></a>
               <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
           </div>
@@ -168,14 +168,14 @@ function App() {
           <section className="repos-grid">
             <div className="credit-cards">
               <div className="card-header">
-                <h3>Meus repositorios</h3>
+                <h3>Meus repositórios</h3>
                 <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
               </div>
               <div className="cards-row"></div>
-              <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">Github -&gt;</a>
+              <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">GitHub -&gt;</a>
             </div>
             <div className="recent">
-              <h3>Paginas Recentes</h3>
+              <h3>Páginas Recentes</h3>
               <div className="painel-superficie">
                 <ul></ul>
               </div>
@@ -195,7 +195,10 @@ function App() {
               </div>
             </div>
             <div className="highlight-section">
-              <h3>Mais Acessados</h3>
+              <div className="card-header">
+                <h3>Mais Acessados</h3>
+                <a href="#" className="ver-mais-link" id="ver-mais-accessed">Ver mais</a>
+              </div>
               <div className="painel-superficie">
                 <ul id="debut-accessed" className="highlight-list">
                   <li><span><i data-lucide="bar-chart-3"></i></span><b className="plus">Acesse itens para ver aqui</b></li>
@@ -206,15 +209,15 @@ function App() {
 
           <section className="charts-grid">
             <div className="painel-contribuicoes-github">
-              <h3>Contribuicoes GitHub</h3>
+              <h3>Contribuições GitHub</h3>
               <div className="painel-superficie">
                 <div className="github-graph-header">
                   <div className="github-total-wrap">
                     <strong id="github-total-contributions">-</strong>
-                    <small>contribuicoes no periodo</small>
+                    <small>contribuições no período</small>
                   </div>
                   <div className="github-controls">
-                    <label>Periodo</label>
+                    <label>Período</label>
                     <div className="github-chip-group" id="github-period-group">
                       <button type="button" className="github-chip github-period-btn" data-period="30">30d</button>
                       <button type="button" className="github-chip github-period-btn active" data-period="90">90d</button>
@@ -224,9 +227,9 @@ function App() {
                 </div>
                 <div className="contribution-body">
                   <div className="contribution-weekdays" aria-hidden="true">
-                    <span className="weekday-mon">Mon</span>
-                    <span className="weekday-wed">Wed</span>
-                    <span className="weekday-fri">Fri</span>
+                    <span className="weekday-mon">Seg</span>
+                    <span className="weekday-wed">Qua</span>
+                    <span className="weekday-fri">Sex</span>
                   </div>
                   <div className="contribution-graph-wrap">
                     <div className="contribution-months" id="contribution-months"></div>
@@ -234,22 +237,22 @@ function App() {
                   </div>
                 </div>
                 <div className="contribution-footer">
-                  <small className="contribution-help">Contributions calendar</small>
+                  <small className="contribution-help">Calendário de contribuições</small>
                   <div className="contribution-legend" aria-label="Contribution intensity legend">
-                    <span>Less</span>
+                    <span>Menos</span>
                     <span className="contribution-day level-0 legend-cell"></span>
                     <span className="contribution-day level-1 legend-cell"></span>
                     <span className="contribution-day level-2 legend-cell"></span>
                     <span className="contribution-day level-3 legend-cell"></span>
                     <span className="contribution-day level-4 legend-cell"></span>
-                    <span>More</span>
+                    <span>Mais</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="painel-commits-github">
-              <h3>Ultimos Commits</h3>
+              <h3>Últimos Commits</h3>
               <div className="painel-superficie">
                 <div className="github-commits-header">
                   <div className="github-controls">
@@ -263,7 +266,7 @@ function App() {
                   </div>
                   <button className="github-refresh-btn" id="github-refresh-btn" type="button">Atualizar</button>
                 </div>
-                <p className="github-cache-status" id="github-cache-status">Aguardando carga...</p>
+                <p className="github-cache-status" id="github-cache-status">Aguardando carregamento...</p>
                 <ul className="github-commits-list" id="github-commits-list">
                   <li className="github-empty">Carregando commits...</li>
                 </ul>
@@ -274,7 +277,62 @@ function App() {
 
         <div className="era-page" id="page-fearless"><div className="era-toolbar"><div className="era-tags" id="tags-fearless"></div><button className="btn-add-item" data-era="fearless">+ Novo Item</button></div><div className="era-items" id="items-fearless"></div></div>
         <div className="era-page" id="page-speak-now"><div className="era-toolbar"><div className="era-tags" id="tags-speak-now"></div><button className="btn-add-item" data-era="speak-now">+ Novo Item</button></div><div className="era-items" id="items-speak-now"></div></div>
-        <div className="era-page" id="page-red"><div className="era-toolbar"><div className="era-tags" id="tags-red"></div><button className="btn-add-item" data-era="red">+ Novo Item</button></div><div className="era-items" id="items-red"></div></div>
+        <div className="era-page" id="page-red">
+          <div className="era-toolbar">
+            <div className="era-tags" id="tags-red">
+              <button type="button" className="tag-btn" id="red-notes-filter-all" data-filter="all">Todos</button>
+              <button type="button" className="tag-btn" id="red-notes-filter-notes" data-filter="notes">Notas</button>
+              <button type="button" className="tag-btn" id="red-notes-filter-checklists" data-filter="checklists">Checklist</button>
+            </div>
+          </div>
+
+          <section className="red-notes-shell red-notes-shell--list-only" id="red-notes-shell">
+            <aside className="red-notes-list-panel">
+              <div className="red-notes-head">
+                <div className="red-notes-head-actions">
+                  <div className="red-notes-view-toggle" aria-label="Visualização">
+                    <button type="button" className="red-notes-view-btn active" id="red-notes-view-list" title="Lista"><i data-lucide="list"></i></button>
+                    <button type="button" className="red-notes-view-btn" id="red-notes-view-grid" title="Grade"><i data-lucide="layout-grid"></i></button>
+                  </div>
+                  <button type="button" className="red-notes-fab" id="red-notes-new-btn" title="Nova nota ou checklist"><i data-lucide="plus"></i></button>
+                </div>
+              </div>
+              <div className="red-notes-search-wrap">
+                <i data-lucide="search"></i>
+                <input type="text" id="red-notes-search" placeholder="Buscar..." />
+              </div>
+              <ul className="red-notes-list" id="red-notes-list"></ul>
+            </aside>
+
+            <div id="red-note-editor-wrap" className="red-note-editor-wrap">
+              <article className="red-note-editor" id="red-note-editor">
+                <div className="red-note-empty" id="red-note-empty" style={{ display: 'none' }}>
+                  <p id="red-note-empty-text">Clique em + para criar uma nota ou checklist.</p>
+                </div>
+                <div className="red-note-form" id="red-note-form" style={{ display: 'none' }}>
+                  <input type="text" id="red-note-title" placeholder="Título da nota" />
+                  <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
+                  <div className="red-note-actions">
+                    <small id="red-note-meta"></small>
+                    <button type="button" className="red-note-delete-btn" id="red-note-delete-btn">Excluir</button>
+                  </div>
+                </div>
+                <div className="red-checklist-form" id="red-checklist-form" style={{ display: 'none' }}>
+                  <input type="text" id="red-checklist-title" placeholder="Título da checklist" />
+                  <div className="red-checklist-progress" id="red-checklist-progress"></div>
+                  <ul className="red-checklist-items" id="red-checklist-items"></ul>
+                  <button type="button" className="red-checklist-add-btn" id="red-checklist-add-btn"><i data-lucide="plus"></i> Adicionar item</button>
+                  <div className="red-note-actions">
+                    <small id="red-checklist-meta"></small>
+                    <button type="button" className="red-note-delete-btn" id="red-checklist-delete-btn">Excluir</button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <div className="era-items" id="items-red"></div>
+        </div>
         <div className="era-page" id="page-1989"><div className="era-toolbar"><div className="era-tags" id="tags-1989"></div><button className="btn-add-item" data-era="1989">+ Novo Item</button></div><div className="era-items" id="items-1989"></div></div>
         <div className="era-page" id="page-reputation"><div className="era-toolbar"><div className="era-tags" id="tags-reputation"></div><button className="btn-add-item" data-era="reputation">+ Novo Item</button></div><div className="era-items" id="items-reputation"></div></div>
         <div className="era-page" id="page-lover"><div className="era-toolbar"><div className="era-tags" id="tags-lover"></div><button className="btn-add-item" data-era="lover">+ Novo Item</button></div><div className="era-items" id="items-lover"></div></div>
@@ -282,6 +340,9 @@ function App() {
 
         <div className="era-page" id="page-evermore">
           <section className="profile-page">
+            <div className="profile-cover" id="profile-cover">
+              <img loading="lazy" decoding="async" src="" alt="Header do perfil" className="profile-header-image" id="profile-header-image" />
+            </div>
             <div className="profile-header">
               <div className="profile-avatar-large">
                 <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
@@ -290,8 +351,8 @@ function App() {
                 <h2 id="profile-name">Seu Nome</h2>
                 <p className="profile-username" id="profile-username">@seu_usuario</p>
                 <div className="profile-bio-wrap">
-                  <p className="profile-bio" id="profile-bio">Clique para adicionar uma descricao...</p>
-                  <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre voce..." style={{ display: 'none' }}></textarea>
+                  <p className="profile-bio" id="profile-bio">Clique para adicionar uma descrição...</p>
+                  <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre você..." style={{ display: 'none' }}></textarea>
                   <div className="profile-bio-footer" id="profile-bio-footer" style={{ display: 'none' }}>
                     <span className="bio-char-count" id="bio-char-count">0/160</span>
                     <div className="bio-footer-actions">
@@ -314,7 +375,7 @@ function App() {
               </div>
               <div className="stat-card">
                 <div className="stat-number" id="stat-repos">0</div>
-                <div className="stat-label">Repositorios</div>
+                <div className="stat-label">Repositórios</div>
               </div>
               <div className="stat-card">
                 <div className="stat-number" id="stat-tags">0</div>
@@ -324,22 +385,22 @@ function App() {
 
             <div className="profile-details">
               <div className="painel-superficie">
-                <h3>Informacoes</h3>
+                <h3>Informações</h3>
                 <div className="profile-details-grid">
                   <div className="detail-item">
                     <span className="detail-label">Email</span>
                     <span className="detail-value" id="profile-email">-</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Localizacao</span>
+                    <span className="detail-label">Localização</span>
                     <span className="detail-value" id="profile-location">-</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Aniversario</span>
+                    <span className="detail-label">Aniversário</span>
                     <span className="detail-value" id="profile-birthdate">-</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Este Usuário desde</span>
+                    <span className="detail-label">Este usuário desde</span>
                     <span className="detail-value" id="profile-joined">-</span>
                   </div>
                 </div>
@@ -354,70 +415,89 @@ function App() {
 
         <div className="era-page" id="page-settings">
           <section className="settings-page">
-            <div className="painel-superficie settings-card">
-              <nav className="settings-tabs">
-                <button className="tab active" data-tab="profile">Edit Profile</button>
-                <button className="tab" data-tab="preferences">Preferences</button>
-                <button className="tab" data-tab="security">Security</button>
-              </nav>
+            <div className="painel-superficie settings-card settings-modern">
+              <header className="settings-modern-header">
+                <h3>Configurações do Perfil</h3>
+                <p>Gerencie as informações e preferências da sua conta.</p>
+              </header>
 
-              <div className="tab-content active" id="tab-profile">
-                <div className="settings-form-layout">
-                  <div className="profile-avatar">
+              <section className="settings-modern-section">
+                <h4>Foto de Perfil</h4>
+                <div className="settings-modern-avatar-row">
+                  <div className="profile-avatar settings-modern-avatar">
                     <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
-                    <button className="avatar-edit" id="avatar-edit-btn"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
+                    <button className="avatar-edit" id="avatar-edit-btn" title="Editar foto"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
                     <button className="avatar-remove" id="avatar-remove-btn" title="Remover foto" style={{ display: 'none' }}>&times;</button>
                     <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
                   </div>
-                  <div className="settings-form">
-                    <div className="form-grid">
-                      <div className="form-group"><label>Your Name</label><input id="settings-name" type="text" placeholder="Charlene Reed" /></div>
-                      <div className="form-group"><label>User Name</label><input id="settings-username" type="text" placeholder="Charlene Reed" /></div>
-                      <div className="form-group"><label>Email</label><input id="settings-email" type="email" placeholder="charlenereed@gmail.com" /></div>
-                      <div className="form-group"><label>Password</label><input id="settings-password" type="password" placeholder="**********" /></div>
-                      <div className="form-group"><label>Date of Birth</label><input id="settings-birthdate" type="date" /></div>
-                      <div className="form-group"><label>Present Address</label><input id="settings-present-address" type="text" placeholder="San Jose, California, USA" /></div>
-                      <div className="form-group"><label>Permanent Address</label><input id="settings-permanent-address" type="text" placeholder="San Jose, California, USA" /></div>
-                      <div className="form-group"><label>City</label><input id="settings-city" type="text" placeholder="San Jose" /></div>
-                      <div className="form-group"><label>Postal Code</label><input id="settings-postal-code" type="text" placeholder="45962" /></div>
-                      <div className="form-group"><label>Country</label><input id="settings-country" type="text" placeholder="USA" /></div>
-                    </div>
-                    <div className="form-actions"><button className="btn-save" id="settings-save-btn" type="button">Save</button></div>
-                    <p className="import-status" id="settings-save-status"></p>
+
+                </div>
+              </section>
+
+              <section className="settings-modern-section">
+                <h4>Header do Perfil</h4>
+                <div className="settings-header-uploader">
+                  <div className="settings-header-preview" id="settings-header-preview">
+                    <img loading="lazy" decoding="async" src="" alt="Prévia do header" className="settings-header-preview-image" id="settings-header-preview-image" />
+                  </div>
+                  <div className="settings-header-actions">
+                    <button type="button" className="btn-import" id="header-edit-btn">Alterar header</button>
+                    <button type="button" className="btn-import" id="header-remove-btn" style={{ display: 'none' }}>Remover header</button>
+                    <input type="file" id="header-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
                   </div>
                 </div>
-              </div>
+              </section>
+              <section className="settings-modern-section">
+                <h4>Dados Pessoais</h4>
+                <div className="form-grid settings-modern-grid">
+                  <div className="form-group"><label>Seu Nome</label><input id="settings-name" type="text" placeholder="Charlene Reed" /></div>
+                  <div className="form-group"><label>Nome de Usuário</label><input id="settings-username" type="text" placeholder="Charlene Reed" /></div>
+                  <div className="form-group"><label>E-mail</label><input id="settings-email" type="email" placeholder="charlenereed@gmail.com" /></div>
+                  <div className="form-group"><label>Senha</label><input id="settings-password" type="password" placeholder="**********" /></div>
+                  <div className="form-group"><label>Data de Nascimento</label><input id="settings-birthdate" type="date" /></div>
+                  <div className="form-group"><label>Cidade</label><input id="settings-city" type="text" placeholder="San Jose" /></div>
+                </div>
+              </section>
 
-              <div className="tab-content" id="tab-preferences">
-                <div className="settings-section">
-                  <h4>Dados</h4>
-                  <p className="settings-desc">Exporte um backup dos seus itens ou importe de um arquivo anterior.</p>
-                  <div className="settings-actions-row">
-                    <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
-                    <div className="import-wrapper">
-                      <button className="btn-import" id="btn-import">Importar Backup</button>
-                      <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
+              <section className="settings-modern-section">
+                <h4>Preferências</h4>
+                <div className="settings-pref-list">
+                  <div className="settings-pref-item">
+                    <div className="settings-pref-copy">
+                      <strong>Backup de dados</strong>
+                      <span>Exporte e importe seus dados sem perder informações.</span>
+                    </div>
+                    <div className="settings-pref-actions">
+                      <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
+                      <div className="import-wrapper">
+                        <button className="btn-import" id="btn-import">Importar Backup</button>
+                        <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
+                      </div>
                     </div>
                   </div>
                   <p className="import-status" id="import-status"></p>
-                </div>
 
-                <div className="settings-section">
-                  <h4>Historico local</h4>
-                  <p className="settings-desc">Ultimas 10 versoes locais para restauracao rapida.</p>
-                  <div className="settings-actions-row">
-                    <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+                  <div className="settings-pref-item">
+                    <div className="settings-pref-copy">
+                      <strong>Histórico local</strong>
+                      <span>Últimas 10 versões locais para restauração rápida.</span>
+                    </div>
+                    <div className="settings-pref-actions">
+                      <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+                    </div>
                   </div>
                   <ul id="local-versions-list" className="local-versions-list">
-                    <li className="local-version-empty">Nenhuma versao local encontrada.</li>
+                    <li className="local-version-empty">Nenhuma versão local encontrada.</li>
                   </ul>
                   <p className="import-status" id="versions-status"></p>
                 </div>
-              </div>
+              </section>
 
-              <div className="tab-content" id="tab-security">
-                <p className="tab-placeholder">Security em breve.</p>
+              <div className="settings-modern-actions">
+                <button type="button" className="settings-cancel-btn" id="settings-cancel-btn">Cancelar</button>
+                <button className="btn-save" id="settings-save-btn" type="button">Salvar alterações</button>
               </div>
+              <p className="import-status" id="settings-save-status"></p>
             </div>
           </section>
         </div>
@@ -431,7 +511,7 @@ function App() {
               <div className="repo-edit-header-icon" aria-hidden="true">
                 <i data-lucide="folder-sync"></i>
               </div>
-              <h3>Editar Repositorio Fixo</h3>
+              <h3>Editar Repositório Fixo</h3>
             </div>
             <button className="modal-close" id="modal-edit-repo-close"><i data-lucide="x"></i></button>
           </div>
@@ -444,9 +524,9 @@ function App() {
             </div>
 
             <div className="form-group">
-              <label>Repositorio do fearless</label>
+              <label>Repositório do Fearless</label>
               <select id="edit-repo-source" required>
-                <option value="">Selecione um repositorio da Fearless</option>
+                <option value="">Selecione um repositório da Fearless</option>
               </select>
             </div>
 
@@ -456,16 +536,66 @@ function App() {
             </div>
 
             <div className="form-group form-group-note">
-              <label>Descricao</label>
+              <label>Descrição</label>
               <textarea id="edit-repo-description" rows="4"></textarea>
-              <small className="repo-modal-hint">Somente repositorios criados na era Fearless podem ser fixados aqui.</small>
+              <small className="repo-modal-hint">Somente repositórios criados na era Fearless podem ser fixados aqui.</small>
             </div>
 
             <div className="repo-edit-actions">
-              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositorio</button>
+              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositório</button>
               <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div className="modal-overlay" id="modal-create-red">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Criar novo</h3>
+            <button type="button" className="modal-close" id="modal-create-red-close"><i data-lucide="x"></i></button>
+          </div>
+          <p className="modal-create-red-desc">Escolha o que deseja criar</p>
+          <div className="modal-create-red-options">
+            <button type="button" className="modal-create-red-card" id="modal-create-red-note">
+              <span className="modal-create-red-icon modal-create-red-icon-note"><i data-lucide="file-text"></i></span>
+              <div>
+                <strong>Nota</strong>
+                <span>Criar uma nova nota de texto</span>
+              </div>
+            </button>
+            <button type="button" className="modal-create-red-card" id="modal-create-red-checklist">
+              <span className="modal-create-red-icon modal-create-red-icon-checklist"><i data-lucide="check-square"></i></span>
+              <div>
+                <strong>Checklist</strong>
+                <span>Criar lista com itens e checkboxes</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal-overlay" id="modal-delete-note">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Excluir item</h3>
+            <button type="button" className="modal-close" id="modal-delete-note-close"><i data-lucide="x"></i></button>
+          </div>
+          <p className="modal-delete-note-message">Excluir este item? Esta ação não pode ser desfeita.</p>
+          <div className="modal-actions">
+            <button type="button" className="modal-btn-cancel" id="modal-delete-note-cancel">Cancelar</button>
+            <button type="button" className="modal-btn-confirm-delete" id="modal-delete-note-confirm">Excluir</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal-overlay" id="red-editor-modal">
+        <div className="modal-content red-editor-modal-content">
+          <div className="modal-header">
+            <h3>Editar</h3>
+            <button type="button" className="modal-close" id="red-editor-modal-close"><i data-lucide="x"></i></button>
+          </div>
+          <div id="red-editor-modal-body"></div>
         </div>
       </div>
 
@@ -480,13 +610,13 @@ function App() {
               <label>Tipo</label>
               <select id="item-type">
                 <option value="link">Link</option>
-                <option value="repo">Repositorio</option>
+                <option value="repo">Repositório</option>
                 <option value="playlist">Playlist</option>
                 <option value="note">Nota</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Titulo</label>
+              <label>Título</label>
               <input type="text" id="item-title" required placeholder="Nome do item" />
             </div>
             <div className="form-group field-url">
@@ -494,11 +624,11 @@ function App() {
               <input type="url" id="item-url" placeholder="https://..." />
             </div>
             <div className="form-group field-content" style={{ display: 'none' }}>
-              <label>Conteudo</label>
+              <label>Conteúdo</label>
               <textarea id="item-content" rows="4" placeholder="Sua nota..."></textarea>
             </div>
             <div className="form-group">
-              <label>Tags <small>(separadas por virgula)</small></label>
+              <label>Tags <small>(separadas por vírgula)</small></label>
               <input type="text" id="item-tags" placeholder="tag1, tag2, tag3" />
             </div>
             <div className="form-group">
@@ -506,7 +636,6 @@ function App() {
               <select id="item-category">
                 <option value="fearless">Fearless</option>
                 <option value="speak-now">Speak Now</option>
-                <option value="red">Red</option>
                 <option value="1989">1989</option>
                 <option value="reputation">Reputation</option>
                 <option value="lover">Lover</option>
@@ -525,5 +654,19 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -1,4 +1,4 @@
-function initShellInteractions() {
+﻿function initShellInteractions() {
   document.querySelectorAll('.era-link').forEach((link) => {
     if (link.dataset.boundClick === '1') return;
     link.dataset.boundClick = '1';
@@ -15,6 +15,11 @@ function initShellInteractions() {
       document.querySelectorAll('.era-page').forEach((p) => p.classList.remove('active'));
       const nextPage = document.getElementById('page-' + target);
       if (nextPage) nextPage.classList.add('active');
+
+      if (target === 'red' && window.App && typeof window.App.renderRedNotes === 'function') {
+        window.App.redSelectedNoteId = '';
+        window.App.renderRedNotes();
+      }
 
       const topTitle = document.getElementById('topbar-title');
       if (topTitle) topTitle.textContent = link.textContent.trim();
@@ -66,7 +71,7 @@ function initShellInteractions() {
     const initialWorkspace = window.Storage.currentWorkspace || 'dev';
     workspaceSwitcher.value = initialWorkspace;
 
-    if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = "Workspace: " + initialWorkspace;
+    if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = "Espaço de trabalho: " + initialWorkspace;
 
     if (workspaceSwitcher.dataset.boundChange !== '1') {
       workspaceSwitcher.dataset.boundChange = '1';
@@ -96,8 +101,16 @@ function initShellInteractions() {
   const topbarIcon = document.querySelector('.profile-icon');
   const topbarImg = document.querySelector('.profile-icon img');
   const editBtn = document.getElementById('avatar-edit-btn');
+  const settingsUploadBtn = document.getElementById('settings-upload-btn');
   const removeBtn = document.getElementById('avatar-remove-btn');
   const fileInput = document.getElementById('avatar-input');
+  const profileCover = document.getElementById('profile-cover');
+  const profileHeaderImage = document.getElementById('profile-header-image');
+  const settingsHeaderPreview = document.getElementById('settings-header-preview');
+  const settingsHeaderPreviewImage = document.getElementById('settings-header-preview-image');
+  const headerEditBtn = document.getElementById('header-edit-btn');
+  const headerRemoveBtn = document.getElementById('header-remove-btn');
+  const headerInput = document.getElementById('header-input');
 
   function applyAvatar(dataUrl) {
     if (!avatarImg || !removeBtn) return;
@@ -121,6 +134,32 @@ function initShellInteractions() {
     if (saved) applyAvatar(saved);
     else resetAvatar();
   }
+  function applyProfileHeader(dataUrl) {
+    if (profileHeaderImage) {
+      profileHeaderImage.src = dataUrl;
+      if (profileCover) profileCover.classList.add('has-image');
+    }
+    if (settingsHeaderPreviewImage) settingsHeaderPreviewImage.src = dataUrl;
+    if (settingsHeaderPreview) settingsHeaderPreview.classList.add('has-image');
+    if (headerRemoveBtn) headerRemoveBtn.style.display = 'inline-flex';
+  }
+
+  function resetProfileHeader() {
+    if (profileHeaderImage) {
+      profileHeaderImage.src = '';
+      if (profileCover) profileCover.classList.remove('has-image');
+    }
+    if (settingsHeaderPreviewImage) settingsHeaderPreviewImage.src = '';
+    if (settingsHeaderPreview) settingsHeaderPreview.classList.remove('has-image');
+    if (headerRemoveBtn) headerRemoveBtn.style.display = 'none';
+  }
+
+  function refreshProfileHeader() {
+    if (!window.Storage || typeof window.Storage.getProfileHeader !== 'function') return;
+    const saved = window.Storage.getProfileHeader();
+    if (saved) applyProfileHeader(saved);
+    else resetProfileHeader();
+  }
 
 
   function refreshLocalVersions() {
@@ -130,7 +169,7 @@ function initShellInteractions() {
 
     const versions = window.Storage.listLocalVersions();
     if (!versions.length) {
-      versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versao local encontrada.</li>';
+      versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versão local encontrada.</li>';
       return;
     }
 
@@ -163,16 +202,17 @@ function initShellInteractions() {
           }
 
           refreshAvatar();
+          refreshProfileHeader();
           refreshLocalVersions();
 
 
           if (versionsStatus) {
-            versionsStatus.textContent = 'Versao restaurada com sucesso.';
+            versionsStatus.textContent = 'Versão restaurada com sucesso.';
             versionsStatus.className = 'import-status success';
           }
         } catch {
           if (versionsStatus) {
-            versionsStatus.textContent = 'Nao foi possivel restaurar essa versao.';
+            versionsStatus.textContent = 'Não foi possível restaurar essa versão.';
             versionsStatus.className = 'import-status error';
           }
         }
@@ -212,6 +252,7 @@ function initShellInteractions() {
         }
 
         refreshAvatar();
+        refreshProfileHeader();
         refreshLocalVersions();
 
 
@@ -236,11 +277,20 @@ function initShellInteractions() {
   }
 
   refreshAvatar();
+  refreshProfileHeader();
   refreshLocalVersions();
 
   if (editBtn && fileInput && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';
     editBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      fileInput.click();
+    });
+  }
+
+  if (settingsUploadBtn && fileInput && settingsUploadBtn.dataset.boundClick !== '1') {
+    settingsUploadBtn.dataset.boundClick = '1';
+    settingsUploadBtn.addEventListener('click', (e) => {
       e.preventDefault();
       fileInput.click();
     });
@@ -252,7 +302,7 @@ function initShellInteractions() {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       if (file.size > 2 * 1024 * 1024) {
-        alert('Imagem muito grande. Maximo: 2 MB.');
+        alert('Imagem muito grande. Máximo: 2 MB.');
         e.target.value = '';
         return;
       }
@@ -275,6 +325,47 @@ function initShellInteractions() {
       resetAvatar();
     });
   }
+  if (headerEditBtn && headerInput && headerEditBtn.dataset.boundClick !== '1') {
+    headerEditBtn.dataset.boundClick = '1';
+    headerEditBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      headerInput.click();
+    });
+  }
+
+  if (headerInput && headerInput.dataset.boundChange !== '1') {
+    headerInput.dataset.boundChange = '1';
+    headerInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        alert('Imagem muito grande. Máximo: 4 MB.');
+        e.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        if (window.Storage && typeof window.Storage.saveProfileHeader === 'function') {
+          window.Storage.saveProfileHeader(dataUrl);
+        }
+        applyProfileHeader(dataUrl);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
+
+  if (headerRemoveBtn && headerRemoveBtn.dataset.boundClick !== '1') {
+    headerRemoveBtn.dataset.boundClick = '1';
+    headerRemoveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.Storage && typeof window.Storage.removeProfileHeader === 'function') {
+        window.Storage.removeProfileHeader();
+      }
+      resetProfileHeader();
+    });
+  }
 
   const saveBtn = document.getElementById('settings-save-btn');
   const saveStatus = document.getElementById('settings-save-status');
@@ -284,11 +375,7 @@ function initShellInteractions() {
     email: document.getElementById('settings-email'),
     password: document.getElementById('settings-password'),
     birthDate: document.getElementById('settings-birthdate'),
-    presentAddress: document.getElementById('settings-present-address'),
-    permanentAddress: document.getElementById('settings-permanent-address'),
     city: document.getElementById('settings-city'),
-    postalCode: document.getElementById('settings-postal-code'),
-    country: document.getElementById('settings-country')
   };
 
   function loadProfileForm() {
@@ -315,7 +402,7 @@ function initShellInteractions() {
 
       if (!payload.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
         if (saveStatus) {
-          saveStatus.textContent = 'Informe um email valido para salvar.';
+          saveStatus.textContent = 'Informe um e-mail válido para salvar.';
           saveStatus.className = 'import-status error';
         }
         return;
@@ -341,7 +428,7 @@ function initShellInteractions() {
         }
       } catch {
         if (saveStatus) {
-          saveStatus.textContent = 'Salvo localmente. Nao foi possivel sincronizar com o servidor agora.';
+          saveStatus.textContent = 'Salvo localmente. Não foi possível sincronizar com o servidor agora.';
           saveStatus.className = 'import-status error';
         }
       }
@@ -351,6 +438,7 @@ function initShellInteractions() {
   // ===== PERFIL (EVERMORE) =====
   function updateProfilePage() {
     if (!window.Storage) return;
+    refreshProfileHeader();
 
     // Obter dados do perfil
     const profileData = window.Storage.getProfileSettings();
@@ -375,7 +463,7 @@ function initShellInteractions() {
         profileBio.textContent = bio;
         profileBio.classList.remove('is-placeholder');
       } else {
-        profileBio.textContent = 'Clique para adicionar uma descricao...';
+        profileBio.textContent = 'Clique para adicionar uma descrição...';
         profileBio.classList.add('is-placeholder');
       }
     }
@@ -543,4 +631,10 @@ function initShellInteractions() {
 }
 
 export default initShellInteractions;
+
+
+
+
+
+
 

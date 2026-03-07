@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 
 export default function LoginPage({
   signIn,
@@ -24,13 +24,13 @@ export default function LoginPage({
     if (isRecoveryMode) {
       setMode('recovery');
       setError('');
-      setSuccess('Defina sua nova senha para concluir a recuperacao.');
+      setSuccess('Defina sua nova senha para concluir a recuperação.');
     }
   }, [isRecoveryMode]);
 
   const getFriendlyError = (message) => {
-    if (message === 'Invalid login credentials') return 'Email ou senha incorretos';
-    if (message?.toLowerCase().includes('email not confirmed')) return 'Confirme seu email antes de entrar.';
+    if (message === 'Invalid login credentials') return 'E-mail ou senha incorretos';
+    if (message?.toLowerCase().includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
     return message || 'Ocorreu um erro. Tente novamente.';
   };
 
@@ -43,12 +43,12 @@ export default function LoginPage({
     try {
       if (mode === 'signup') {
         await signUp(email, password);
-        setSuccess('Conta criada! Verifique seu email para confirmar.');
+        setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
       } else if (mode === 'signin') {
         await signIn(email, password);
       } else if (mode === 'forgot') {
         await requestPasswordReset(email);
-        setSuccess('Enviamos um link de recuperacao para seu email.');
+        setSuccess('Enviamos um link de recuperação para seu e-mail.');
       } else if (mode === 'recovery') {
         await updatePassword(password);
         setSuccess('Senha atualizada com sucesso. Entre com sua nova senha.');
@@ -90,13 +90,13 @@ export default function LoginPage({
         <p className="login-subtitle">{title}</p>
 
         {authStatus === 'expired' && (
-          <p className="login-error">Sua sessao expirou por inatividade. Faca login novamente.</p>
+          <p className="login-error">Sua sessão expirou por inatividade. Faça login novamente.</p>
         )}
 
         <form onSubmit={handleSubmit} className="login-form">
           {mode !== 'recovery' && (
             <div className="login-field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">E-mail</label>
               <input
                 id="email"
                 type="email"
@@ -140,7 +140,7 @@ export default function LoginPage({
           <>
             {mode === 'signin' && (
               <p className="login-toggle">
-                Nao tem conta?{' '}
+                Não tem conta?{' '}
                 <button type="button" onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}>
                   Criar conta
                 </button>
@@ -149,7 +149,7 @@ export default function LoginPage({
 
             {mode === 'signup' && (
               <p className="login-toggle">
-                Ja tem conta?{' '}
+                Já tem conta?{' '}
                 <button type="button" onClick={() => { setMode('signin'); setError(''); setSuccess(''); }}>
                   Entrar
                 </button>
@@ -179,3 +179,5 @@ export default function LoginPage({
     </div>
   );
 }
+
+

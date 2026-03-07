@@ -4,9 +4,9 @@
 // 2) Cards fixos + recentes
 // 3) Helpers de formatacao
 // 4) Cache e preferencias do painel GitHub
-// 5) Coleta/processamento de eventos e contribuicoes
+// 5) Coleta/processamento de eventos e contribuições
 // 6) Renderizacao de commits/grafico
-// 7) Controles da UI (periodo/limite/refresh)
+// 7) Controles da UI (período/limite/refresh)
 
 // ===== 1) CONFIGURACAO =====
 const GITHUB_USER = "hrrymnz";
@@ -38,7 +38,7 @@ function getGithubCacheKey() {
 // ===== 2) CARDS FIXOS E RECENTES =====
 const REPO_PIN_SLOTS = 2;
 
-// Historico local de acessos recentes a repositorios.
+// Historico local de acessos recentes a repositórios.
 let reposRecentes = JSON.parse(localStorage.getItem(getReposRecentesKey())) || [];
 let reposPinned = carregarReposFixados();
 
@@ -71,7 +71,7 @@ function obterDescricaoRepo(item) {
     return String(item.content).slice(0, 120);
   }
   const host = item && item.url ? String(item.url).replace(/^https?:\/\//i, "") : "";
-  return host || "Sem descricao";
+  return host || "Sem descrição";
 }
 
 function obterReposFearless() {
@@ -86,7 +86,7 @@ function obterReposFearless() {
     })
     .map((item) => ({
       id: item.id,
-      title: item.title || "Repositorio",
+      title: item.title || "Repositório",
       description: obterDescricaoRepo(item),
       url: item.url || "",
       slug: extrairRepoSlug(item.url || item.title || "")
@@ -164,7 +164,7 @@ function salvarReposFixados(nextRepos) {
   }
 }
 
-function abrirRepositorio(slug, nomeExibicao = "") {
+function abrirRepositório(slug, nomeExibicao = "") {
   const repoSlug = String(slug || "").trim();
   if (!repoSlug) return;
 
@@ -192,15 +192,15 @@ function atualizarPreviewRepoSelecionado() {
 
   if (!selected) {
     nameInput.value = "";
-    descInput.value = "Adicione repositorios na era Fearless e selecione um acima.";
+    descInput.value = "Adicione repositórios na era Fearless e selecione um acima.";
     return;
   }
 
   nameInput.value = selected.title;
-  descInput.value = selected.description || "Sem descricao";
+  descInput.value = selected.description || "Sem descrição";
 }
 
-function editarRepositorioFixado(index) {
+function editarRepositórioFixado(index) {
   const atual = reposPinned[index];
   if (!atual) return;
 
@@ -219,11 +219,11 @@ function editarRepositorioFixado(index) {
   slotInput.value = "REPO FIXO " + (index + 1);
 
   if (!reposFearless.length) {
-    sourceSelect.innerHTML = '<option value="">Sem repositorios na Fearless</option>';
+    sourceSelect.innerHTML = '<option value="">Sem repositórios na Fearless</option>';
     sourceSelect.disabled = true;
   } else {
     sourceSelect.disabled = false;
-    sourceSelect.innerHTML = ['<option value="">Selecione um repositorio da Fearless</option>']
+    sourceSelect.innerHTML = ['<option value="">Selecione um repositório da Fearless</option>']
       .concat(reposFearless.map((repo) =>
         '<option value="' + escapeHtml(repo.id) + '">' + escapeHtml(repo.title) + '</option>'
       ))
@@ -321,8 +321,8 @@ function renderizarRepos() {
     const isEmpty = !selected;
     const classe = isEmpty ? 'credit-card light repo-card repo-card-empty' : ('credit-card ' + slot.estilo + ' repo-card');
     const dataRepo = isEmpty ? '' : escapeHtml(selected.slug);
-    const tituloBase = selected ? selected.title : "Selecione um repositorio";
-    const descricaoBase = selected ? (selected.description || "Sem descricao") : "Adicione um repositorio na Fearless e configure este slot.";
+    const tituloBase = selected ? selected.title : "Selecione um repositório";
+    const descricaoBase = selected ? (selected.description || "Sem descrição") : "Adicione um repositório na Fearless e configure este slot.";
     const titulo = escapeHtml(slot.nome || tituloBase);
     const descricao = escapeHtml(slot.descricao || descricaoBase);
 
@@ -330,7 +330,7 @@ function renderizarRepos() {
       <article class="${classe}" data-repo="${dataRepo}" data-index="${i}">
         <div class="repo-card-head">
           <small>REPO FIXO ${i + 1}</small>
-          <button type="button" class="repo-edit-btn" data-edit-index="${i}" title="Editar repositorio">
+          <button type="button" class="repo-edit-btn" data-edit-index="${i}" title="Editar repositório">
             <i data-lucide="pencil"></i>
           </button>
         </div>
@@ -351,7 +351,7 @@ function renderizarRepos() {
     if (editBtn) {
       e.preventDefault();
       e.stopPropagation();
-      editarRepositorioFixado(Number(editBtn.dataset.editIndex));
+      editarRepositórioFixado(Number(editBtn.dataset.editIndex));
       return;
     }
 
@@ -359,7 +359,7 @@ function renderizarRepos() {
     if (!card) return;
     const repoSlug = String(card.dataset.repo || "").trim();
     if (!repoSlug) return;
-    abrirRepositorio(repoSlug, card.querySelector("strong")?.textContent || "");
+    abrirRepositório(repoSlug, card.querySelector("strong")?.textContent || "");
   });
 }
 
@@ -477,7 +477,7 @@ function renderizarRecentes() {
 
     if (link.dataset.type === "repo" && link.dataset.repo) {
       e.preventDefault();
-      abrirRepositorio(link.dataset.repo);
+      abrirRepositório(link.dataset.repo);
       return;
     }
 
@@ -516,7 +516,7 @@ function formatarEra(era) {
     reputation: "Reputation",
     lover: "Lover",
     folklore: "Folklore",
-    settings: "Settings"
+    settings: "Configurações"
   };
   return labels[key] || "Debut";
 }
@@ -598,7 +598,7 @@ async function obterContribuicoesGithub(forceRefresh = false) {
   }
 
   const response = await fetch(GITHUB_CONTRIB_API);
-  if (!response.ok) throw new Error("Falha ao carregar contribuicoes");
+  if (!response.ok) throw new Error("Falha ao carregar contribuições");
   const data = await response.json();
 
   cache.contributions = {
@@ -631,7 +631,7 @@ function filtrarCommitsPorPeriodo(eventos, periodoDias) {
     .filter(evento => evento.type === "PushEvent" && evento.payload && Array.isArray(evento.payload.commits))
     .filter(evento => new Date(evento.created_at) >= corte)
     .flatMap(evento => evento.payload.commits.map(commit => ({
-      repo: evento.repo ? evento.repo.name : "Repositorio",
+      repo: evento.repo ? evento.repo.name : "Repositório",
       mensagem: commit.message || "Commit sem mensagem",
       url: evento.repo ? `https://github.com/${evento.repo.name}/commit/${commit.sha}` : "#",
       data: evento.created_at
@@ -644,7 +644,7 @@ function renderizarCommitsRecentes(commits) {
   if (!lista) return;
 
   if (!commits.length) {
-    lista.innerHTML = '<li class="github-empty">Nenhum commit publico no periodo selecionado.</li>';
+    lista.innerHTML = '<li class="github-empty">Nenhum commit público no período selecionado.</li>';
     return;
   }
 
@@ -679,7 +679,7 @@ function preencherGraficoContribuicoes(dias, total) {
   mesesContainer.innerHTML = "";
   totalEl.textContent = String(total);
 
-  // Define quantidade de semanas exibidas; minimo 5 para nao colapsar visualmente.
+  // Define quantidade de semanas exibidas; minimo 5 para não colapsar visualmente.
   const colunas = Math.max(5, Math.ceil(dias.length / 7));
   container.style.setProperty("--graph-columns", String(colunas));
   mesesContainer.style.setProperty("--graph-columns", String(colunas));
@@ -708,13 +708,13 @@ function preencherGraficoContribuicoes(dias, total) {
     const bloco = document.createElement("div");
     const level = Number(day.level) || 0;
     bloco.className = `contribution-day level-${Math.min(4, Math.max(0, level))}`;
-    bloco.title = `${day.date} - ${day.count || 0} contribuicoes`;
+    bloco.title = `${day.date} - ${day.count || 0} contribuições`;
     container.appendChild(bloco);
   });
 }
 
 function renderizarGraficoContribuicoes(dataContribuicoes) {
-  // A API de contribuicoes vem por dia; aqui alinhamos esse mapa ao periodo selecionado.
+  // A API de contribuições vem por dia; aqui alinhamos esse mapa ao período selecionado.
   const diasApi = dataContribuicoes && Array.isArray(dataContribuicoes.contributions) ? dataContribuicoes.contributions : [];
   const mapa = new Map(diasApi.map(day => [day.date, Number(day.count) || 0]));
   const janela = obterJanelaDias(githubState.periodoDias);
@@ -750,7 +750,7 @@ async function renderizarPainelGithub(forceRefresh = false) {
   }
 
   try {
-    // Commits e contribuicoes sao buscados em paralelo para reduzir tempo de espera.
+    // Commits e contribuições sao buscados em paralelo para reduzir tempo de espera.
     const [eventosResp, contribuicoesResp] = await Promise.all([
       obterEventosGithub(forceRefresh),
       obterContribuicoesGithub(forceRefresh)
@@ -762,7 +762,7 @@ async function renderizarPainelGithub(forceRefresh = false) {
 
     if (eventosResp.origem === "cache" && contribuicoesResp.origem === "cache") {
       const idade = Math.max(eventosResp.idadeMs, contribuicoesResp.idadeMs);
-      definirStatusCache("Cache local em uso (" + formatarTempoRelativo(idade) + " atras).");
+      definirStatusCache("Cache local em uso (" + formatarTempoRelativo(idade) + " atrás).");
     } else {
       definirStatusCache("Dados atualizados da API.");
     }
@@ -770,7 +770,7 @@ async function renderizarPainelGithub(forceRefresh = false) {
     // Fallback seguro: UI continua funcional mesmo sem resposta da API.
     renderizarCommitsRecentes([]);
     renderizarGraficoContribuicoes({ contributions: [] });
-    definirStatusCache("Nao foi possivel carregar GitHub agora.");
+    definirStatusCache("Não foi possível carregar o GitHub agora.");
   }
 }
 
@@ -819,3 +819,6 @@ window.renderizarRecentes = renderizarRecentes;
 window.initRepositorios = initRepositorios;
 
 export { initRepositorios, renderizarRecentes };
+
+
+
