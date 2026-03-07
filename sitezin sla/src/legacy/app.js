@@ -1,4 +1,4 @@
-﻿// ===== APP MODULE =====
+// ===== APP MODULE =====
 // Mapa rapido deste arquivo:
 // 1) Helpers de segurança/formatacao
 // 2) Inicializacao geral da UI

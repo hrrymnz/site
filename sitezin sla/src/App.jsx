@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -338,18 +338,34 @@ function App() {
         <div className="era-page" id="page-lover"><div className="era-toolbar"><div className="era-tags" id="tags-lover"></div><button className="btn-add-item" data-era="lover">+ Novo Item</button></div><div className="era-items" id="items-lover"></div></div>
         <div className="era-page" id="page-folklore"><div className="era-toolbar"><div className="era-tags" id="tags-folklore"></div><button className="btn-add-item" data-era="folklore">+ Novo Item</button></div><div className="era-items" id="items-folklore"></div></div>
 
-        <div className="era-page" id="page-evermore">
-          <section className="profile-page">
+                <div className="era-page" id="page-evermore">
+          <section className="profile-page x-profile-shell">
+            <div className="x-profile-topbar">
+              <button type="button" className="x-profile-back" aria-label="Voltar"><i data-lucide="arrow-left"></i></button>
+              <div className="x-profile-top-title">
+                <strong id="profile-name-top">Seu Nome</strong>
+                <small id="profile-headline-count">0 itens</small>
+              </div>
+            </div>
+
             <div className="profile-cover" id="profile-cover">
               <img loading="lazy" decoding="async" src="" alt="Header do perfil" className="profile-header-image" id="profile-header-image" />
             </div>
-            <div className="profile-header">
-              <div className="profile-avatar-large">
+
+            <div className="x-profile-main">
+              <div className="profile-avatar-large x-avatar-floating">
                 <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
               </div>
-              <div className="profile-header-info">
+              <div className="x-profile-actions">
+                <a href="#" className="btn-edit-profile x-edit-profile" id="btn-edit-profile">Editar perfil</a>
+              </div>
+            </div>
+
+            <div className="x-profile-content">
+              <div className="profile-header-info x-profile-header-info">
                 <h2 id="profile-name">Seu Nome</h2>
                 <p className="profile-username" id="profile-username">@seu_usuario</p>
+
                 <div className="profile-bio-wrap">
                   <p className="profile-bio" id="profile-bio">Clique para adicionar uma descrição...</p>
                   <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre você..." style={{ display: 'none' }}></textarea>
@@ -361,54 +377,28 @@ function App() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="profile-stats">
-              <div className="stat-card">
-                <div className="stat-number" id="stat-items">0</div>
-                <div className="stat-label">Itens</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-playlists">0</div>
-                <div className="stat-label">Playlists</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-repos">0</div>
-                <div className="stat-label">Repositórios</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-tags">0</div>
-                <div className="stat-label">Tags</div>
-              </div>
-            </div>
+                <div className="x-profile-meta">
+                  <span className="x-meta-item"><i data-lucide="map-pin"></i><span id="profile-location">-</span></span>
+                  <span className="x-meta-item"><i data-lucide="mail"></i><span id="profile-email">-</span></span>
+                  <span className="x-meta-item"><i data-lucide="cake"></i><span id="profile-birthdate">-</span></span>
+                  <span className="x-meta-item"><i data-lucide="calendar-days"></i><span id="profile-joined">-</span></span>
+                </div>
 
-            <div className="profile-details">
-              <div className="painel-superficie">
-                <h3>Informações</h3>
-                <div className="profile-details-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value" id="profile-email">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Localização</span>
-                    <span className="detail-value" id="profile-location">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Aniversário</span>
-                    <span className="detail-value" id="profile-birthdate">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Este usuário desde</span>
-                    <span className="detail-value" id="profile-joined">-</span>
-                  </div>
+                <div className="x-profile-follow-row">
+                  <span><strong id="stat-items">0</strong> Itens</span>
+                  <span><strong id="stat-tags">0</strong> Tags</span>
+                  <span><strong id="stat-playlists">0</strong> Playlists</span>
+                  <span><strong id="stat-repos">0</strong> Repositórios</span>
                 </div>
               </div>
             </div>
 
-            <div className="profile-actions">
-              <a href="#" className="btn-edit-profile" id="btn-edit-profile">Editar Perfil</a>
+            <div className="x-profile-tabs" role="tablist" aria-label="Resumo do perfil">
+              <button type="button" className="x-tab active">Itens</button>
+              <button type="button" className="x-tab">Tags</button>
+              <button type="button" className="x-tab">Playlists</button>
+              <button type="button" className="x-tab">Repositórios</button>
             </div>
           </section>
         </div>
@@ -654,6 +644,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

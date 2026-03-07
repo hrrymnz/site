@@ -1,4 +1,4 @@
-﻿function initShellInteractions() {
+function initShellInteractions() {
   document.querySelectorAll('.era-link').forEach((link) => {
     if (link.dataset.boundClick === '1') return;
     link.dataset.boundClick = '1';
@@ -452,6 +452,9 @@
     const profileName = document.getElementById('profile-name');
     if (profileName) profileName.textContent = profileData.name || 'Seu Nome';
 
+    const profileNameTop = document.getElementById('profile-name-top');
+    if (profileNameTop) profileNameTop.textContent = profileData.name || 'Seu Nome';
+
     const profileUsername = document.getElementById('profile-username');
     if (profileUsername) profileUsername.textContent = '@' + (profileData.username || 'seu_usuario');
 
@@ -513,6 +516,9 @@
     const statItems = document.getElementById('stat-items');
     if (statItems) statItems.textContent = localItems;
 
+    const profileHeadlineCount = document.getElementById('profile-headline-count');
+    if (profileHeadlineCount) profileHeadlineCount.textContent = localItems + ' itens';
+
     const statPlaylists = document.getElementById('stat-playlists');
     if (statPlaylists) statPlaylists.textContent = playlists;
 
@@ -526,6 +532,16 @@
   // Atualizar perfil ao carregar
   updateProfilePage();
 
+
+  const profileBackBtn = document.querySelector('.x-profile-back');
+  if (profileBackBtn && profileBackBtn.dataset.boundClick !== '1') {
+    profileBackBtn.dataset.boundClick = '1';
+    profileBackBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const debutLink = document.querySelector('.era-link[data-target="debut"]');
+      if (debutLink) debutLink.click();
+    });
+  }
   // Botao de editar perfil - redireciona para settings
   const btnEditProfile = document.getElementById('btn-edit-profile');
   if (btnEditProfile && btnEditProfile.dataset.boundClick !== '1') {
@@ -631,6 +647,7 @@
 }
 
 export default initShellInteractions;
+
 
 
 

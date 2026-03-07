@@ -3939,3 +3939,318 @@ button {
 .profile-cover.has-image .profile-header-image {
   display: block;
 }
+
+/* ===== EVERMORE: PERFIL ESTILO X (ADAPTADO) ===== */
+#page-evermore .profile-page.x-profile-shell {
+  width: min(920px, calc(100% - 24px));
+  max-width: 920px;
+  margin: 12px auto 18px;
+  padding: 0 0 18px;
+  background: #fdf6ef;
+  border: 1px solid #e6d2c2;
+  border-radius: 14px;
+  overflow: hidden;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-topbar {
+  height: 54px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e6d2c2;
+  background: #f8ede2;
+}
+
+#page-evermore .x-profile-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #d8b89e;
+  background: transparent;
+  color: #7f3c10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#page-evermore .x-profile-back i {
+  width: 16px;
+  height: 16px;
+}
+
+#page-evermore .x-profile-top-title {
+  display: grid;
+  gap: 1px;
+}
+
+#page-evermore .x-profile-top-title strong {
+  font-size: 1.02rem;
+  line-height: 1.2;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-top-title small {
+  font-size: 0.76rem;
+  color: #8a6f59;
+}
+
+#page-evermore .profile-cover {
+  height: 220px;
+  border: none;
+  border-radius: 0;
+  background: linear-gradient(135deg, #d7b79f 0%, #e7cfbe 40%, #f3e5d9 100%);
+}
+
+#page-evermore .profile-cover::after {
+  background: linear-gradient(180deg, rgba(84, 47, 23, 0.04) 0%, rgba(84, 47, 23, 0.12) 100%);
+}
+
+#page-evermore .x-profile-main {
+  position: relative;
+  padding: 0 16px;
+  min-height: 66px;
+}
+
+#page-evermore .x-avatar-floating {
+  position: absolute;
+  top: -66px;
+  left: 16px;
+  width: 132px;
+  height: 132px;
+  border: 4px solid #fdf6ef;
+  background: #f5e8dc;
+  box-shadow: 0 8px 18px rgba(127, 60, 16, 0.2);
+}
+
+#page-evermore .x-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+#page-evermore .x-edit-profile {
+  background: transparent;
+  border: 1px solid #cc621b;
+  color: #7f3c10;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.86rem;
+  transform: none;
+}
+
+#page-evermore .x-edit-profile:hover {
+  background: rgba(204, 98, 27, 0.12);
+  transform: none;
+}
+
+#page-evermore .x-profile-content {
+  padding: 10px 16px 0;
+}
+
+#page-evermore .x-profile-header-info h2 {
+  margin: 0;
+  font-size: 1.42rem;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-header-info .profile-username {
+  margin: 2px 0 10px;
+  color: #8a6f59;
+}
+
+#page-evermore .x-profile-header-info .profile-bio {
+  color: #3f2d1f;
+  border-radius: 8px;
+}
+
+#page-evermore .x-profile-header-info .profile-bio:hover {
+  background: rgba(204, 98, 27, 0.08);
+  border-color: rgba(204, 98, 27, 0.22);
+}
+
+#page-evermore .x-profile-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+#page-evermore .x-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: #8a6f59;
+}
+
+#page-evermore .x-meta-item i {
+  width: 14px;
+  height: 14px;
+}
+
+#page-evermore .x-profile-follow-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: #8a6f59;
+  font-size: 0.9rem;
+}
+
+#page-evermore .x-profile-follow-row strong {
+  color: #2f2117;
+  margin-right: 4px;
+}
+
+#page-evermore .x-profile-tabs {
+  margin-top: 16px;
+  border-top: 1px solid #e6d2c2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#page-evermore .x-tab {
+  height: 46px;
+  border: none;
+  background: transparent;
+  color: #8a6f59;
+  font-weight: 600;
+  font-size: 0.86rem;
+  border-bottom: 3px solid transparent;
+}
+
+#page-evermore .x-tab.active {
+  color: #2f2117;
+  border-bottom-color: #cc621b;
+}
+
+#page-evermore .x-tab:hover {
+  background: rgba(204, 98, 27, 0.08);
+}
+
+@media (max-width: 900px) {
+  #page-evermore .x-avatar-floating {
+    width: 110px;
+    height: 110px;
+    top: -54px;
+  }
+
+  #page-evermore .x-profile-main {
+    min-height: 58px;
+  }
+}
+
+@media (max-width: 680px) {
+  #page-evermore .x-profile-shell {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  #page-evermore .profile-cover {
+    height: 180px;
+  }
+
+  #page-evermore .x-avatar-floating {
+    left: 12px;
+    width: 92px;
+    height: 92px;
+    top: -44px;
+    border-width: 3px;
+  }
+
+  #page-evermore .x-profile-main {
+    padding: 0 12px;
+    min-height: 52px;
+  }
+
+  #page-evermore .x-profile-content {
+    padding: 10px 12px 0;
+  }
+
+  #page-evermore .x-tab {
+    font-size: 0.78rem;
+  }
+}
+
+#page-settings .settings-header-uploader {
+  display: grid;
+  gap: 12px;
+}
+
+#page-settings .settings-header-preview {
+  width: 100%;
+  max-width: 520px;
+  height: 144px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #d9dee9 0%, #c8d0e0 48%, #b6c3d8 100%);
+}
+
+#page-settings .settings-header-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+#page-settings .settings-header-preview.has-image .settings-header-preview-image {
+  display: block;
+}
+
+#page-settings .settings-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  #page-evermore .x-avatar-floating {
+    width: 110px;
+    height: 110px;
+    top: -54px;
+  }
+
+  #page-evermore .x-profile-main {
+    min-height: 58px;
+  }
+}
+
+@media (max-width: 680px) {
+  #page-evermore .x-profile-shell {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  #page-evermore .profile-cover {
+    height: 180px;
+  }
+
+  #page-evermore .x-avatar-floating {
+    left: 12px;
+    width: 92px;
+    height: 92px;
+    top: -44px;
+    border-width: 3px;
+  }
+
+  #page-evermore .x-profile-main {
+    padding: 0 12px;
+    min-height: 52px;
+  }
+
+  #page-evermore .x-profile-content {
+    padding: 10px 12px 0;
+  }
+
+  #page-evermore .x-tab {
+    font-size: 0.78rem;
+  }
+}
+
+
+
