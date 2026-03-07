@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function LoginPage({
   signIn,
@@ -14,6 +14,11 @@ export default function LoginPage({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('login_theme_mode') || 'light');
+
+  useEffect(() => {
+    localStorage.setItem('login_theme_mode', themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     if (isRecoveryMode) {
@@ -65,8 +70,22 @@ export default function LoginPage({
   }[mode];
 
   return (
-    <div className="login-page">
+    <div className={`login-page login-theme-${themeMode}`}>
       <div className="login-card">
+        <button
+          type="button"
+          className="login-theme-toggle"
+          onClick={() => setThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'))}
+          aria-label="Alternar modo da tela de login"
+          aria-pressed={themeMode === 'dark'}
+        >
+          <span className="login-theme-switch" aria-hidden="true">
+            <span className="login-theme-switch-icon login-theme-switch-icon-moon"></span>
+            <span className="login-theme-switch-icon login-theme-switch-icon-sun"></span>
+            <span className="login-theme-switch-thumb"></span>
+          </span>
+        </button>
+
         <h1 className="login-brand">TaylorSwift.</h1>
         <p className="login-subtitle">{title}</p>
 

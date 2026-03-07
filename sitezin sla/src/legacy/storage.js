@@ -12,6 +12,7 @@ const Storage = {
   KEY: "swiftItems",
   ORDER_KEY: "swiftItemsOrder",
   FEARLESS_SEED_KEY: "fearlessDefaultSeeded",
+  REPOS_PINNED_KEY: "reposPinned",
   REPOS_RECENTES_KEY: "reposRecentes",
   GITHUB_PREFS_KEY: "githubDashboardPrefs",
   GITHUB_CACHE_KEY: "githubDashboardCache",
@@ -63,6 +64,7 @@ const Storage = {
     this.KEY = prefix + "swiftItems";
     this.ORDER_KEY = prefix + "swiftItemsOrder";
     this.FEARLESS_SEED_KEY = prefix + "fearlessDefaultSeeded";
+    this.REPOS_PINNED_KEY = prefix + "reposPinned";
     this.REPOS_RECENTES_KEY = prefix + "reposRecentes";
     this.GITHUB_PREFS_KEY = prefix + "githubDashboardPrefs";
     this.GITHUB_CACHE_KEY = prefix + "githubDashboardCache";
@@ -82,6 +84,7 @@ const Storage = {
       [this.KEY, userPrefix + "swiftItems"],
       [this.ORDER_KEY, userPrefix + "swiftItemsOrder"],
       [this.FEARLESS_SEED_KEY, userPrefix + "fearlessDefaultSeeded"],
+      [this.REPOS_PINNED_KEY, userPrefix + "reposPinned"],
       [this.REPOS_RECENTES_KEY, userPrefix + "reposRecentes"],
       [this.GITHUB_PREFS_KEY, userPrefix + "githubDashboardPrefs"],
       [this.GITHUB_CACHE_KEY, userPrefix + "githubDashboardCache"],
@@ -123,6 +126,7 @@ const Storage = {
       pinned: false
     }
   ],
+  DEFAULT_PINNED_REPOS: [],
 
   getAll() {
     return JSON.parse(localStorage.getItem(this.KEY)) || [];
@@ -132,6 +136,7 @@ const Storage = {
     return {
       items: this.getAll(),
       orders: JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {},
+      reposPinned: this.getPinnedRepos(),
       reposRecentes: JSON.parse(localStorage.getItem(this.REPOS_RECENTES_KEY)) || [],
       githubPrefs: JSON.parse(localStorage.getItem(this.GITHUB_PREFS_KEY)) || {},
       githubCache: JSON.parse(localStorage.getItem(this.GITHUB_CACHE_KEY)) || {},
@@ -156,6 +161,10 @@ const Storage = {
 
     if (data.orders && typeof data.orders === "object") {
       localStorage.setItem(this.ORDER_KEY, JSON.stringify(data.orders));
+    }
+
+    if (Array.isArray(data.reposPinned)) {
+      localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(data.reposPinned));
     }
 
     if (Array.isArray(data.reposRecentes)) {
@@ -194,6 +203,7 @@ const Storage = {
   snapshotScore(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return 0;
     const itemsCount = Array.isArray(snapshot.items) ? snapshot.items.length : 0;
+    const pinnedReposCount = Array.isArray(snapshot.reposPinned) ? snapshot.reposPinned.length : 0;
     const recentCount = Array.isArray(snapshot.reposRecentes) ? snapshot.reposRecentes.length : 0;
     const prefsCount = snapshot.githubPrefs && typeof snapshot.githubPrefs === "object"
       ? Object.keys(snapshot.githubPrefs).length
@@ -202,7 +212,7 @@ const Storage = {
       ? Object.values(snapshot.profileSettings).filter(Boolean).length
       : 0;
     const hasAvatar = snapshot.avatar ? 1 : 0;
-    return itemsCount * 10 + recentCount * 3 + prefsCount * 2 + profileCount * 2 + hasAvatar;
+    return itemsCount * 10 + pinnedReposCount * 4 + recentCount * 3 + prefsCount * 2 + profileCount * 2 + hasAvatar;
   },
 
   scheduleSync() {
@@ -379,6 +389,47 @@ const Storage = {
     this.createLocalVersion(label);
   },
 
+  getPinnedRepos() {
+    const saved = JSON.parse(localStorage.getItem(this.REPOS_PINNED_KEY));
+    if (!Array.isArray(saved) || !saved.length) {
+      return this.DEFAULT_PINNED_REPOS.map(repo => ({ ...repo }));
+    }
+
+    return saved.map((repo) => ({
+      sourceId: String(repo?.sourceId || "").trim(),
+      estilo: repo?.estilo === "light" ? "light" : "primary",
+      // Campos legados mantidos para migracao progressiva no frontend
+      nome: String(repo?.nome || "").trim(),
+      descricao: String(repo?.descricao || "").trim(),
+      slug: String(repo?.slug || "").trim(),
+      url: String(repo?.url || "").trim()
+    }));
+  },
+
+  savePinnedRepos(repos = []) {
+    const normalized = Array.isArray(repos)
+      ? repos.map((repo) => ({
+          sourceId: String(repo?.sourceId || "").trim(),
+          estilo: repo?.estilo === "light" ? "light" : "primary",
+          nome: String(repo?.nome || "").trim(),
+          descricao: String(repo?.descricao || "").trim(),
+          slug: String(repo?.slug || "").trim(),
+          url: String(repo?.url || "").trim()
+        }))
+      : [];
+
+    localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(normalized));
+    this.scheduleSync();
+    this.createLocalVersion("repos-pinned-update");
+    return normalized;
+  },
+
+  updatePinnedRepo(index, nextRepo) {
+    const repos = this.getPinnedRepos();
+    if (index < 0 || index >= repos.length) return repos;
+    repos[index] = { ...repos[index], ...nextRepo };
+    return this.savePinnedRepos(repos);
+  },
 
   getUiPrefs() {
     return JSON.parse(localStorage.getItem(this.UI_PREFS_KEY)) || {
@@ -443,6 +494,7 @@ const Storage = {
       category: data.category || "debut",
       pinned: data.pinned || false,
       accessCount: 0,
+      pinnedAt: data.pinned ? new Date().toISOString() : "",
       createdAt: new Date().toISOString(),
       lastAccessed: ""
     };
@@ -453,16 +505,7 @@ const Storage = {
 
   // ===== 2) SEED INICIAL =====
   ensureFearlessDefaults() {
-    const allItems = this.getAll();
-    const fearlessItems = allItems.filter(item => item.category === "fearless");
-
-    // If Fearless is empty, repopulate the default repository cards.
-    if (fearlessItems.length === 0) {
-      this.DEFAULT_FEARLESS_CARDS.forEach(card => this.addItem(card));
-      localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
-      return;
-    }
-
+    // Sem seed automatico: repositorios devem ser adicionados manualmente na era Fearless.
     if (localStorage.getItem(this.FEARLESS_SEED_KEY) !== "1") {
       localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
       this.scheduleSync();
@@ -527,7 +570,14 @@ const Storage = {
   },
 
   getPinned() {
-    return this.getAll().filter(i => i.pinned).sort((a, b) => b.accessCount - a.accessCount);
+    return this.getAll()
+      .filter(i => i.pinned)
+      .sort((a, b) => {
+        const aPinnedAt = new Date(a.pinnedAt || a.createdAt || 0).getTime();
+        const bPinnedAt = new Date(b.pinnedAt || b.createdAt || 0).getTime();
+        if (aPinnedAt !== bPinnedAt) return bPinnedAt - aPinnedAt;
+        return (b.accessCount || 0) - (a.accessCount || 0);
+      });
   },
 
   getMostAccessed(limit = 5) {
@@ -646,6 +696,7 @@ const Storage = {
 
 window.Storage = Storage;
 export default Storage;
+
 
 
 

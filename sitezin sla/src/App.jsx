@@ -1,7 +1,8 @@
-﻿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
+import brandVector from './assets/brand-vector.svg';
 
 const ENABLE_WORKSPACES = import.meta.env.VITE_ENABLE_WORKSPACES === 'true';
 
@@ -13,10 +14,18 @@ function App() {
     isRecoveryMode,
     signIn,
     signUp,
-    signOut,
+    signOut: authSignOut,
     requestPasswordReset,
     updatePassword
   } = useAuth();
+
+  const handleSignOut = async () => {
+    document.body.setAttribute('data-era', 'debut');
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    await authSignOut();
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -39,9 +48,10 @@ function App() {
         const activeWorkspace = localStorage.getItem(`${user.id}_activeWorkspace`) || 'default';
         Storage.setWorkspace(activeWorkspace);
       }
-
-      await Storage.bootstrapPersistence();
-      if (cancelled) return;
+      document.body.setAttribute('data-era', 'debut');
+      if (window.location.hash !== '#debut') {
+        history.replaceState(null, '', window.location.pathname + window.location.search + '#debut');
+      }
 
       initLegacyApp();
       initShellInteractions();
@@ -49,6 +59,29 @@ function App() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
+
+      Storage.bootstrapPersistence()
+        .then(() => {
+          if (cancelled) return;
+          if (window.App && typeof window.App.renderAllEras === 'function') {
+            window.App.renderAllEras();
+          }
+          if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+            window.App.renderDebutHighlights();
+          }
+          if (typeof window.renderizarRecentes === 'function') {
+            window.renderizarRecentes();
+          }
+          if (typeof window.updateProfilePage === 'function') {
+            window.updateProfilePage();
+          }
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        })
+        .catch(() => {
+          // Mantem interface responsiva mesmo se a hidratacao remota falhar.
+        });
     };
 
     boot();
@@ -79,7 +112,9 @@ function App() {
     <main className="dashboard">
       <aside className="sidebar">
         <div className="brand-row">
-          <a href="#" className="brand-icon-slot"></a>
+          <span className="brand-icon-slot" aria-hidden="true">
+            <img src={brandVector} alt="" className="brand-icon-image" />
+          </span>
           <h1 className="brand">TaylorSwift.</h1>
         </div>
         <nav className="menu">
@@ -96,7 +131,7 @@ function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="sidebar-email">{user.email}</span>
-          <button className="logout-btn" onClick={signOut}><i data-lucide="log-out"></i>Sair</button>
+          <button className="logout-btn" onClick={handleSignOut}><i data-lucide="log-out"></i>Sair</button>
         </div>
       </aside>
 
@@ -149,7 +184,10 @@ function App() {
 
           <section className="highlights-grid">
             <div className="highlight-section">
-              <h3>Itens Fixados</h3>
+              <div className="card-header">
+                <h3>Itens Fixados</h3>
+                <a href="#" className="ver-mais-link" id="ver-mais-pinned">Ver mais</a>
+              </div>
               <div className="painel-superficie">
                 <ul id="debut-pinned" className="highlight-list">
                   <li><span><i data-lucide="pin"></i></span><b className="plus">Fixe itens nas eras</b></li>
@@ -301,7 +339,7 @@ function App() {
                     <span className="detail-value" id="profile-birthdate">-</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Este Usuário desde</span>
+                    <span className="detail-label">Este Usu�rio desde</span>
                     <span className="detail-value" id="profile-joined">-</span>
                   </div>
                 </div>
@@ -385,6 +423,52 @@ function App() {
         </div>
       </section>
 
+
+      <div className="modal-overlay" id="modal-edit-repo">
+        <div className="modal-content">
+          <div className="modal-header">
+            <div className="repo-edit-title">
+              <div className="repo-edit-header-icon" aria-hidden="true">
+                <i data-lucide="folder-sync"></i>
+              </div>
+              <h3>Editar Repositorio Fixo</h3>
+            </div>
+            <button className="modal-close" id="modal-edit-repo-close"><i data-lucide="x"></i></button>
+          </div>
+          <form id="form-edit-repo" className="repo-edit-form">
+            <input type="hidden" id="edit-repo-index" />
+
+            <div className="form-group">
+              <label>Slot</label>
+              <input type="text" id="edit-repo-slot" placeholder="Selecione o Slot (1 ou 2)" disabled />
+            </div>
+
+            <div className="form-group">
+              <label>Repositorio do fearless</label>
+              <select id="edit-repo-source" required>
+                <option value="">Selecione um repositorio da Fearless</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Nome exibido</label>
+              <input type="text" id="edit-repo-name" />
+            </div>
+
+            <div className="form-group form-group-note">
+              <label>Descricao</label>
+              <textarea id="edit-repo-description" rows="4"></textarea>
+              <small className="repo-modal-hint">Somente repositorios criados na era Fearless podem ser fixados aqui.</small>
+            </div>
+
+            <div className="repo-edit-actions">
+              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositorio</button>
+              <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div className="modal-overlay" id="modal-add-item">
         <div className="modal-content">
           <div className="modal-header">
@@ -441,3 +525,5 @@ function App() {
 }
 
 export default App;
+
+

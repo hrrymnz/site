@@ -11,6 +11,7 @@ const App = {
   currentEra: "debut",
   currentTagFilter: null,
   draggedId: null,
+  showAllPinnedHighlights: false,
 
   // ===== HELPERS =====
   // Funcoes utilitarias para escapar texto, normalizar dados e construir labels da interface.
@@ -66,6 +67,64 @@ const App = {
     '</button>';
   },
 
+  normalizeRepoSlug(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    const fromUrl = raw.match(/^https?:\/\/github\.com\/[^/]+\/([^/?#]+)/i);
+    if (fromUrl && fromUrl[1]) return fromUrl[1].toLowerCase();
+
+    return raw.replace(/^\/+|\/+$/g, "").split("/").pop().toLowerCase();
+  },
+
+  getPinnedRepoMatchers() {
+    if (typeof Storage === "undefined" || typeof Storage.getPinnedRepos !== "function") {
+      return { titles: new Set(), slugs: new Set() };
+    }
+
+    const repos = Storage.getPinnedRepos();
+    const titles = new Set();
+    const slugs = new Set();
+
+    const allItems = typeof Storage.getAll === "function" ? Storage.getAll() : [];
+    const byId = new Map(allItems.map((item) => [item.id, item]));
+
+    repos.forEach((repo) => {
+      const source = repo?.sourceId ? byId.get(repo.sourceId) : null;
+      const nome = String(source?.title || repo?.nome || "").trim().toLowerCase();
+      const slug = this.normalizeRepoSlug(source?.url || repo?.slug || repo?.url || repo?.nome || "");
+      if (nome) titles.add(nome);
+      if (slug) slugs.add(slug);
+    });
+
+    return { titles, slugs };
+  },
+
+  isPinnedRepoMirroredInMyRepos(item, matchers) {
+    if (!item || String(item.type || "").toLowerCase() !== "repo") return false;
+
+    const title = String(item.title || "").trim().toLowerCase();
+    const slugFromUrl = this.normalizeRepoSlug(item.url || "");
+
+    if (title && matchers.titles.has(title)) return true;
+    if (slugFromUrl && matchers.slugs.has(slugFromUrl)) return true;
+    if (title && matchers.slugs.has(title)) return true;
+    return false;
+  },
+
+  setupPinnedHighlightsToggle() {
+    const toggleLink = document.getElementById("ver-mais-pinned");
+    if (!toggleLink || toggleLink.dataset.boundClick === "1") return;
+
+    toggleLink.dataset.boundClick = "1";
+    toggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (toggleLink.dataset.disabled === "1") return;
+      this.showAllPinnedHighlights = !this.showAllPinnedHighlights;
+      this.renderDebutHighlights();
+    });
+  },
+
   navigateToEra(era) {
     // Navegacao centralizada para reaproveitar o comportamento da sidebar.
     const key = this.normalizeEra(era);
@@ -119,6 +178,7 @@ const App = {
     this.topbarTagFilter = prefs.tag || "__all__";
 
     this.setupQuickFilters();
+    this.setupPinnedHighlightsToggle();
     Storage.ensureFearlessDefaults();
     this.renderAllEras();
     this.renderDebutHighlights();
@@ -431,12 +491,12 @@ const App = {
           buttons.push('<button class="tag-btn ' + (this.currentTagFilter === tag ? "active" : "") + '" data-tag="' + this.escapeHtml(tag) + '">' + this.escapeHtml(tag) + ' <small>(' + count + ')</small></button>');
         });
         tagsContainer.innerHTML = buttons.join("");
-      } else if (eraTags.length) {
-        tagsContainer.innerHTML = eraTags.map(tag =>
-          '<button class="tag-btn ' + (this.currentTagFilter === tag ? "active" : "") + '" data-tag="' + this.escapeHtml(tag) + '">' + this.escapeHtml(tag) + '</button>'
-        ).join("");
       } else {
-        tagsContainer.innerHTML = "";
+        const buttons = ['<button class="tag-btn ' + (!this.currentTagFilter ? "active" : "") + '" data-tag="__all__">Todos</button>'];
+        eraTags.forEach(tag => {
+          buttons.push('<button class="tag-btn ' + (this.currentTagFilter === tag ? "active" : "") + '" data-tag="' + this.escapeHtml(tag) + '">' + this.escapeHtml(tag) + '</button>');
+        });
+        tagsContainer.innerHTML = buttons.join("");
       }
 
       tagsContainer.querySelectorAll(".tag-btn").forEach(btn => {
@@ -510,7 +570,7 @@ const App = {
       btn.addEventListener("click", () => {
         const item = Storage.getAll().find(i => i.id === btn.dataset.id);
         if (item) {
-          Storage.updateItem(btn.dataset.id, { pinned: !item.pinned });
+          Storage.updateItem(btn.dataset.id, { pinned: !item.pinned, pinnedAt: !item.pinned ? new Date().toISOString() : "" });
           this.renderEra(era);
           this.renderDebutHighlights();
         }
@@ -596,15 +656,34 @@ const App = {
     const pinnedContainer = document.getElementById("debut-pinned");
     const accessedContainer = document.getElementById("debut-accessed");
 
-    // BLOCO 1: Itens fixados mais relevantes.
+    // BLOCO 1: Itens fixados mais relevantes (exclui repositorios ja fixados em "Meus repositorios").
     if (pinnedContainer) {
-      const pinned = Storage.getPinned().slice(0, 3);
-      if (pinned.length) {
-        pinnedContainer.innerHTML = pinned.map(item => {
+      const repoMatchers = this.getPinnedRepoMatchers();
+      const allPinned = Storage.getPinned().filter((item) => !this.isPinnedRepoMirroredInMyRepos(item, repoMatchers));
+      const visiblePinned = this.showAllPinnedHighlights ? allPinned : allPinned.slice(0, 3);
+      const togglePinnedLink = document.getElementById("ver-mais-pinned");
+
+      if (togglePinnedLink) {
+        togglePinnedLink.style.display = "inline";
+        if (allPinned.length > 3) {
+          togglePinnedLink.textContent = this.showAllPinnedHighlights ? "Ver menos" : "Ver mais";
+          togglePinnedLink.dataset.disabled = "0";
+          togglePinnedLink.classList.remove("is-disabled");
+        } else {
+          togglePinnedLink.textContent = "Ver mais";
+          togglePinnedLink.dataset.disabled = "1";
+          togglePinnedLink.classList.add("is-disabled");
+          this.showAllPinnedHighlights = false;
+        }
+      }
+
+      if (visiblePinned.length) {
+        pinnedContainer.innerHTML = visiblePinned.map(item => {
           const safeUrl = this.sanitizeUrl(item.url);
           const eraBadge = this.renderEraBadge(item.category);
+          const eraKey = this.normalizeEra(item.category);
+
           if (safeUrl) {
-            const eraKey = this.normalizeEra(item.category);
             return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
               '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + item.id + '">' +
                 '<span>' + this.typeIcon(item.type) + '</span>' +
@@ -614,7 +693,6 @@ const App = {
             '</li>';
           }
 
-          const eraKey = this.normalizeEra(item.category);
           return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
             '<div class="highlight-link-main">' +
               '<span>' + this.typeIcon(item.type) + '</span>' +
@@ -638,10 +716,15 @@ const App = {
             this.navigateToEra(btn.dataset.era);
           });
         });
-        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
+
+        if (window.lucide && typeof window.lucide.createIcons === "function") {
+          window.lucide.createIcons();
+        }
       } else {
         pinnedContainer.innerHTML = '<li><span><i data-lucide="pin"></i></span><b class="plus">Fixe itens nas eras</b></li>';
-        if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
+        if (window.lucide && typeof window.lucide.createIcons === "function") {
+          window.lucide.createIcons();
+        }
       }
     }
 
@@ -694,3 +777,4 @@ window.App = App;
 window.initLegacyApp = initLegacyApp;
 
 export { App, initLegacyApp };
+

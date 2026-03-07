@@ -36,14 +36,11 @@ function getGithubCacheKey() {
 }
 
 // ===== 2) CARDS FIXOS E RECENTES =====
-// Repositorios fixados (aparecem como cards na pagina Debut).
-const reposPinned = [
-  { nome: "HtmlAnalyzer", descricao: "Teste tecnico", estilo: "primary" },
-  { nome: "Quiz", descricao: "codigo feito com objetivo academico", estilo: "light" }
-];
+const REPO_PIN_SLOTS = 2;
 
 // Historico local de acessos recentes a repositorios.
 let reposRecentes = JSON.parse(localStorage.getItem(getReposRecentesKey())) || [];
+let reposPinned = carregarReposFixados();
 
 function sincronizarEstadoPersistido() {
   if (typeof Storage !== "undefined" && typeof Storage.scheduleSync === "function") {
@@ -51,31 +48,318 @@ function sincronizarEstadoPersistido() {
   }
 }
 
-function abrirRepositorio(nome) {
-  const url = `${GITHUB_URL}/${nome}`;
-  reposRecentes = reposRecentes.filter(r => r !== nome);
-  reposRecentes.unshift(nome);
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function extrairRepoSlug(urlOuNome) {
+  const raw = String(urlOuNome || "").trim();
+  if (!raw) return "";
+  const fromUrl = raw.match(/^https?:\/\/github\.com\/[^/]+\/([^/?#]+)/i);
+  if (fromUrl && fromUrl[1]) return fromUrl[1];
+  return raw.replace(/^\/+|\/+$/g, "").split("/").pop() || "";
+}
+
+function obterDescricaoRepo(item) {
+  if (item && item.content) {
+    return String(item.content).slice(0, 120);
+  }
+  const host = item && item.url ? String(item.url).replace(/^https?:\/\//i, "") : "";
+  return host || "Sem descricao";
+}
+
+function obterReposFearless() {
+  if (typeof Storage === "undefined" || typeof Storage.getByCategory !== "function") return [];
+
+  return Storage.getByCategory("fearless")
+    .filter((item) => {
+      const type = String(item.type || "").toLowerCase();
+      const isRepoType = type === "repo";
+      const isGithubUrl = /^https?:\/\/github\.com\//i.test(String(item.url || ""));
+      return isRepoType || isGithubUrl;
+    })
+    .map((item) => ({
+      id: item.id,
+      title: item.title || "Repositorio",
+      description: obterDescricaoRepo(item),
+      url: item.url || "",
+      slug: extrairRepoSlug(item.url || item.title || "")
+    }));
+}
+
+function criarMapaFearless(reposFearless) {
+  const byId = new Map();
+  reposFearless.forEach((repo) => byId.set(repo.id, repo));
+  return byId;
+}
+
+function normalizeRepoSlot(repo, index, reposFearless) {
+  const fallbackStyle = index % 2 === 0 ? "primary" : "light";
+  const next = {
+    sourceId: String(repo?.sourceId || "").trim(),
+    estilo: repo?.estilo === "light" ? "light" : fallbackStyle,
+    nome: String(repo?.nome || "").trim(),
+    descricao: String(repo?.descricao || "").trim(),
+    slug: String(repo?.slug || "").trim()
+  };
+
+  if (next.sourceId) return next;
+
+  // Compatibilidade: tenta casar formato antigo (nome/slug/url) com repos existentes na Fearless.
+  const oldName = String(repo?.nome || "").trim().toLowerCase();
+  const oldSlug = extrairRepoSlug(repo?.slug || repo?.url || repo?.nome || "").toLowerCase();
+  const matched = reposFearless.find((r) => {
+    if (oldName && oldName === String(r.title || "").trim().toLowerCase()) return true;
+    if (oldSlug && oldSlug === String(r.slug || "").trim().toLowerCase()) return true;
+    return false;
+  });
+
+  if (matched) next.sourceId = matched.id;
+  return next;
+}
+
+function carregarReposFixados() {
+  const reposFearless = obterReposFearless();
+  const saved = (typeof Storage !== "undefined" && typeof Storage.getPinnedRepos === "function")
+    ? Storage.getPinnedRepos()
+    : (JSON.parse(localStorage.getItem("reposPinned")) || []);
+
+  const normalized = Array.isArray(saved)
+    ? saved.slice(0, REPO_PIN_SLOTS).map((repo, idx) => normalizeRepoSlot(repo, idx, reposFearless))
+    : [];
+
+  while (normalized.length < REPO_PIN_SLOTS) {
+    normalized.push({
+      sourceId: "",
+      estilo: normalized.length % 2 === 0 ? "primary" : "light"
+    });
+  }
+
+  return normalized;
+}
+
+function salvarReposFixados(nextRepos) {
+  reposPinned = nextRepos.map((repo, idx) => ({
+    sourceId: String(repo?.sourceId || "").trim(),
+    estilo: repo?.estilo === "light" ? "light" : (idx % 2 === 0 ? "primary" : "light"),
+    nome: String(repo?.nome || "").trim(),
+    descricao: String(repo?.descricao || "").trim()
+  }));
+
+  if (typeof Storage !== "undefined" && typeof Storage.savePinnedRepos === "function") {
+    Storage.savePinnedRepos(reposPinned);
+  } else {
+    localStorage.setItem("reposPinned", JSON.stringify(reposPinned));
+    sincronizarEstadoPersistido();
+  }
+
+  if (typeof window !== "undefined" && window.App && typeof window.App.renderDebutHighlights === "function") {
+    window.App.renderDebutHighlights();
+  }
+}
+
+function abrirRepositorio(slug, nomeExibicao = "") {
+  const repoSlug = String(slug || "").trim();
+  if (!repoSlug) return;
+
+  const url = `${GITHUB_URL}/${repoSlug}`;
+  const titulo = String(nomeExibicao || repoSlug).trim();
+
+  reposRecentes = reposRecentes
+    .map((r) => (typeof r === "string" ? { slug: r, titulo: r } : r))
+    .filter((r) => String(r.slug || "").trim().toLowerCase() !== repoSlug.toLowerCase());
+  reposRecentes.unshift({ slug: repoSlug, titulo });
   if (reposRecentes.length > 10) reposRecentes.pop();
   localStorage.setItem(getReposRecentesKey(), JSON.stringify(reposRecentes));
   sincronizarEstadoPersistido();
   window.open(url, "_blank");
 }
 
+function atualizarPreviewRepoSelecionado() {
+  const sourceSelect = document.getElementById("edit-repo-source");
+  const nameInput = document.getElementById("edit-repo-name");
+  const descInput = document.getElementById("edit-repo-description");
+  if (!sourceSelect || !nameInput || !descInput) return;
+
+  const reposFearless = obterReposFearless();
+  const selected = reposFearless.find((repo) => repo.id === sourceSelect.value);
+
+  if (!selected) {
+    nameInput.value = "";
+    descInput.value = "Adicione repositorios na era Fearless e selecione um acima.";
+    return;
+  }
+
+  nameInput.value = selected.title;
+  descInput.value = selected.description || "Sem descricao";
+}
+
+function editarRepositorioFixado(index) {
+  const atual = reposPinned[index];
+  if (!atual) return;
+
+  const modal = document.getElementById("modal-edit-repo");
+  const form = document.getElementById("form-edit-repo");
+  const idxInput = document.getElementById("edit-repo-index");
+  const slotInput = document.getElementById("edit-repo-slot");
+  const sourceSelect = document.getElementById("edit-repo-source");
+  const nameInput = document.getElementById("edit-repo-name");
+  const descInput = document.getElementById("edit-repo-description");
+
+  if (!modal || !form || !idxInput || !slotInput || !sourceSelect || !nameInput || !descInput) return;
+
+  const reposFearless = obterReposFearless();
+  idxInput.value = String(index);
+  slotInput.value = "REPO FIXO " + (index + 1);
+
+  if (!reposFearless.length) {
+    sourceSelect.innerHTML = '<option value="">Sem repositorios na Fearless</option>';
+    sourceSelect.disabled = true;
+  } else {
+    sourceSelect.disabled = false;
+    sourceSelect.innerHTML = ['<option value="">Selecione um repositorio da Fearless</option>']
+      .concat(reposFearless.map((repo) =>
+        '<option value="' + escapeHtml(repo.id) + '">' + escapeHtml(repo.title) + '</option>'
+      ))
+      .join('');
+  }
+
+  sourceSelect.value = atual.sourceId || "";
+  atualizarPreviewRepoSelecionado();
+
+  // Mantem customizacoes salvas por slot quando existirem.
+  if (atual.nome) nameInput.value = atual.nome;
+  if (atual.descricao) descInput.value = atual.descricao;
+
+  modal.classList.add("visible");
+  sourceSelect.focus();
+}
+
+function configurarModalEdicaoRepos() {
+  const modal = document.getElementById("modal-edit-repo");
+  const form = document.getElementById("form-edit-repo");
+  const closeBtn = document.getElementById("modal-edit-repo-close");
+  const cancelBtn = document.getElementById("edit-repo-cancel");
+  const sourceSelect = document.getElementById("edit-repo-source");
+
+  if (!modal || !form) return;
+  if (modal.dataset.boundRepoModal === "1") return;
+  modal.dataset.boundRepoModal = "1";
+
+  const closeModal = () => {
+    modal.classList.remove("visible");
+  };
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeModal();
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeModal();
+    });
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  if (sourceSelect) {
+    sourceSelect.addEventListener("change", () => atualizarPreviewRepoSelecionado());
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const idxInput = document.getElementById("edit-repo-index");
+    const sourceSelectEl = document.getElementById("edit-repo-source");
+
+    const idx = Number(idxInput?.value || -1);
+    if (idx < 0 || idx >= reposPinned.length) {
+      closeModal();
+      return;
+    }
+
+    const nameInput = document.getElementById("edit-repo-name");
+    const descInput = document.getElementById("edit-repo-description");
+
+    const sourceId = String(sourceSelectEl?.value || "").trim();
+    const next = [...reposPinned];
+    next[idx] = {
+      ...next[idx],
+      sourceId,
+      nome: String(nameInput?.value || "").trim(),
+      descricao: String(descInput?.value || "").trim()
+    };
+
+    salvarReposFixados(next);
+    renderizarRepos();
+    closeModal();
+  });
+}
+
 function renderizarRepos() {
   const container = document.querySelector(".cards-row");
   if (!container) return;
 
-  container.innerHTML = reposPinned.map((repo, i) => `
-    <article class="credit-card ${repo.estilo} repo-card" data-repo="${repo.nome}">
-      <small>REPO FIXO ${i + 1}</small>
-      <strong>${repo.nome}</strong>
-      <p>${repo.descricao}</p>
-    </article>
-  `).join("");
+  reposPinned = carregarReposFixados();
+  const reposFearless = obterReposFearless();
+  const byId = criarMapaFearless(reposFearless);
 
+  container.innerHTML = reposPinned.map((slot, i) => {
+    const selected = byId.get(slot.sourceId);
+    const isEmpty = !selected;
+    const classe = isEmpty ? 'credit-card light repo-card repo-card-empty' : ('credit-card ' + slot.estilo + ' repo-card');
+    const dataRepo = isEmpty ? '' : escapeHtml(selected.slug);
+    const tituloBase = selected ? selected.title : "Selecione um repositorio";
+    const descricaoBase = selected ? (selected.description || "Sem descricao") : "Adicione um repositorio na Fearless e configure este slot.";
+    const titulo = escapeHtml(slot.nome || tituloBase);
+    const descricao = escapeHtml(slot.descricao || descricaoBase);
+
+    return `
+      <article class="${classe}" data-repo="${dataRepo}" data-index="${i}">
+        <div class="repo-card-head">
+          <small>REPO FIXO ${i + 1}</small>
+          <button type="button" class="repo-edit-btn" data-edit-index="${i}" title="Editar repositorio">
+            <i data-lucide="pencil"></i>
+          </button>
+        </div>
+        <strong>${titulo}</strong>
+        <p>${descricao}</p>
+      </article>
+    `;
+  }).join("");
+
+  if (typeof lucide !== "undefined" && typeof lucide.createIcons === "function") {
+    lucide.createIcons();
+  }
+
+  if (container.dataset.boundRepoClick === "1") return;
+  container.dataset.boundRepoClick = "1";
   container.addEventListener("click", (e) => {
+    const editBtn = e.target.closest(".repo-edit-btn");
+    if (editBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      editarRepositorioFixado(Number(editBtn.dataset.editIndex));
+      return;
+    }
+
     const card = e.target.closest(".repo-card");
-    if (card) abrirRepositorio(card.dataset.repo);
+    if (!card) return;
+    const repoSlug = String(card.dataset.repo || "").trim();
+    if (!repoSlug) return;
+    abrirRepositorio(repoSlug, card.querySelector("strong")?.textContent || "");
   });
 }
 
@@ -103,14 +387,17 @@ function renderizarRecentes() {
       }));
   }
 
-  const recentesRepos = reposRecentes.slice(0, 3).map(nome => ({
-    tipo: "repo",
-    repo: nome,
-    titulo: nome,
-    url: `${GITHUB_URL}/${nome}`,
-    era: "debut",
-    itemType: "repo"
-  }));
+  const recentesRepos = reposRecentes
+    .map((entry) => (typeof entry === "string" ? { slug: entry, titulo: entry } : entry))
+    .slice(0, 3)
+    .map((entry) => ({
+      tipo: "repo",
+      repo: entry.slug,
+      titulo: entry.titulo || entry.slug,
+      url: `${GITHUB_URL}/${entry.slug}`,
+      era: "debut",
+      itemType: "repo"
+    }));
 
   // Combina fontes evitando duplicar a mesma URL.
   const combined = [];
@@ -519,6 +806,7 @@ function configurarControlesGithub() {
 
 function initRepositorios() {
   // Ordem de inicializacao: cards/recentes -> preferencias -> controles -> painel.
+  configurarModalEdicaoRepos();
   renderizarRepos();
   renderizarRecentes();
   carregarPreferenciasGithub();
