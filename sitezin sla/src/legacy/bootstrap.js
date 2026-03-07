@@ -101,6 +101,7 @@ function initShellInteractions() {
   const topbarIcon = document.querySelector('.profile-icon');
   const topbarImg = document.querySelector('.profile-icon img');
   const editBtn = document.getElementById('avatar-edit-btn');
+  const profileEditPhotoCta = document.getElementById('profile-edit-photo-cta');
   const settingsUploadBtn = document.getElementById('settings-upload-btn');
   const removeBtn = document.getElementById('avatar-remove-btn');
   const fileInput = document.getElementById('avatar-input');
@@ -111,6 +112,42 @@ function initShellInteractions() {
   const headerEditBtn = document.getElementById('header-edit-btn');
   const headerRemoveBtn = document.getElementById('header-remove-btn');
   const headerInput = document.getElementById('header-input');
+  const coverActionButtons = document.querySelectorAll('#modal-edit-profile .profile-edit-cover-cta[data-action]');
+  const editPhotoModal = document.getElementById('modal-edit-photo');
+  const editPhotoCloseBtn = document.getElementById('modal-edit-photo-close');
+  const editPhotoApplyBtn = document.getElementById('edit-photo-apply');
+  const editPhotoPreview = document.getElementById('edit-photo-preview');
+  const editPhotoPreviewWrap = document.getElementById('edit-photo-preview-wrap');
+  const editPhotoEmpty = document.getElementById('edit-photo-empty');
+  const editPhotoZoom = document.getElementById('edit-photo-zoom');
+  const editPhotoZoomValue = document.getElementById('edit-photo-zoom-value');
+  const editProfileModal = document.getElementById('modal-edit-profile');
+  const editProfileModalContent = editProfileModal
+    ? editProfileModal.querySelector('.profile-edit-modal-content')
+    : null;
+  const discardProfileModal = document.getElementById('modal-discard-profile');
+  const discardProfileCancel = document.getElementById('discard-profile-cancel');
+  const discardProfileConfirm = document.getElementById('discard-profile-confirm');
+  const editProfileClose = document.getElementById('modal-edit-profile-close');
+  const editProfileCancel = document.getElementById('profile-edit-cancel');
+  const birthTriggerBtn = document.getElementById('profile-edit-birth-trigger');
+  const birthPanel = document.getElementById('profile-edit-birth-panel');
+  const birthCancelBtn = document.getElementById('profile-edit-birth-cancel');
+  const birthRemoveBtn = document.getElementById('profile-edit-birth-remove');
+  const birthSummaryEl = document.getElementById('profile-edit-birth-summary');
+  const birthMonthSelect = document.getElementById('settings-birth-month');
+  const birthDaySelect = document.getElementById('settings-birth-day');
+  const birthYearSelect = document.getElementById('settings-birth-year');
+  let birthOriginalValue = '';
+  let isBirthdateExpanded = false;
+  let isEditPhotoModalOpen = false;
+  let photoToEdit = '';
+  let editingPhotoType = 'profile';
+  let photoEditZoom = 1;
+  let photoEditPosition = { x: 0, y: 0 };
+  let photoEditIsDragging = false;
+  let photoEditDragStart = { x: 0, y: 0 };
+  let profileEditOriginalSnapshot = null;
 
   function applyAvatar(dataUrl) {
     if (!avatarImg || !removeBtn) return;
@@ -159,6 +196,234 @@ function initShellInteractions() {
     const saved = window.Storage.getProfileHeader();
     if (saved) applyProfileHeader(saved);
     else resetProfileHeader();
+  }
+
+  function openDiscardProfileModal() {
+    if (discardProfileModal) discardProfileModal.classList.add('visible');
+  }
+
+  function closeDiscardProfileModal() {
+    if (discardProfileModal) discardProfileModal.classList.remove('visible');
+  }
+
+  function getCurrentProfileEditSnapshot() {
+    const snapshot = {
+      name: profileFields.name ? String(profileFields.name.value || '') : '',
+      username: profileFields.username ? String(profileFields.username.value || '') : '',
+      bio: profileFields.bio ? String(profileFields.bio.value || '') : '',
+      city: profileFields.city ? String(profileFields.city.value || '') : '',
+      website: profileFields.website ? String(profileFields.website.value || '') : '',
+      birthDate: profileFields.birthDate ? String(profileFields.birthDate.value || '') : '',
+      avatar: window.Storage && typeof window.Storage.getAvatar === 'function'
+        ? String(window.Storage.getAvatar() || '')
+        : '',
+      header: window.Storage && typeof window.Storage.getProfileHeader === 'function'
+        ? String(window.Storage.getProfileHeader() || '')
+        : ''
+    };
+    return snapshot;
+  }
+
+  function hasProfileEditUnsavedChanges() {
+    if (!profileEditOriginalSnapshot) return false;
+    const current = getCurrentProfileEditSnapshot();
+    return Object.keys(current).some((key) => current[key] !== profileEditOriginalSnapshot[key]);
+  }
+
+  function restoreProfileFromSnapshot() {
+    if (!profileEditOriginalSnapshot) return;
+    Object.keys(profileFields).forEach((key) => {
+      const el = profileFields[key];
+      if (!el) return;
+      el.value = profileEditOriginalSnapshot[key] || '';
+    });
+
+    if (window.Storage) {
+      if (profileEditOriginalSnapshot.avatar) {
+        if (typeof window.Storage.saveAvatar === 'function') window.Storage.saveAvatar(profileEditOriginalSnapshot.avatar);
+        applyAvatar(profileEditOriginalSnapshot.avatar);
+      } else {
+        if (typeof window.Storage.removeAvatar === 'function') window.Storage.removeAvatar();
+        resetAvatar();
+      }
+
+      if (profileEditOriginalSnapshot.header) {
+        if (typeof window.Storage.saveProfileHeader === 'function') window.Storage.saveProfileHeader(profileEditOriginalSnapshot.header);
+        applyProfileHeader(profileEditOriginalSnapshot.header);
+      } else {
+        if (typeof window.Storage.removeProfileHeader === 'function') window.Storage.removeProfileHeader();
+        resetProfileHeader();
+      }
+    }
+
+    refreshProfileModalUi();
+    setBirthSelectorsFromInput();
+    forceCloseBirthdatePanel();
+  }
+
+  function setEditPhotoModalOpen(isOpen) {
+    isEditPhotoModalOpen = !!isOpen;
+    if (editPhotoModal) {
+      editPhotoModal.classList.toggle('visible', isEditPhotoModalOpen);
+    }
+    if (!isEditPhotoModalOpen) {
+      photoEditZoom = 1;
+      photoEditPosition = { x: 0, y: 0 };
+      photoEditIsDragging = false;
+      if (editPhotoZoom) editPhotoZoom.value = '1';
+      if (editPhotoZoomValue) editPhotoZoomValue.textContent = '1.0x';
+      applyEditPhotoTransform();
+    }
+  }
+
+  function applyEditPhotoTransform() {
+    if (!editPhotoPreview) return;
+    editPhotoPreview.style.transform = 'scale(' + photoEditZoom + ') translate(' + (photoEditPosition.x / photoEditZoom) + 'px, ' + (photoEditPosition.y / photoEditZoom) + 'px)';
+    editPhotoPreview.style.transition = photoEditIsDragging ? 'none' : 'transform 0.2s ease';
+    editPhotoPreview.style.cursor = photoEditZoom > 1 ? 'move' : 'default';
+  }
+
+  function getEditPhotoViewportSize() {
+    const fallback = editingPhotoType === 'cover'
+      ? { width: 600, height: 200 }
+      : { width: 500, height: 500 };
+    if (!editPhotoPreviewWrap) return fallback;
+    const width = editPhotoPreviewWrap.clientWidth || fallback.width;
+    const height = editPhotoPreviewWrap.clientHeight || fallback.height;
+    return { width, height };
+  }
+
+  function renderEditedPhotoDataUrl(sourceUrl, outputWidth, outputHeight) {
+    return new Promise((resolve, reject) => {
+      if (!sourceUrl) {
+        reject(new Error('Imagem vazia'));
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        const { width: viewportWidth, height: viewportHeight } = getEditPhotoViewportSize();
+        const canvas = document.createElement('canvas');
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas indisponível'));
+          return;
+        }
+
+        const baseScale = Math.max(viewportWidth / img.naturalWidth, viewportHeight / img.naturalHeight);
+        const baseWidth = img.naturalWidth * baseScale;
+        const baseHeight = img.naturalHeight * baseScale;
+        const drawWidth = baseWidth * photoEditZoom;
+        const drawHeight = baseHeight * photoEditZoom;
+        const drawX = (viewportWidth - drawWidth) / 2 + photoEditPosition.x;
+        const drawY = (viewportHeight - drawHeight) / 2 + photoEditPosition.y;
+
+        const scaleX = outputWidth / viewportWidth;
+        const scaleY = outputHeight / viewportHeight;
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(
+          img,
+          drawX * scaleX,
+          drawY * scaleY,
+          drawWidth * scaleX,
+          drawHeight * scaleY
+        );
+
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('Falha ao carregar imagem para edição'));
+      img.src = sourceUrl;
+    });
+  }
+
+  function handlePhotoDragStart(e) {
+    if (photoEditZoom <= 1) return;
+    photoEditIsDragging = true;
+    photoEditDragStart = {
+      x: e.clientX - photoEditPosition.x,
+      y: e.clientY - photoEditPosition.y
+    };
+    applyEditPhotoTransform();
+  }
+
+  function handlePhotoDragMove(e) {
+    if (!photoEditIsDragging || photoEditZoom <= 1) return;
+    let newX = e.clientX - photoEditDragStart.x;
+    let newY = e.clientY - photoEditDragStart.y;
+    const { width, height } = getEditPhotoViewportSize();
+    const maxMoveX = ((photoEditZoom - 1) / photoEditZoom) * (width / 2);
+    const maxMoveY = ((photoEditZoom - 1) / photoEditZoom) * (height / 2);
+    newX = Math.max(-maxMoveX, Math.min(maxMoveX, newX));
+    newY = Math.max(-maxMoveY, Math.min(maxMoveY, newY));
+    photoEditPosition = { x: newX, y: newY };
+    applyEditPhotoTransform();
+  }
+
+  function handlePhotoDragEnd() {
+    if (!photoEditIsDragging) return;
+    photoEditIsDragging = false;
+    applyEditPhotoTransform();
+  }
+
+  function handleEditPhotoZoomChange(nextZoom) {
+    photoEditZoom = Math.max(1, Number(nextZoom || 1));
+    if (photoEditZoom <= 1) photoEditPosition = { x: 0, y: 0 };
+    if (editPhotoZoomValue) editPhotoZoomValue.textContent = photoEditZoom.toFixed(1) + 'x';
+    applyEditPhotoTransform();
+  }
+
+  function updateEditPhotoPreview() {
+    if (!editPhotoPreview) return;
+    editPhotoPreview.src = photoToEdit || '';
+    editPhotoPreview.draggable = false;
+    const hasImage = Boolean(photoToEdit);
+    if (editPhotoPreviewWrap) editPhotoPreviewWrap.classList.toggle('has-image', hasImage);
+    if (editPhotoPreviewWrap) editPhotoPreviewWrap.dataset.type = editingPhotoType;
+    if (editPhotoEmpty) editPhotoEmpty.style.display = hasImage ? 'none' : 'block';
+    applyEditPhotoTransform();
+  }
+
+  function handleEditPhoto(type) {
+    editingPhotoType = type === 'cover' ? 'cover' : 'profile';
+    const profileImage = avatarImg ? avatarImg.src : '';
+    const coverImage = (settingsHeaderPreviewImage && settingsHeaderPreviewImage.src) || (profileHeaderImage && profileHeaderImage.src) || '';
+    photoToEdit = editingPhotoType === 'profile' ? profileImage : coverImage;
+    photoEditZoom = 1;
+    photoEditPosition = { x: 0, y: 0 };
+    photoEditIsDragging = false;
+    updateEditPhotoPreview();
+    if (editPhotoZoom) editPhotoZoom.value = '1';
+    handleEditPhotoZoomChange(1);
+    setEditPhotoModalOpen(true);
+  }
+
+  async function handleApplyPhoto(zoomLevel) {
+    try {
+      const output = editingPhotoType === 'cover'
+        ? { width: 1500, height: 500 }
+        : { width: 800, height: 800 };
+      const editedDataUrl = await renderEditedPhotoDataUrl(photoToEdit, output.width, output.height);
+      if (editingPhotoType === 'cover') {
+        if (window.Storage && typeof window.Storage.saveProfileHeader === 'function') {
+          window.Storage.saveProfileHeader(editedDataUrl);
+        }
+        applyProfileHeader(editedDataUrl);
+      } else {
+        if (window.Storage && typeof window.Storage.saveAvatar === 'function') {
+          window.Storage.saveAvatar(editedDataUrl);
+        }
+        applyAvatar(editedDataUrl);
+      }
+      console.log('Zoom aplicado:', zoomLevel);
+    } catch {
+      // Mantém o estado atual sem quebrar fluxo.
+    } finally {
+      setEditPhotoModalOpen(false);
+    }
   }
 
 
@@ -280,11 +545,19 @@ function initShellInteractions() {
   refreshProfileHeader();
   refreshLocalVersions();
 
-  if (editBtn && fileInput && editBtn.dataset.boundClick !== '1') {
+  if (editBtn && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';
     editBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      fileInput.click();
+      if (fileInput) fileInput.click();
+    });
+  }
+
+  if (profileEditPhotoCta && profileEditPhotoCta.dataset.boundClick !== '1') {
+    profileEditPhotoCta.dataset.boundClick = '1';
+    profileEditPhotoCta.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleEditPhoto('profile');
     });
   }
 
@@ -311,6 +584,7 @@ function initShellInteractions() {
         const dataUrl = ev.target.result;
         window.Storage.saveAvatar(dataUrl);
         applyAvatar(dataUrl);
+        handleEditPhoto('profile');
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -325,11 +599,50 @@ function initShellInteractions() {
       resetAvatar();
     });
   }
-  if (headerEditBtn && headerInput && headerEditBtn.dataset.boundClick !== '1') {
+  if (headerEditBtn && headerEditBtn.dataset.boundClick !== '1') {
     headerEditBtn.dataset.boundClick = '1';
     headerEditBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      headerInput.click();
+      if (headerInput) headerInput.click();
+    });
+  }
+
+  if (editPhotoCloseBtn && editPhotoCloseBtn.dataset.boundClick !== '1') {
+    editPhotoCloseBtn.dataset.boundClick = '1';
+    editPhotoCloseBtn.addEventListener('click', () => setEditPhotoModalOpen(false));
+  }
+
+  if (editPhotoModal && editPhotoModal.dataset.boundOverlay !== '1') {
+    editPhotoModal.dataset.boundOverlay = '1';
+    editPhotoModal.addEventListener('click', (e) => {
+      if (e.target === editPhotoModal) setEditPhotoModalOpen(false);
+    });
+  }
+
+  if (editPhotoZoom && editPhotoZoom.dataset.boundInput !== '1') {
+    editPhotoZoom.dataset.boundInput = '1';
+    editPhotoZoom.addEventListener('input', () => {
+      handleEditPhotoZoomChange(editPhotoZoom.value);
+    });
+  }
+
+  if (editPhotoPreview && editPhotoPreview.dataset.boundDrag !== '1') {
+    editPhotoPreview.dataset.boundDrag = '1';
+    editPhotoPreview.addEventListener('mousedown', handlePhotoDragStart);
+  }
+
+  if (editPhotoPreviewWrap && editPhotoPreviewWrap.dataset.boundDrag !== '1') {
+    editPhotoPreviewWrap.dataset.boundDrag = '1';
+    editPhotoPreviewWrap.addEventListener('mousemove', handlePhotoDragMove);
+    editPhotoPreviewWrap.addEventListener('mouseup', handlePhotoDragEnd);
+    editPhotoPreviewWrap.addEventListener('mouseleave', handlePhotoDragEnd);
+  }
+
+  if (editPhotoApplyBtn && editPhotoApplyBtn.dataset.boundClick !== '1') {
+    editPhotoApplyBtn.dataset.boundClick = '1';
+    editPhotoApplyBtn.addEventListener('click', () => {
+      const zoomLevel = editPhotoZoom ? Number(editPhotoZoom.value || 1) : 1;
+      handleApplyPhoto(zoomLevel);
     });
   }
 
@@ -350,6 +663,7 @@ function initShellInteractions() {
           window.Storage.saveProfileHeader(dataUrl);
         }
         applyProfileHeader(dataUrl);
+        handleEditPhoto('cover');
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -367,15 +681,34 @@ function initShellInteractions() {
     });
   }
 
+  coverActionButtons.forEach((btn) => {
+    if (btn.dataset.boundClick === '1') return;
+    btn.dataset.boundClick = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const action = btn.dataset.action || '';
+      if (action === 'edit-cover') {
+        if (headerInput) headerInput.click();
+        return;
+      }
+      if (action === 'remove-cover') {
+        if (window.Storage && typeof window.Storage.removeProfileHeader === 'function') {
+          window.Storage.removeProfileHeader();
+        }
+        resetProfileHeader();
+      }
+    });
+  });
+
   const saveBtn = document.getElementById('settings-save-btn');
   const saveStatus = document.getElementById('settings-save-status');
   const profileFields = {
     name: document.getElementById('settings-name'),
     username: document.getElementById('settings-username'),
-    email: document.getElementById('settings-email'),
-    password: document.getElementById('settings-password'),
     birthDate: document.getElementById('settings-birthdate'),
     city: document.getElementById('settings-city'),
+    website: document.getElementById('settings-website'),
+    bio: document.getElementById('settings-bio'),
   };
 
   function loadProfileForm() {
@@ -386,9 +719,373 @@ function initShellInteractions() {
       if (!el) return;
       el.value = data[key] || '';
     });
+    refreshProfileModalUi();
+    setBirthSelectorsFromInput();
+  }
+
+  function bindCounter(fieldId, counterId, max) {
+    const field = document.getElementById(fieldId);
+    const counter = document.getElementById(counterId);
+    if (!field || !counter) return;
+    const update = () => {
+      const len = String(field.value || '').length;
+      counter.textContent = len + '/' + max;
+    };
+    update();
+    if (field.dataset.boundInputCounter !== '1') {
+      field.dataset.boundInputCounter = '1';
+      field.addEventListener('input', update);
+    }
+  }
+
+  function refreshProfileModalUi() {
+    bindCounter('settings-name', 'counter-settings-name', 50);
+    bindCounter('settings-city', 'counter-settings-city', 30);
+    bindCounter('settings-bio', 'counter-settings-bio', 160);
+    bindCounter('settings-website', 'counter-settings-website', 100);
+  }
+
+  function parseBirthDate(value) {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const [y, m, d] = value.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return { y, m, d };
+  }
+
+  function formatBirthDatePt(value) {
+    const parsed = parseBirthDate(value);
+    if (!parsed) return '-';
+    const dt = new Date(parsed.y, parsed.m - 1, parsed.d);
+    return dt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function normalizeWebsiteUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return 'https://' + raw;
+  }
+
+  function formatWebsiteDisplay(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '-';
+    const noProtocol = raw.replace(/^https?:\/\//i, '');
+    const noWww = noProtocol.replace(/^www\./i, '');
+    const hostLike = noWww.split(/[/?#]/)[0];
+    if (!hostLike) return raw;
+    if (/\.xn--[a-z0-9-]+$/i.test(hostLike)) {
+      return hostLike.replace(/\.xn--[a-z0-9-]+$/i, '.');
+    }
+    return hostLike;
+  }
+
+  function getWebsiteHref(value) {
+    const normalized = normalizeWebsiteUrl(value);
+    if (!normalized) return '';
+    try {
+      // Só retorna href quando a URL é válida no parser nativo.
+      // Alguns domínios "xn--" inválidos para o parser ainda exibem texto curto.
+      new URL(normalized);
+      return normalized;
+    } catch {
+      return '';
+    }
+  }
+
+  function formatBirthDateForProfile(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '-';
+    const parsed = parseBirthDate(raw);
+    if (parsed) {
+      const dt = new Date(parsed.y, parsed.m - 1, parsed.d);
+      return dt.toLocaleDateString('pt-BR');
+    }
+    const maybeDate = new Date(raw);
+    if (!Number.isNaN(maybeDate.getTime())) {
+      return maybeDate.toLocaleDateString('pt-BR');
+    }
+    return raw;
+  }
+
+  function getGithubContributionTotalFromCache() {
+    const cacheKey = (window.Storage && window.Storage.GITHUB_CACHE_KEY) || 'githubDashboardCache';
+    const prefsKey = (window.Storage && window.Storage.GITHUB_PREFS_KEY) || 'githubDashboardPrefs';
+
+    let cache;
+    try {
+      cache = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+    } catch {
+      cache = {};
+    }
+
+    const contributionsData = cache && cache.contributions && cache.contributions.data;
+    const days = contributionsData && Array.isArray(contributionsData.contributions)
+      ? contributionsData.contributions
+      : [];
+    if (!days.length) return 0;
+
+    let prefs;
+    try {
+      prefs = JSON.parse(localStorage.getItem(prefsKey) || '{}');
+    } catch {
+      prefs = {};
+    }
+    const periodoDias = [30, 90, 365].includes(Number(prefs.periodoDias)) ? Number(prefs.periodoDias) : 90;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const inicio = new Date(hoje);
+    inicio.setDate(inicio.getDate() - (periodoDias - 1));
+
+    const inicioMs = inicio.getTime();
+    const hojeMs = hoje.getTime();
+
+    return days.reduce((acc, day) => {
+      const dateValue = String(day.date || '').trim();
+      if (!dateValue) return acc;
+      const ms = new Date(dateValue + 'T00:00:00').getTime();
+      if (Number.isNaN(ms) || ms < inicioMs || ms > hojeMs) return acc;
+      return acc + (Number(day.count) || 0);
+    }, 0);
+  }
+
+  function getProfileContributionTotal() {
+    const totalEl = document.getElementById('github-total-contributions');
+    if (totalEl) {
+      const direct = Number(String(totalEl.textContent || '').replace(/[^\d]/g, ''));
+      if (!Number.isNaN(direct) && direct > 0) return direct;
+    }
+    return getGithubContributionTotalFromCache();
+  }
+
+  function fillSelect(select, values, selected) {
+    if (!select) return;
+    select.innerHTML = values.map((v) => '<option value="' + v.value + '">' + v.label + '</option>').join('');
+    if (selected != null) select.value = String(selected);
+  }
+
+  function ensureBirthSelectors() {
+    if (!birthMonthSelect || !birthDaySelect || !birthYearSelect) return;
+    if (birthMonthSelect.dataset.filled === '1') return;
+
+    const months = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ].map((label, idx) => ({ value: idx + 1, label }));
+    fillSelect(birthMonthSelect, months, 1);
+
+    const nowYear = new Date().getFullYear();
+    const years = [];
+    for (let y = nowYear - 13; y >= nowYear - 90; y -= 1) years.push({ value: y, label: y });
+    fillSelect(birthYearSelect, years, nowYear - 20);
+
+    birthMonthSelect.dataset.filled = '1';
+  }
+
+  function refreshBirthDays() {
+    if (!birthMonthSelect || !birthYearSelect || !birthDaySelect) return;
+    const m = Number(birthMonthSelect.value || 1);
+    const y = Number(birthYearSelect.value || new Date().getFullYear());
+    const maxDays = new Date(y, m, 0).getDate();
+    const currentDay = Number(birthDaySelect.value || 1);
+    const days = [];
+    for (let d = 1; d <= maxDays; d += 1) days.push({ value: d, label: d });
+    fillSelect(birthDaySelect, days, Math.min(currentDay, maxDays));
+  }
+
+  function syncBirthInputFromSelectors() {
+    const birthInput = document.getElementById('settings-birthdate');
+    if (!birthInput || !birthMonthSelect || !birthDaySelect || !birthYearSelect) return;
+    const y = String(birthYearSelect.value).padStart(4, '0');
+    const m = String(birthMonthSelect.value).padStart(2, '0');
+    const d = String(birthDaySelect.value).padStart(2, '0');
+    birthInput.value = y + '-' + m + '-' + d;
+    if (birthSummaryEl) birthSummaryEl.textContent = formatBirthDatePt(birthInput.value);
+  }
+
+  function setBirthSelectorsFromInput() {
+    const birthInput = document.getElementById('settings-birthdate');
+    if (!birthInput || !birthMonthSelect || !birthDaySelect || !birthYearSelect) return;
+    ensureBirthSelectors();
+    const parsed = parseBirthDate(birthInput.value);
+    if (!parsed) {
+      const fallbackYear = new Date().getFullYear() - 20;
+      birthMonthSelect.value = '1';
+      birthYearSelect.value = String(fallbackYear);
+      refreshBirthDays();
+      birthDaySelect.value = '1';
+      if (birthSummaryEl) birthSummaryEl.textContent = '-';
+      return;
+    }
+    birthMonthSelect.value = String(parsed.m);
+    birthYearSelect.value = String(parsed.y);
+    refreshBirthDays();
+    birthDaySelect.value = String(parsed.d);
+    if (birthSummaryEl) birthSummaryEl.textContent = formatBirthDatePt(birthInput.value);
+  }
+
+  function cancelBirthdateEditor() {
+    const birthInput = document.getElementById('settings-birthdate');
+    if (birthInput) birthInput.value = birthOriginalValue || '';
+    setBirthSelectorsFromInput();
+    forceCloseBirthdatePanel();
+  }
+
+  function primeBirthdateEditor() {
+    const birthInput = document.getElementById('settings-birthdate');
+    birthOriginalValue = birthInput ? String(birthInput.value || '') : '';
+    setBirthSelectorsFromInput();
+    forceCloseBirthdatePanel();
+  }
+
+  function forceCloseBirthdatePanel() {
+    if (!birthPanel) return;
+    birthPanel.classList.remove('is-open');
+    birthPanel.style.display = '';
+    if (birthTriggerBtn) {
+      birthTriggerBtn.style.display = '';
+      birthTriggerBtn.setAttribute('aria-expanded', 'false');
+    }
+    isBirthdateExpanded = false;
   }
 
   loadProfileForm();
+  forceCloseBirthdatePanel();
+
+  function openEditProfileModal() {
+    loadProfileForm();
+    refreshAvatar();
+    refreshProfileHeader();
+    primeBirthdateEditor();
+    closeDiscardProfileModal();
+    profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
+    if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+    if (editProfileModal) editProfileModal.classList.add('visible');
+    window.setTimeout(() => {
+      if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+    }, 0);
+  }
+
+  function performCloseEditProfileModal() {
+    closeDiscardProfileModal();
+    cancelBirthdateEditor();
+    if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+    if (editProfileModal) editProfileModal.classList.remove('visible');
+    // Garante fechamento mesmo com conflitos de clique/reflow
+    window.setTimeout(forceCloseBirthdatePanel, 0);
+  }
+
+  function closeEditProfileModal() {
+    if (hasProfileEditUnsavedChanges()) {
+      openDiscardProfileModal();
+      return;
+    }
+    performCloseEditProfileModal();
+  }
+
+  if (editProfileClose && editProfileClose.dataset.boundClick !== '1') {
+    editProfileClose.dataset.boundClick = '1';
+    editProfileClose.addEventListener('click', closeEditProfileModal);
+  }
+
+  if (editProfileCancel && editProfileCancel.dataset.boundClick !== '1') {
+    editProfileCancel.dataset.boundClick = '1';
+    editProfileCancel.addEventListener('click', closeEditProfileModal);
+  }
+
+  if (editProfileModal && editProfileModal.dataset.boundOverlay !== '1') {
+    editProfileModal.dataset.boundOverlay = '1';
+    editProfileModal.addEventListener('click', (e) => {
+      if (e.target === editProfileModal) closeEditProfileModal();
+    });
+  }
+
+  if (discardProfileModal && discardProfileModal.dataset.boundOverlay !== '1') {
+    discardProfileModal.dataset.boundOverlay = '1';
+    discardProfileModal.addEventListener('click', (e) => {
+      if (e.target === discardProfileModal) closeDiscardProfileModal();
+    });
+  }
+
+  if (discardProfileCancel && discardProfileCancel.dataset.boundClick !== '1') {
+    discardProfileCancel.dataset.boundClick = '1';
+    discardProfileCancel.addEventListener('click', closeDiscardProfileModal);
+  }
+
+  if (discardProfileConfirm && discardProfileConfirm.dataset.boundClick !== '1') {
+    discardProfileConfirm.dataset.boundClick = '1';
+    discardProfileConfirm.addEventListener('click', () => {
+      restoreProfileFromSnapshot();
+      performCloseEditProfileModal();
+    });
+  }
+
+  if (editProfileModal && editProfileModal.dataset.boundBirthObserver !== '1') {
+    editProfileModal.dataset.boundBirthObserver = '1';
+    const birthModalObserver = new MutationObserver(() => {
+      const isVisible = editProfileModal.classList.contains('visible');
+      if (isVisible) {
+        forceCloseBirthdatePanel();
+        return;
+      }
+      cancelBirthdateEditor();
+    });
+    birthModalObserver.observe(editProfileModal, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  if (birthMonthSelect && birthMonthSelect.dataset.boundChange !== '1') {
+    birthMonthSelect.dataset.boundChange = '1';
+    birthMonthSelect.addEventListener('change', () => {
+      refreshBirthDays();
+      syncBirthInputFromSelectors();
+    });
+  }
+
+  if (birthYearSelect && birthYearSelect.dataset.boundChange !== '1') {
+    birthYearSelect.dataset.boundChange = '1';
+    birthYearSelect.addEventListener('change', () => {
+      refreshBirthDays();
+      syncBirthInputFromSelectors();
+    });
+  }
+
+  if (birthDaySelect && birthDaySelect.dataset.boundChange !== '1') {
+    birthDaySelect.dataset.boundChange = '1';
+    birthDaySelect.addEventListener('change', syncBirthInputFromSelectors);
+  }
+
+  if (birthTriggerBtn && birthPanel && birthTriggerBtn.dataset.boundClick !== '1') {
+    birthTriggerBtn.dataset.boundClick = '1';
+    birthTriggerBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (isBirthdateExpanded) {
+        forceCloseBirthdatePanel();
+        return;
+      }
+      birthPanel.classList.add('is-open');
+      birthPanel.style.display = '';
+      if (birthTriggerBtn) {
+        birthTriggerBtn.style.display = 'none';
+        birthTriggerBtn.setAttribute('aria-expanded', 'true');
+      }
+      isBirthdateExpanded = true;
+    });
+  }
+
+  if (birthCancelBtn && birthPanel && birthCancelBtn.dataset.boundClick !== '1') {
+    birthCancelBtn.dataset.boundClick = '1';
+    birthCancelBtn.addEventListener('click', cancelBirthdateEditor);
+  }
+
+  if (birthRemoveBtn && birthPanel && birthRemoveBtn.dataset.boundClick !== '1') {
+    birthRemoveBtn.dataset.boundClick = '1';
+    birthRemoveBtn.addEventListener('click', () => {
+      const birthInput = document.getElementById('settings-birthdate');
+      if (birthInput) birthInput.value = '';
+      if (birthSummaryEl) birthSummaryEl.textContent = '-';
+      forceCloseBirthdatePanel();
+    });
+  }
 
   if (saveBtn && saveBtn.dataset.boundClick !== '1') {
     saveBtn.dataset.boundClick = '1';
@@ -400,14 +1097,14 @@ function initShellInteractions() {
         payload[key] = String(el.value || '').trim();
       });
 
-      if (!payload.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      const emailField = document.getElementById('settings-email');
+      if (emailField && payload.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.email)) {
         if (saveStatus) {
           saveStatus.textContent = 'Informe um e-mail válido para salvar.';
           saveStatus.className = 'import-status error';
         }
         return;
       }
-
       try {
         if (typeof window.Storage.saveProfileAndAllData === 'function') {
           await window.Storage.saveProfileAndAllData(payload);
@@ -425,6 +1122,8 @@ function initShellInteractions() {
         if (saveStatus) {
           saveStatus.textContent = 'Perfil e dados gerais salvos com sucesso!';
           saveStatus.className = 'import-status success';
+          profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
+          performCloseEditProfileModal();
         }
       } catch {
         if (saveStatus) {
@@ -471,9 +1170,25 @@ function initShellInteractions() {
       }
     }
 
-    // Atualizar informacoes
-    const profileEmail = document.getElementById('profile-email');
-    if (profileEmail) profileEmail.textContent = profileData.email || '-';
+    // Atualizar informações
+    const profileWebsite = document.getElementById('profile-website');
+    if (profileWebsite) {
+      const websiteText = String(profileData.website || '').trim();
+      if (websiteText) {
+        profileWebsite.textContent = formatWebsiteDisplay(websiteText);
+        const href = getWebsiteHref(websiteText);
+        if (href) {
+          profileWebsite.href = href;
+        } else {
+          profileWebsite.removeAttribute('href');
+        }
+        profileWebsite.classList.remove('is-empty');
+      } else {
+        profileWebsite.textContent = '-';
+        profileWebsite.removeAttribute('href');
+        profileWebsite.classList.add('is-empty');
+      }
+    }
 
     const profileLocation = document.getElementById('profile-location');
     if (profileLocation) {
@@ -482,7 +1197,7 @@ function initShellInteractions() {
     }
 
     const profileBirthdate = document.getElementById('profile-birthdate');
-    if (profileBirthdate) profileBirthdate.textContent = profileData.birthDate || '-';
+    if (profileBirthdate) profileBirthdate.textContent = formatBirthDateForProfile(profileData.birthDate);
 
     // Data de inscricao (primeira vez que acessou)
     const profileJoined = document.getElementById('profile-joined');
@@ -517,7 +1232,10 @@ function initShellInteractions() {
     if (statItems) statItems.textContent = localItems;
 
     const profileHeadlineCount = document.getElementById('profile-headline-count');
-    if (profileHeadlineCount) profileHeadlineCount.textContent = localItems + ' itens';
+    if (profileHeadlineCount) {
+      const contributionsTotal = getProfileContributionTotal();
+      profileHeadlineCount.textContent = contributionsTotal + ' contribuições';
+    }
 
     const statPlaylists = document.getElementById('stat-playlists');
     if (statPlaylists) statPlaylists.textContent = playlists;
@@ -542,14 +1260,14 @@ function initShellInteractions() {
       if (debutLink) debutLink.click();
     });
   }
-  // Botao de editar perfil - redireciona para settings
+
+  // Botão de editar perfil (Evermore)
   const btnEditProfile = document.getElementById('btn-edit-profile');
   if (btnEditProfile && btnEditProfile.dataset.boundClick !== '1') {
     btnEditProfile.dataset.boundClick = '1';
     btnEditProfile.addEventListener('click', (e) => {
       e.preventDefault();
-      const settingsLink = document.querySelector('.era-link[data-target="settings"]');
-      if (settingsLink) settingsLink.click();
+      openEditProfileModal();
     });
   }
 
@@ -647,11 +1365,3 @@ function initShellInteractions() {
 }
 
 export default initShellInteractions;
-
-
-
-
-
-
-
-

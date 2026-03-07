@@ -127,7 +127,7 @@ function App() {
           <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
           <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
-          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
+          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Settings</a>
         </nav>
         <div className="sidebar-bottom">
           <span className="sidebar-email">{user.email}</span>
@@ -146,12 +146,12 @@ function App() {
             </div>
             {ENABLE_WORKSPACES && (
               <div className="workspace-switcher-wrap">
-                <label htmlFor="workspace-switcher">Espaço de trabalho</label>
+                <label htmlFor="workspace-switcher">Workspace</label>
                 <select id="workspace-switcher" className="workspace-switcher" defaultValue="default">
-                  <option value="default">Principal</option>
+                  <option value="default">Main</option>
                   <option value="dev">Dev</option>
-                  <option value="reading">Leitura</option>
-                  <option value="ideas">Ideias</option>
+                  <option value="reading">Reading</option>
+                  <option value="ideas">Ideas</option>
                 </select>
                 <small id="workspace-switch-status" className="workspace-switch-status"></small>
               </div>
@@ -172,7 +172,7 @@ function App() {
                 <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
               </div>
               <div className="cards-row"></div>
-              <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">GitHub -&gt;</a>
+              <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">Github -&gt;</a>
             </div>
             <div className="recent">
               <h3>Páginas Recentes</h3>
@@ -195,10 +195,7 @@ function App() {
               </div>
             </div>
             <div className="highlight-section">
-              <div className="card-header">
-                <h3>Mais Acessados</h3>
-                <a href="#" className="ver-mais-link" id="ver-mais-accessed">Ver mais</a>
-              </div>
+              <h3>Mais Acessados</h3>
               <div className="painel-superficie">
                 <ul id="debut-accessed" className="highlight-list">
                   <li><span><i data-lucide="bar-chart-3"></i></span><b className="plus">Acesse itens para ver aqui</b></li>
@@ -227,9 +224,9 @@ function App() {
                 </div>
                 <div className="contribution-body">
                   <div className="contribution-weekdays" aria-hidden="true">
-                    <span className="weekday-mon">Seg</span>
-                    <span className="weekday-wed">Qua</span>
-                    <span className="weekday-fri">Sex</span>
+                    <span className="weekday-mon">Mon</span>
+                    <span className="weekday-wed">Wed</span>
+                    <span className="weekday-fri">Fri</span>
                   </div>
                   <div className="contribution-graph-wrap">
                     <div className="contribution-months" id="contribution-months"></div>
@@ -237,22 +234,22 @@ function App() {
                   </div>
                 </div>
                 <div className="contribution-footer">
-                  <small className="contribution-help">Calendário de contribuições</small>
+                  <small className="contribution-help">Contributions calendar</small>
                   <div className="contribution-legend" aria-label="Contribution intensity legend">
-                    <span>Menos</span>
+                    <span>Less</span>
                     <span className="contribution-day level-0 legend-cell"></span>
                     <span className="contribution-day level-1 legend-cell"></span>
                     <span className="contribution-day level-2 legend-cell"></span>
                     <span className="contribution-day level-3 legend-cell"></span>
                     <span className="contribution-day level-4 legend-cell"></span>
-                    <span>Mais</span>
+                    <span>More</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="painel-commits-github">
-              <h3>Últimos Commits</h3>
+              <h3>Ultimos Commits</h3>
               <div className="painel-superficie">
                 <div className="github-commits-header">
                   <div className="github-controls">
@@ -266,7 +263,7 @@ function App() {
                   </div>
                   <button className="github-refresh-btn" id="github-refresh-btn" type="button">Atualizar</button>
                 </div>
-                <p className="github-cache-status" id="github-cache-status">Aguardando carregamento...</p>
+                <p className="github-cache-status" id="github-cache-status">Aguardando carga...</p>
                 <ul className="github-commits-list" id="github-commits-list">
                   <li className="github-empty">Carregando commits...</li>
                 </ul>
@@ -338,34 +335,15 @@ function App() {
         <div className="era-page" id="page-lover"><div className="era-toolbar"><div className="era-tags" id="tags-lover"></div><button className="btn-add-item" data-era="lover">+ Novo Item</button></div><div className="era-items" id="items-lover"></div></div>
         <div className="era-page" id="page-folklore"><div className="era-toolbar"><div className="era-tags" id="tags-folklore"></div><button className="btn-add-item" data-era="folklore">+ Novo Item</button></div><div className="era-items" id="items-folklore"></div></div>
 
-                <div className="era-page" id="page-evermore">
-          <section className="profile-page x-profile-shell">
-            <div className="x-profile-topbar">
-              <button type="button" className="x-profile-back" aria-label="Voltar"><i data-lucide="arrow-left"></i></button>
-              <div className="x-profile-top-title">
-                <strong id="profile-name-top">Seu Nome</strong>
-                <small id="profile-headline-count">0 itens</small>
-              </div>
-            </div>
-
-            <div className="profile-cover" id="profile-cover">
-              <img loading="lazy" decoding="async" src="" alt="Header do perfil" className="profile-header-image" id="profile-header-image" />
-            </div>
-
-            <div className="x-profile-main">
-              <div className="profile-avatar-large x-avatar-floating">
+        <div className="era-page" id="page-evermore">
+          <section className="profile-page">
+            <div className="profile-header">
+              <div className="profile-avatar-large">
                 <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
               </div>
-              <div className="x-profile-actions">
-                <a href="#" className="btn-edit-profile x-edit-profile" id="btn-edit-profile">Editar perfil</a>
-              </div>
-            </div>
-
-            <div className="x-profile-content">
-              <div className="profile-header-info x-profile-header-info">
+              <div className="profile-header-info">
                 <h2 id="profile-name">Seu Nome</h2>
                 <p className="profile-username" id="profile-username">@seu_usuario</p>
-
                 <div className="profile-bio-wrap">
                   <p className="profile-bio" id="profile-bio">Clique para adicionar uma descrição...</p>
                   <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre você..." style={{ display: 'none' }}></textarea>
@@ -377,117 +355,124 @@ function App() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="x-profile-meta">
-                  <span className="x-meta-item"><i data-lucide="map-pin"></i><span id="profile-location">-</span></span>
-                  <span className="x-meta-item"><i data-lucide="mail"></i><span id="profile-email">-</span></span>
-                  <span className="x-meta-item"><i data-lucide="cake"></i><span id="profile-birthdate">-</span></span>
-                  <span className="x-meta-item"><i data-lucide="calendar-days"></i><span id="profile-joined">-</span></span>
-                </div>
+            <div className="profile-stats">
+              <div className="stat-card">
+                <div className="stat-number" id="stat-items">0</div>
+                <div className="stat-label">Itens</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number" id="stat-playlists">0</div>
+                <div className="stat-label">Playlists</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number" id="stat-repos">0</div>
+                <div className="stat-label">Repositórios</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number" id="stat-tags">0</div>
+                <div className="stat-label">Tags</div>
+              </div>
+            </div>
 
-                <div className="x-profile-follow-row">
-                  <span><strong id="stat-items">0</strong> Itens</span>
-                  <span><strong id="stat-tags">0</strong> Tags</span>
-                  <span><strong id="stat-playlists">0</strong> Playlists</span>
-                  <span><strong id="stat-repos">0</strong> Repositórios</span>
+            <div className="profile-details">
+              <div className="painel-superficie">
+                <h3>Informações</h3>
+                <div className="profile-details-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Email</span>
+                    <span className="detail-value" id="profile-email">-</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Localização</span>
+                    <span className="detail-value" id="profile-location">-</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Aniversário</span>
+                    <span className="detail-value" id="profile-birthdate">-</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Este usuário desde</span>
+                    <span className="detail-value" id="profile-joined">-</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="x-profile-tabs" role="tablist" aria-label="Resumo do perfil">
-              <button type="button" className="x-tab active">Itens</button>
-              <button type="button" className="x-tab">Tags</button>
-              <button type="button" className="x-tab">Playlists</button>
-              <button type="button" className="x-tab">Repositórios</button>
+            <div className="profile-actions">
+              <a href="#" className="btn-edit-profile" id="btn-edit-profile">Editar Perfil</a>
             </div>
           </section>
         </div>
 
         <div className="era-page" id="page-settings">
           <section className="settings-page">
-            <div className="painel-superficie settings-card settings-modern">
-              <header className="settings-modern-header">
-                <h3>Configurações do Perfil</h3>
-                <p>Gerencie as informações e preferências da sua conta.</p>
-              </header>
+            <div className="painel-superficie settings-card">
+              <nav className="settings-tabs">
+                <button className="tab active" data-tab="profile">Edit Profile</button>
+                <button className="tab" data-tab="preferences">Preferences</button>
+                <button className="tab" data-tab="security">Security</button>
+              </nav>
 
-              <section className="settings-modern-section">
-                <h4>Foto de Perfil</h4>
-                <div className="settings-modern-avatar-row">
-                  <div className="profile-avatar settings-modern-avatar">
+              <div className="tab-content active" id="tab-profile">
+                <div className="settings-form-layout">
+                  <div className="profile-avatar">
                     <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
-                    <button className="avatar-edit" id="avatar-edit-btn" title="Editar foto"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
+                    <button className="avatar-edit" id="avatar-edit-btn"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
                     <button className="avatar-remove" id="avatar-remove-btn" title="Remover foto" style={{ display: 'none' }}>&times;</button>
                     <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
                   </div>
-
-                </div>
-              </section>
-
-              <section className="settings-modern-section">
-                <h4>Header do Perfil</h4>
-                <div className="settings-header-uploader">
-                  <div className="settings-header-preview" id="settings-header-preview">
-                    <img loading="lazy" decoding="async" src="" alt="Prévia do header" className="settings-header-preview-image" id="settings-header-preview-image" />
-                  </div>
-                  <div className="settings-header-actions">
-                    <button type="button" className="btn-import" id="header-edit-btn">Alterar header</button>
-                    <button type="button" className="btn-import" id="header-remove-btn" style={{ display: 'none' }}>Remover header</button>
-                    <input type="file" id="header-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
-                  </div>
-                </div>
-              </section>
-              <section className="settings-modern-section">
-                <h4>Dados Pessoais</h4>
-                <div className="form-grid settings-modern-grid">
-                  <div className="form-group"><label>Seu Nome</label><input id="settings-name" type="text" placeholder="Charlene Reed" /></div>
-                  <div className="form-group"><label>Nome de Usuário</label><input id="settings-username" type="text" placeholder="Charlene Reed" /></div>
-                  <div className="form-group"><label>E-mail</label><input id="settings-email" type="email" placeholder="charlenereed@gmail.com" /></div>
-                  <div className="form-group"><label>Senha</label><input id="settings-password" type="password" placeholder="**********" /></div>
-                  <div className="form-group"><label>Data de Nascimento</label><input id="settings-birthdate" type="date" /></div>
-                  <div className="form-group"><label>Cidade</label><input id="settings-city" type="text" placeholder="San Jose" /></div>
-                </div>
-              </section>
-
-              <section className="settings-modern-section">
-                <h4>Preferências</h4>
-                <div className="settings-pref-list">
-                  <div className="settings-pref-item">
-                    <div className="settings-pref-copy">
-                      <strong>Backup de dados</strong>
-                      <span>Exporte e importe seus dados sem perder informações.</span>
+                  <div className="settings-form">
+                    <div className="form-grid">
+                      <div className="form-group"><label>Your Name</label><input id="settings-name" type="text" placeholder="Charlene Reed" /></div>
+                      <div className="form-group"><label>User Name</label><input id="settings-username" type="text" placeholder="Charlene Reed" /></div>
+                      <div className="form-group"><label>Email</label><input id="settings-email" type="email" placeholder="charlenereed@gmail.com" /></div>
+                      <div className="form-group"><label>Password</label><input id="settings-password" type="password" placeholder="**********" /></div>
+                      <div className="form-group"><label>Date of Birth</label><input id="settings-birthdate" type="date" /></div>
+                      <div className="form-group"><label>Present Address</label><input id="settings-present-address" type="text" placeholder="San Jose, California, USA" /></div>
+                      <div className="form-group"><label>Permanent Address</label><input id="settings-permanent-address" type="text" placeholder="San Jose, California, USA" /></div>
+                      <div className="form-group"><label>City</label><input id="settings-city" type="text" placeholder="San Jose" /></div>
+                      <div className="form-group"><label>Postal Code</label><input id="settings-postal-code" type="text" placeholder="45962" /></div>
+                      <div className="form-group"><label>Country</label><input id="settings-country" type="text" placeholder="USA" /></div>
                     </div>
-                    <div className="settings-pref-actions">
-                      <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
-                      <div className="import-wrapper">
-                        <button className="btn-import" id="btn-import">Importar Backup</button>
-                        <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
-                      </div>
+                    <div className="form-actions"><button className="btn-save" id="settings-save-btn" type="button">Save</button></div>
+                    <p className="import-status" id="settings-save-status"></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="tab-content" id="tab-preferences">
+                <div className="settings-section">
+                  <h4>Dados</h4>
+                  <p className="settings-desc">Exporte um backup dos seus itens ou importe de um arquivo anterior.</p>
+                  <div className="settings-actions-row">
+                    <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
+                    <div className="import-wrapper">
+                      <button className="btn-import" id="btn-import">Importar Backup</button>
+                      <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
                     </div>
                   </div>
                   <p className="import-status" id="import-status"></p>
+                </div>
 
-                  <div className="settings-pref-item">
-                    <div className="settings-pref-copy">
-                      <strong>Histórico local</strong>
-                      <span>Últimas 10 versões locais para restauração rápida.</span>
-                    </div>
-                    <div className="settings-pref-actions">
-                      <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
-                    </div>
+                <div className="settings-section">
+                  <h4>Histórico local</h4>
+                  <p className="settings-desc">Últimas 10 versões locais para restauração rápida.</p>
+                  <div className="settings-actions-row">
+                    <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
                   </div>
                   <ul id="local-versions-list" className="local-versions-list">
                     <li className="local-version-empty">Nenhuma versão local encontrada.</li>
                   </ul>
                   <p className="import-status" id="versions-status"></p>
                 </div>
-              </section>
-
-              <div className="settings-modern-actions">
-                <button type="button" className="settings-cancel-btn" id="settings-cancel-btn">Cancelar</button>
-                <button className="btn-save" id="settings-save-btn" type="button">Salvar alterações</button>
               </div>
-              <p className="import-status" id="settings-save-status"></p>
+
+              <div className="tab-content" id="tab-security">
+                <p className="tab-placeholder">Security em breve.</p>
+              </div>
             </div>
           </section>
         </div>
@@ -644,15 +629,6 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
 
 
 

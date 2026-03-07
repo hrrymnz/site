@@ -1,4 +1,4 @@
-// ===== APP MODULE =====
+﻿// ===== APP MODULE =====
 // Mapa rapido deste arquivo:
 // 1) Helpers de segurança/formatacao
 // 2) Inicializacao geral da UI
@@ -12,7 +12,6 @@ const App = {
   currentTagFilter: null,
   draggedId: null,
   showAllPinnedHighlights: false,
-  showAllAccessedHighlights: false,
   redNotesQuery: "",
   redSelectedNoteId: "",
   redNoteDraft: null,
@@ -20,9 +19,7 @@ const App = {
   redNotesViewMode: "list",
   redNotesFilter: "all",
   pendingDeleteNoteId: null,
-  pendingDeleteContext: null,
   redChecklistSaveTimer: null,
-  spotifyCoverPending: {},
 
   // ===== HELPERS =====
   // Funcoes utilitarias para escapar texto, normalizar dados e construir labels da interface.
@@ -63,7 +60,7 @@ const App = {
       reputation: "Reputation",
       lover: "Lover",
       folklore: "Folklore",
-      settings: "Configurações"
+      settings: "Settings"
     };
     const key = this.normalizeEra(era);
     return labels[key] || "Debut";
@@ -136,19 +133,6 @@ const App = {
     });
   },
 
-  setupAccessedHighlightsToggle() {
-    const toggleLink = document.getElementById("ver-mais-accessed");
-    if (!toggleLink || toggleLink.dataset.boundClick === "1") return;
-
-    toggleLink.dataset.boundClick = "1";
-    toggleLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (toggleLink.dataset.disabled === "1") return;
-      this.showAllAccessedHighlights = !this.showAllAccessedHighlights;
-      this.renderDebutHighlights();
-    });
-  },
-
   navigateToEra(era) {
     // Navegacao centralizada para reaproveitar o comportamento da sidebar.
     const key = this.normalizeEra(era);
@@ -180,106 +164,6 @@ const App = {
     '</div>';
   },
 
-  getSpotifyEmbedUrl(url) {
-    const value = String(url || "").trim();
-    if (!value) return "";
-
-    const webMatch = value.match(/^https?:\/\/open\.spotify\.com\/(playlist|album|track|episode|show)\/([a-zA-Z0-9]+)(?:\?.*)?$/i);
-    if (webMatch) {
-      return "https://open.spotify.com/embed/" + webMatch[1].toLowerCase() + "/" + webMatch[2];
-    }
-
-    const uriMatch = value.match(/^spotify:(playlist|album|track|episode|show):([a-zA-Z0-9]+)$/i);
-    if (uriMatch) {
-      return "https://open.spotify.com/embed/" + uriMatch[1].toLowerCase() + "/" + uriMatch[2];
-    }
-
-    return "";
-  },
-
-  getSpotifyEntityUrl(url) {
-    const embedUrl = this.getSpotifyEmbedUrl(url);
-    if (!embedUrl) return "";
-    return embedUrl.replace("/embed/", "/");
-  },
-
-  getSpotifyCoverCache() {
-    if (this.spotifyCoverCache) return this.spotifyCoverCache;
-    try {
-      this.spotifyCoverCache = JSON.parse(localStorage.getItem("spotifySpeakNowCoverCacheV1") || "{}") || {};
-    } catch {
-      this.spotifyCoverCache = {};
-    }
-    return this.spotifyCoverCache;
-  },
-
-  saveSpotifyCoverCache(cache) {
-    this.spotifyCoverCache = cache || {};
-    try {
-      localStorage.setItem("spotifySpeakNowCoverCacheV1", JSON.stringify(this.spotifyCoverCache));
-    } catch {
-      // Falha de quota/localStorage nao deve quebrar a UI.
-    }
-  },
-
-  ensureSpotifyCover(url) {
-    const entityUrl = this.getSpotifyEntityUrl(url);
-    if (!entityUrl) return;
-
-    const cache = this.getSpotifyCoverCache();
-    if (cache[entityUrl]) return;
-    if (this.spotifyCoverPending[entityUrl]) return;
-
-    this.spotifyCoverPending[entityUrl] = true;
-
-    fetch("https://open.spotify.com/oembed?url=" + encodeURIComponent(entityUrl))
-      .then((resp) => (resp.ok ? resp.json() : null))
-      .then((data) => {
-        if (!data || !data.thumbnail_url) return;
-        cache[entityUrl] = {
-          thumbnail_url: String(data.thumbnail_url || ""),
-          title: String(data.title || "")
-        };
-        this.saveSpotifyCoverCache(cache);
-        this.renderEra("speak-now");
-      })
-      .catch(() => {
-        // Sem capa remota: mantem fallback visual.
-      })
-      .finally(() => {
-        delete this.spotifyCoverPending[entityUrl];
-      });
-  },
-
-  renderSpeakNowPlaylistWidget(item, safeUrl) {
-    const entityUrl = this.getSpotifyEntityUrl(item.url);
-    if (!entityUrl) return "";
-
-    this.ensureSpotifyCover(item.url);
-
-    const cache = this.getSpotifyCoverCache();
-    const coverData = cache[entityUrl] || null;
-    const coverUrl = coverData && coverData.thumbnail_url ? this.escapeHtml(coverData.thumbnail_url) : "";
-
-    const coverMarkup = coverUrl
-      ? '<img class="speak-widget-cover" src="' + coverUrl + '" alt="Capa da playlist" loading="lazy" decoding="async" />'
-      : '<div class="speak-widget-cover-fallback"><i data-lucide="music-2"></i></div>';
-
-    return '<div class="item-card speak-widget-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
-      '<div class="item-card-header">' +
-        '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
-        '<div class="item-card-actions">' +
-          (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-          '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '"><i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i></button>' +
-          '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
-        '</div>' +
-      '</div>' +
-      '<a href="' + (safeUrl || '#') + '" target="_blank" rel="noopener noreferrer" class="speak-widget-cover-link" data-id="' + item.id + '">' +
-        '<div class="speak-widget-cover-wrap">' + coverMarkup + '</div>' +
-      '</a>' +
-      (item.tags.length ? '<div class="item-tags speak-widget-tags">' + item.tags.map(t => '<span class="item-tag" data-tag="' + this.escapeHtml(t) + '">' + this.escapeHtml(t) + '</span>').join("") + '</div>' : '') +
-    '</div>';
-  },
   typeIcon(type) {
     const icons = {
       link: '<i data-lucide="link"></i>',
@@ -298,7 +182,6 @@ const App = {
     this.setupModal();
     this.setupAddButtons();
     this.setupRedNotes();
-    this.setupDeleteNoteModal();
 
     const prefs = Storage.getUiPrefs ? Storage.getUiPrefs() : {};
     this.quickFilter = prefs.quickFilter || "all";
@@ -306,7 +189,6 @@ const App = {
 
     this.setupQuickFilters();
     this.setupPinnedHighlightsToggle();
-    this.setupAccessedHighlightsToggle();
     Storage.ensureFearlessDefaults();
     this.renderAllEras();
     this.renderDebutHighlights();
@@ -403,7 +285,7 @@ const App = {
     { id: "__page-reputation", title: "Reputation", era: "reputation", keywords: [] },
     { id: "__page-lover", title: "Lover", era: "lover", keywords: [] },
     { id: "__page-folklore", title: "Folklore", era: "folklore", keywords: [] },
-    { id: "__page-settings", title: "Configurações", era: "settings", keywords: ["configurações", "preferências", "perfil", "backup", "exportar", "importar", "segurança"] }
+    { id: "__page-settings", title: "Settings", era: "settings", keywords: ["configurações", "configurações", "preferências", "perfil", "profile", "backup", "exportar", "importar", "segurança"] }
   ],
 
   searchPages(query) {
@@ -673,10 +555,6 @@ const App = {
       if (era === "fearless") {
         return this.renderFearlessRepoCard(item, safeUrl);
       }
-      if (era === "speak-now" && /(?:open\.spotify\.com|^spotify:)/i.test(String(item.url || ""))) {
-        const widget = this.renderSpeakNowPlaylistWidget(item, safeUrl);
-        if (widget) return widget;
-      }
       return '<div class="item-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
         '<div class="item-card-header">' +
           '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
@@ -776,21 +654,6 @@ const App = {
     }
 
     list.addEventListener("click", (event) => {
-      const pinBtn = event.target.closest(".red-note-pin-btn");
-      if (pinBtn && pinBtn.dataset.id) {
-        event.preventDefault();
-        event.stopPropagation();
-        const current = Storage.getAll().find((entry) => entry.id === pinBtn.dataset.id);
-        if (!current) return;
-        Storage.updateItem(pinBtn.dataset.id, {
-          pinned: !current.pinned,
-          pinnedAt: !current.pinned ? new Date().toISOString() : ""
-        });
-        this.renderRedNotes();
-        this.renderDebutHighlights();
-        return;
-      }
-
       const item = event.target.closest(".red-note-list-item");
       if (!item || !item.dataset.id) return;
       this.redSelectedNoteId = item.dataset.id;
@@ -838,60 +701,31 @@ const App = {
 
       if (isClose || isCancel || isOverlay) {
         e.preventDefault();
-        App.pendingDeleteNoteId = null;
-        App.pendingDeleteContext = null;
         modal.classList.remove("visible");
         return;
       }
-
       if (isConfirm) {
         e.preventDefault();
-        const fallbackId = App.pendingDeleteNoteId;
-        const ctx = App.pendingDeleteContext || (fallbackId ? { itemId: fallbackId, era: "red", clearRedSelection: true } : null);
-
-        if (ctx && ctx.itemId) {
-          Storage.deleteItem(ctx.itemId);
-
-          if (ctx.era === "red" || ctx.clearRedSelection) {
-            App.redSelectedNoteId = "";
-            App.redNoteDraft = null;
-            App.renderRedNotes();
-            App.renderEra("red");
-          } else if (ctx.era) {
-            App.renderEra(ctx.era);
-          }
-
+        const noteId = App.pendingDeleteNoteId;
+        if (noteId) {
+          App.pendingDeleteNoteId = null;
+          Storage.deleteItem(noteId);
+          App.redSelectedNoteId = "";
+          App.redNoteDraft = null;
+          App.renderRedNotes();
+          App.renderEra("red");
           App.renderDebutHighlights();
-          if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
         }
-
-        App.pendingDeleteNoteId = null;
-        App.pendingDeleteContext = null;
         modal.classList.remove("visible");
       }
     });
   },
 
-  openDeleteNoteModal(noteId, options = {}) {
-    if (!noteId) return;
-
-    const fromItem = (typeof Storage !== "undefined" && typeof Storage.getAll === "function") ? Storage.getAll().find((entry) => entry.id === noteId) : null;
-    const era = options.era || this.normalizeEra((fromItem && fromItem.category) || this.currentEra || "debut");
-    const shouldCloseRedEditor = options.closeRedEditor !== false;
-
+  openDeleteNoteModal(noteId) {
     App.pendingDeleteNoteId = noteId;
-    App.pendingDeleteContext = {
-      itemId: noteId,
-      era,
-      clearRedSelection: !!options.clearRedSelection
-    };
-
-    // Fecha o editor/modal do Red quando aplicável.
-    if (shouldCloseRedEditor) {
-      const editorModal = document.getElementById("red-editor-modal");
-      if (editorModal) editorModal.classList.remove("visible");
-    }
-
+    // Fecha o editor/modal ao abrir o pop-up de exclusao
+    const editorModal = document.getElementById("red-editor-modal");
+    if (editorModal) editorModal.classList.remove("visible");
     const modal = document.getElementById("modal-delete-note");
     if (modal) {
       modal.classList.add("visible");
@@ -1037,7 +871,6 @@ const App = {
       : Storage.getByCategory("red").filter((item) => item.type === "note" || item.type === "checklist");
 
     const ordered = [...source].sort((a, b) => {
-      if (!!b.pinned !== !!a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
       const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
       return bTime - aTime;
@@ -1068,28 +901,19 @@ const App = {
           const total = items.length;
           const preview = isChecklist
             ? (total ? done + " de " + total + " concluídos" : "Nenhum item")
-            : (String(item.content || "").replace(/\s+/g, " ").trim().slice(0, 88) || "Sem conteúdo");
+            : (String(item.content || "").replace(/\s+/g, " ").trim().slice(0, 88) || "Sem conteudo");
           const title = this.escapeHtml(String(item.title || (isChecklist ? "Checklist" : "Sem título")));
           const timestamp = new Date(item.updatedAt || item.createdAt || Date.now());
           const dateLabel = Number.isNaN(timestamp.getTime()) ? "" : timestamp.toLocaleDateString("pt-BR");
           const icon = isChecklist ? "check-square" : "file-text";
-          const pinIcon = item.pinned ? "pin-off" : "pin";
-          const pinTitle = item.pinned ? "Desafixar" : "Fixar";
-                    return '<li class="red-note-list-item ' + (isActive ? "active " : "") + (item.pinned ? "pinned" : "") + '" data-id="' + this.escapeHtml(item.id) + '" data-type="' + this.escapeHtml(item.type) + '">' +
-            '<div class="red-note-card-top">' +
-              '<span class="red-note-list-icon"><i data-lucide="' + icon + '"></i></span>' +
-              '<div class="item-card-actions red-note-card-actions">' +
-                (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-                '<button type="button" class="item-btn-pin red-note-pin-btn" data-id="' + this.escapeHtml(item.id) + '" title="' + pinTitle + '"><i data-lucide="' + pinIcon + '"></i></button>' +
-              '</div>' +
-            '</div>' +
+          return '<li class="red-note-list-item ' + (isActive ? "active" : "") + '" data-id="' + this.escapeHtml(item.id) + '" data-type="' + this.escapeHtml(item.type) + '">' +
+            '<span class="red-note-list-icon"><i data-lucide="' + icon + '"></i></span>' +
             '<strong>' + title + '</strong>' +
             '<p>' + this.escapeHtml(preview) + '</p>' +
             '<small>' + this.escapeHtml(dateLabel) + '</small>' +
           '</li>';
         }).join("")
       : '<li class="red-note-list-empty">Nenhum item encontrado.</li>';
-
 
     list.classList.toggle("red-notes-list--grid", this.redNotesViewMode === "grid");
 
@@ -1245,17 +1069,6 @@ const App = {
         }, 100);
       });
     });
-    container.querySelectorAll(".speak-widget-cover-link").forEach(link => {
-      link.addEventListener("click", () => {
-        Storage.trackAccess(link.dataset.id);
-        setTimeout(() => {
-          this.renderEra(era);
-          this.renderDebutHighlights();
-          if (typeof renderizarRecentes === "function") renderizarRecentes();
-        }, 100);
-      });
-    });
-
 
     // Pin/unpin
     container.querySelectorAll(".item-btn-pin").forEach(btn => {
@@ -1272,7 +1085,11 @@ const App = {
     // Delete
     container.querySelectorAll(".item-btn-delete").forEach(btn => {
       btn.addEventListener("click", () => {
-        this.openDeleteNoteModal(btn.dataset.id, { era, closeRedEditor: false });
+        if (confirm("Excluir este item?")) {
+          Storage.deleteItem(btn.dataset.id);
+          this.renderEra(era);
+          this.renderDebutHighlights();
+        }
       });
     });
 
@@ -1382,7 +1199,7 @@ const App = {
           }
 
           return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
-            '<div class="highlight-link-main" data-id="' + item.id + '" data-category="' + this.escapeHtml(item.category) + '" data-type="' + this.escapeHtml(item.type) + '">' +
+            '<div class="highlight-link-main">' +
               '<span>' + this.typeIcon(item.type) + '</span>' +
               '<b class="plus">' + this.escapeHtml(item.title) + '</b>' +
             '</div>' +
@@ -1390,20 +1207,9 @@ const App = {
           '</li>';
         }).join("");
 
-                pinnedContainer.querySelectorAll(".highlight-link-main").forEach(link => {
-          link.addEventListener("click", (event) => {
-            const itemId = link.dataset.id;
-            if (!itemId) return;
-            Storage.trackAccess(itemId);
-            const currentItem = Storage.getAll().find((entry) => entry.id === itemId);
-            if (currentItem && currentItem.category === "red" && (currentItem.type === "note" || currentItem.type === "checklist")) {
-              event.preventDefault();
-              this.navigateToEra("red");
-              setTimeout(() => {
-                this.redSelectedNoteId = itemId;
-                this.renderRedNotes();
-              }, 0);
-            }
+        pinnedContainer.querySelectorAll(".highlight-link-main").forEach(link => {
+          link.addEventListener("click", () => {
+            if (link.dataset.id) Storage.trackAccess(link.dataset.id);
             if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
           });
         });
@@ -1429,27 +1235,11 @@ const App = {
 
     // BLOCO 2: Itens mais acessados com URL valida.
     if (accessedContainer) {
-      const allAccessed = Storage.getMostAccessed(20)
-        .filter(item => this.sanitizeUrl(item.url));
-      const visibleAccessed = this.showAllAccessedHighlights ? allAccessed : allAccessed.slice(0, 3);
-      const toggleAccessedLink = document.getElementById("ver-mais-accessed");
-
-      if (toggleAccessedLink) {
-        toggleAccessedLink.style.display = "inline";
-        if (allAccessed.length > 3) {
-          toggleAccessedLink.textContent = this.showAllAccessedHighlights ? "Ver menos" : "Ver mais";
-          toggleAccessedLink.dataset.disabled = "0";
-          toggleAccessedLink.classList.remove("is-disabled");
-        } else {
-          toggleAccessedLink.textContent = "Ver mais";
-          toggleAccessedLink.dataset.disabled = "1";
-          toggleAccessedLink.classList.add("is-disabled");
-          this.showAllAccessedHighlights = false;
-        }
-      }
-
-      if (visibleAccessed.length) {
-        accessedContainer.innerHTML = visibleAccessed.map(item => {
+      const accessed = Storage.getMostAccessed(20)
+        .filter(item => this.sanitizeUrl(item.url))
+        .slice(0, 3);
+      if (accessed.length) {
+        accessedContainer.innerHTML = accessed.map(item => {
           const eraKey = this.normalizeEra(item.category);
           return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
               '<a href="' + this.sanitizeUrl(item.url) + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + item.id + '">' +
@@ -1492,19 +1282,6 @@ window.App = App;
 window.initLegacyApp = initLegacyApp;
 
 export { App, initLegacyApp };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
