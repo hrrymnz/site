@@ -339,7 +339,7 @@ function App() {
                     <span className="detail-value" id="profile-birthdate">-</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Este Usu·rio desde</span>
+                    <span className="detail-label">Este Usu√°rio desde</span>
                     <span className="detail-value" id="profile-joined">-</span>
                   </div>
                 </div>
