@@ -138,7 +138,11 @@ function initShellInteractions() {
   const birthMonthSelect = document.getElementById('settings-birth-month');
   const birthDaySelect = document.getElementById('settings-birth-day');
   const birthYearSelect = document.getElementById('settings-birth-year');
+  const birthVisibilityDateSelect = document.getElementById('profile-edit-birth-visibility-date');
+  const birthVisibilityYearSelect = document.getElementById('profile-edit-birth-visibility-year');
   let birthOriginalValue = '';
+  let birthVisibilityDateOriginalValue = 'only-you';
+  let birthVisibilityYearOriginalValue = 'only-you';
   let isBirthdateExpanded = false;
   let isEditPhotoModalOpen = false;
   let photoToEdit = '';
@@ -214,6 +218,8 @@ function initShellInteractions() {
       city: profileFields.city ? String(profileFields.city.value || '') : '',
       website: profileFields.website ? String(profileFields.website.value || '') : '',
       birthDate: profileFields.birthDate ? String(profileFields.birthDate.value || '') : '',
+      birthVisibilityDate: birthVisibilityDateSelect ? String(birthVisibilityDateSelect.value || 'only-you') : 'only-you',
+      birthVisibilityYear: birthVisibilityYearSelect ? String(birthVisibilityYearSelect.value || 'only-you') : 'only-you',
       avatar: window.Storage && typeof window.Storage.getAvatar === 'function'
         ? String(window.Storage.getAvatar() || '')
         : '',
@@ -706,9 +712,15 @@ function initShellInteractions() {
     name: document.getElementById('settings-name'),
     username: document.getElementById('settings-username'),
     birthDate: document.getElementById('settings-birthdate'),
+    birthVisibilityDate: birthVisibilityDateSelect,
+    birthVisibilityYear: birthVisibilityYearSelect,
     city: document.getElementById('settings-city'),
     website: document.getElementById('settings-website'),
     bio: document.getElementById('settings-bio'),
+  };
+  const profileFieldDefaults = {
+    birthVisibilityDate: 'only-you',
+    birthVisibilityYear: 'only-you',
   };
 
   function loadProfileForm() {
@@ -717,7 +729,10 @@ function initShellInteractions() {
     Object.keys(profileFields).forEach((key) => {
       const el = profileFields[key];
       if (!el) return;
-      el.value = data[key] || '';
+      const fallback = Object.prototype.hasOwnProperty.call(profileFieldDefaults, key)
+        ? profileFieldDefaults[key]
+        : '';
+      el.value = data[key] || fallback;
     });
     refreshProfileModalUi();
     setBirthSelectorsFromInput();
@@ -927,6 +942,8 @@ function initShellInteractions() {
   function cancelBirthdateEditor() {
     const birthInput = document.getElementById('settings-birthdate');
     if (birthInput) birthInput.value = birthOriginalValue || '';
+    if (birthVisibilityDateSelect) birthVisibilityDateSelect.value = birthVisibilityDateOriginalValue || 'only-you';
+    if (birthVisibilityYearSelect) birthVisibilityYearSelect.value = birthVisibilityYearOriginalValue || 'only-you';
     setBirthSelectorsFromInput();
     forceCloseBirthdatePanel();
   }
@@ -934,6 +951,8 @@ function initShellInteractions() {
   function primeBirthdateEditor() {
     const birthInput = document.getElementById('settings-birthdate');
     birthOriginalValue = birthInput ? String(birthInput.value || '') : '';
+    birthVisibilityDateOriginalValue = birthVisibilityDateSelect ? String(birthVisibilityDateSelect.value || 'only-you') : 'only-you';
+    birthVisibilityYearOriginalValue = birthVisibilityYearSelect ? String(birthVisibilityYearSelect.value || 'only-you') : 'only-you';
     setBirthSelectorsFromInput();
     forceCloseBirthdatePanel();
   }
@@ -1097,14 +1116,6 @@ function initShellInteractions() {
         payload[key] = String(el.value || '').trim();
       });
 
-      const emailField = document.getElementById('settings-email');
-      if (emailField && payload.email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.email)) {
-        if (saveStatus) {
-          saveStatus.textContent = 'Informe um e-mail válido para salvar.';
-          saveStatus.className = 'import-status error';
-        }
-        return;
-      }
       try {
         if (typeof window.Storage.saveProfileAndAllData === 'function') {
           await window.Storage.saveProfileAndAllData(payload);
@@ -1122,6 +1133,7 @@ function initShellInteractions() {
         if (saveStatus) {
           saveStatus.textContent = 'Perfil e dados gerais salvos com sucesso!';
           saveStatus.className = 'import-status success';
+          updateProfilePage();
           profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
           performCloseEditProfileModal();
         }
@@ -1268,6 +1280,29 @@ function initShellInteractions() {
     btnEditProfile.addEventListener('click', (e) => {
       e.preventDefault();
       openEditProfileModal();
+    });
+  }
+
+  const settingsGoProfileBtn = document.getElementById('settings-go-profile-btn');
+  if (settingsGoProfileBtn && settingsGoProfileBtn.dataset.boundClick !== '1') {
+    settingsGoProfileBtn.dataset.boundClick = '1';
+    settingsGoProfileBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const evermoreLink = document.querySelector('.era-link[data-target="evermore"]');
+      if (evermoreLink) {
+        evermoreLink.click();
+        updateProfilePage();
+      }
+    });
+  }
+
+  const settingsCloseBtn = document.getElementById('settings-close-btn');
+  if (settingsCloseBtn && settingsCloseBtn.dataset.boundClick !== '1') {
+    settingsCloseBtn.dataset.boundClick = '1';
+    settingsCloseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const debutLink = document.querySelector('.era-link[data-target="debut"]');
+      if (debutLink) debutLink.click();
     });
   }
 

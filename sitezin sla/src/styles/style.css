@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   /*
     Mapa rapido do CSS:
     1) Variaveis e tema por era
@@ -3326,4 +3326,1009 @@ button {
 [data-era="debut"] #page-debut #ver-mais-pinned:hover {
   color: #058B00;
   text-decoration: none;
+}
+[data-era="debut"] #page-debut #ver-mais-accessed {
+  color: #7ca84e;
+}
+
+[data-era="debut"] #page-debut #ver-mais-accessed:hover {
+  color: #058B00;
+  text-decoration: none;
+}
+
+[data-era="debut"] #page-debut #ver-mais-pinned.is-disabled,
+[data-era="debut"] #page-debut #ver-mais-accessed.is-disabled {
+  color: #7ca84e;
+  opacity: 1;
+}
+
+[data-era="debut"] #page-debut #ver-mais-pinned.is-disabled:hover,
+[data-era="debut"] #page-debut #ver-mais-accessed.is-disabled:hover {
+  color: #7ca84e;
+  text-decoration: none;
+}
+
+/* Red: card actions (pin/unpin) */
+#page-red .red-note-card-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#page-red .red-note-pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: 0.15s;
+  width: auto;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#page-red .red-note-pin-btn i {
+  width: 14px;
+  height: 14px;
+}
+
+#page-red .red-note-pin-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+#page-red .red-note-list-item.pinned {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent-light), var(--cartao-suave));
+}
+
+/* Speak Now: playlist widget */
+.speak-widget-card {
+  background: #f2edff;
+  border-color: #b89af7;
+}
+
+[data-era="speak-now"] .speak-widget-card.pinned {
+  border-color: #7553cb;
+  background: linear-gradient(135deg, rgba(117, 83, 203, 0.34), rgba(186, 157, 247, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(117, 83, 203, 0.48), 0 8px 20px rgba(88, 58, 170, 0.2);
+}
+
+.speak-widget-cover-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+[data-era="speak-now"] .speak-widget-card .item-url {
+  display: none !important;
+}
+
+.speak-widget-cover-wrap {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  margin: 2px auto 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, #ffffff 70%);
+  background: #1f2430;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.speak-widget-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.speak-widget-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #c8b5fb;
+}
+
+.speak-widget-cover-fallback i {
+  width: 26px;
+  height: 26px;
+}
+
+/* Evermore profile (X-like layout) */
+.profile-cover {
+  position: relative;
+  height: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #d9dee9 0%, #c8d0e0 48%, #b6c3d8 100%);
+}
+
+.profile-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 14, 28, 0.02) 0%, rgba(10, 14, 28, 0.16) 100%);
+}
+
+.profile-header-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.profile-cover.has-image .profile-header-image {
+  display: block;
+}
+
+#page-evermore .profile-page.x-profile-shell {
+  width: min(920px, calc(100% - 24px));
+  max-width: 920px;
+  margin: 12px auto 18px;
+  padding: 0 0 18px;
+  background: #fdf6ef;
+  border: 1px solid #e6d2c2;
+  border-radius: 14px;
+  overflow: hidden;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-topbar {
+  height: 54px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e6d2c2;
+  background: #f8ede2;
+}
+
+#page-evermore .x-profile-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #d8b89e;
+  background: transparent;
+  color: #7f3c10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#page-evermore .x-profile-top-title {
+  display: grid;
+  gap: 1px;
+}
+
+#page-evermore .x-profile-top-title strong {
+  font-size: 1.02rem;
+  line-height: 1.2;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-top-title small {
+  font-size: 0.76rem;
+  color: #8a6f59;
+}
+
+#page-evermore .profile-cover {
+  height: 220px;
+  border: none;
+  border-radius: 0;
+  background: linear-gradient(135deg, #d7b79f 0%, #e7cfbe 40%, #f3e5d9 100%);
+}
+
+#page-evermore .x-profile-main {
+  position: relative;
+  padding: 0 16px;
+  min-height: 66px;
+}
+
+#page-evermore .x-avatar-floating {
+  position: absolute;
+  top: -66px;
+  left: 16px;
+  width: 132px;
+  height: 132px;
+  border: 4px solid #fdf6ef;
+  background: #f5e8dc;
+  box-shadow: 0 8px 18px rgba(127, 60, 16, 0.2);
+}
+
+#page-evermore .x-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+#page-evermore .x-edit-profile {
+  background: transparent;
+  border: 1px solid #cc621b;
+  color: #7f3c10;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.86rem;
+  transform: none;
+}
+
+#page-evermore .x-profile-content {
+  padding: 10px 16px 0;
+}
+
+#page-evermore .x-profile-header-info h2 {
+  margin: 0;
+  font-size: 1.42rem;
+  color: #2f2117;
+}
+
+#page-evermore .x-profile-header-info .profile-username {
+  margin: 2px 0 10px;
+  color: #8a6f59;
+}
+
+#page-evermore .x-profile-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+#page-evermore .x-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: #8a6f59;
+}
+
+#page-evermore .x-profile-follow-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: #8a6f59;
+  font-size: 0.9rem;
+}
+
+#page-evermore .x-profile-follow-row strong {
+  color: #2f2117;
+  margin-right: 4px;
+}
+
+#page-evermore .x-profile-tabs {
+  margin-top: 16px;
+  border-top: 1px solid #e6d2c2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#page-evermore .x-tab {
+  height: 46px;
+  border: none;
+  background: transparent;
+  color: #8a6f59;
+  font-weight: 600;
+  font-size: 0.86rem;
+  border-bottom: 3px solid transparent;
+}
+
+#page-evermore .x-tab.active {
+  color: #2f2117;
+  border-bottom-color: #cc621b;
+}
+
+/* Profile edit modal */
+#modal-edit-profile {
+  backdrop-filter: blur(2px);
+}
+
+#modal-edit-profile .profile-edit-modal-content {
+  width: 100%;
+  max-width: 600px;
+  height: 90vh;
+  max-height: 650px;
+  overflow: hidden;
+  background: #000;
+  color: #e7e9ea;
+  border: none;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.6);
+  border-radius: 16px;
+  padding: 0;
+}
+
+#modal-edit-profile .profile-edit-twitter-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+#modal-edit-profile .modal-header {
+  border-bottom: 1px solid #1f2937;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+#modal-edit-profile .profile-edit-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+#modal-edit-profile .profile-edit-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#modal-edit-profile .modal-header h3 {
+  color: #e7e9ea;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+#modal-edit-profile .modal-close {
+  color: #8b98a5;
+}
+
+#modal-edit-profile .profile-edit-close-ghost {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+
+#modal-edit-profile .modal-close:hover {
+  background: #1d2630;
+  color: #e7e9ea;
+}
+
+#modal-edit-profile .profile-edit-save-top {
+  width: auto;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+#modal-edit-profile .profile-edit-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+#modal-edit-profile .form-group label,
+#modal-edit-profile .profile-edit-birth-actions span {
+  color: #8b98a5;
+  font-size: 0.75rem;
+}
+
+#modal-edit-profile .profile-edit-cover-wrap {
+  position: relative;
+  margin: 0;
+  height: 200px;
+}
+
+#modal-edit-profile .profile-edit-form-grid .form-group {
+  position: relative;
+}
+
+#modal-edit-profile .profile-edit-form-grid {
+  padding: 0 16px 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+#modal-edit-profile .form-group input,
+#modal-edit-profile .profile-edit-form-grid textarea,
+#modal-edit-profile .profile-edit-birth-fields select,
+#modal-edit-profile .profile-edit-select {
+  width: 100%;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  padding: 12px;
+  background: #161b22;
+  color: #e7e9ea;
+}
+
+#modal-edit-profile .profile-edit-form-grid .form-group label {
+  position: absolute;
+  left: 8px;
+  top: -8px;
+  padding: 0 4px;
+  background: #000;
+  z-index: 1;
+}
+
+#modal-edit-profile .profile-edit-form-grid .form-group small {
+  display: block;
+  margin-top: 6px;
+  text-align: right;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+#modal-edit-profile .form-group input::placeholder,
+#modal-edit-profile .profile-edit-form-grid textarea::placeholder {
+  color: #6e7b85;
+}
+
+#modal-edit-profile .form-group input:focus,
+#modal-edit-profile .profile-edit-form-grid textarea:focus,
+#modal-edit-profile .profile-edit-birth-fields select:focus,
+#modal-edit-profile .profile-edit-select:focus {
+  outline: none;
+  border-color: #1d9bf0;
+  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.22);
+}
+
+#modal-edit-profile .btn-import {
+  background: transparent;
+  border: 1px solid #2f3336;
+  color: #e7e9ea;
+}
+
+#modal-edit-profile .btn-import:hover {
+  background: #1d2630;
+  color: #e7e9ea;
+}
+
+#modal-edit-profile .btn-save {
+  background: #1d9bf0;
+  border: 1px solid #1d9bf0;
+  color: #fff;
+}
+
+#modal-edit-profile .btn-save:hover {
+  background: #1787d1;
+}
+
+#modal-edit-profile .settings-header-preview {
+  max-width: none;
+  height: 200px;
+  border-radius: 0;
+  border: none;
+  background: linear-gradient(135deg, #223040 0%, #1a2733 48%, #121a22 100%);
+}
+
+#modal-edit-profile .settings-header-actions.profile-edit-cover-overlay-actions {
+  position: absolute;
+  inset: 0;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+#modal-edit-profile .profile-edit-cover-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  padding: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-edit-profile .profile-edit-cover-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+#modal-edit-profile .profile-edit-cover-icon-btn i,
+#modal-edit-profile .profile-edit-cover-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+#modal-edit-profile .profile-edit-avatar-row {
+  margin: -64px 16px 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+#modal-edit-profile .profile-edit-avatar-floating {
+  width: 132px;
+  height: 132px;
+  border: 4px solid #000;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#modal-edit-profile .profile-edit-avatar-floating .avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+#modal-edit-profile .avatar-edit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-edit-profile .profile-edit-avatar-actions {
+  gap: 8px;
+}
+
+#modal-edit-profile .import-status {
+  color: #8b98a5;
+  padding: 0 16px 16px;
+}
+
+#modal-edit-profile .profile-edit-birthdate-shell {
+  padding: 0 16px 24px;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  padding: 12px;
+  text-align: left;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger:hover {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger-value {
+  color: #ffffff;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+#modal-edit-profile .profile-edit-birth-trigger-edit {
+  color: #1d9bf0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#modal-edit-profile .profile-edit-birth-panel {
+  display: none;
+  margin-top: 12px;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 16px;
+  background: #0f1419;
+}
+
+#modal-edit-profile .profile-edit-birth-panel.is-open {
+  display: block;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded {
+  display: grid;
+  gap: 16px;
+  padding-top: 4px;
+  padding-bottom: 20px;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded-cancel {
+  width: auto;
+  border: 0;
+  background: transparent;
+  color: #1d9bf0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded-cancel:hover {
+  text-decoration: underline;
+}
+
+#modal-edit-profile .profile-edit-birth-expanded-copy {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #8b98a5;
+  margin: 0;
+}
+
+#modal-edit-profile .profile-edit-birth-select-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#modal-edit-profile .profile-edit-select-wrap {
+  position: relative;
+}
+
+#modal-edit-profile .profile-edit-select-label {
+  position: absolute;
+  left: 8px;
+  top: -8px;
+  padding: 0 4px;
+  background: #0f1419;
+  z-index: 1;
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+#modal-edit-profile .profile-edit-select {
+  appearance: none;
+  cursor: pointer;
+  padding: 12px 36px 12px 12px;
+  background: transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#modal-edit-profile .profile-edit-select:hover {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+#modal-edit-profile .profile-edit-select option {
+  background: #000;
+  color: #e7e9ea;
+}
+
+#modal-edit-profile .profile-edit-select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8b98a5;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-edit-profile .profile-edit-select-chevron i,
+#modal-edit-profile .profile-edit-select-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+#modal-edit-profile .profile-edit-birth-visibility {
+  display: grid;
+  gap: 12px;
+}
+
+#modal-edit-profile .profile-edit-birth-visibility-title {
+  margin: 0 0 8px;
+  color: #e7e9ea;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+#modal-edit-profile .profile-edit-birth-visibility-copy {
+  margin: 0;
+  color: #8b98a5;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+#modal-edit-profile .profile-edit-birth-more {
+  color: #1d9bf0;
+  text-decoration: none;
+}
+
+#modal-edit-profile .profile-edit-birth-more:hover {
+  text-decoration: underline;
+}
+
+#modal-edit-profile .profile-edit-birth-actions {
+  border-top: 1px solid #1f2937;
+  padding-top: 12px;
+}
+
+#modal-edit-profile .profile-edit-birth-remove-link {
+  width: auto;
+  border: 0;
+  background: transparent;
+  color: #f87171;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+#modal-edit-profile .profile-edit-birth-remove-link:hover {
+  text-decoration: underline;
+}
+
+#modal-discard-profile {
+  z-index: 360;
+}
+
+#modal-discard-profile .modal-content {
+  width: min(320px, 92vw);
+  background: #000;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 24px;
+  color: #e7e9ea;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+#modal-discard-profile .modal-header {
+  margin-bottom: 8px;
+}
+
+#modal-discard-profile .modal-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+#modal-discard-profile .modal-delete-note-message {
+  margin: 0 0 18px;
+  color: #8b98a5;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+#modal-discard-profile .modal-actions {
+  display: grid;
+  gap: 10px;
+}
+
+#modal-discard-profile .modal-btn-confirm-delete {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+}
+
+#modal-discard-profile .modal-btn-confirm-delete:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+#modal-discard-profile .modal-btn-cancel {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e7e9ea;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+}
+
+#modal-discard-profile .modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Photo edit modal */
+#modal-edit-photo .modal-content {
+  width: min(700px, 95vw);
+}
+
+.edit-photo-preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f4f6fb;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+
+.edit-photo-preview-wrap[data-type="cover"] {
+  height: 240px;
+}
+
+#edit-photo-preview {
+  max-width: 100%;
+  max-height: 100%;
+  user-select: none;
+}
+
+.edit-photo-empty {
+  position: absolute;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.edit-photo-controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+@media (max-width: 860px) {
+  .profile-edit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #page-evermore .x-avatar-floating {
+    width: 100px;
+    height: 100px;
+    top: -50px;
+  }
+}
+
+
+/* Settings: tela moderna */
+#page-settings .settings-modern {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 26px;
+  border-radius: 12px;
+  background: #f8faff;
+  border: 1px solid #e9edf7;
+}
+
+#page-settings .settings-modern-header {
+  margin-bottom: 24px;
+}
+
+#page-settings .settings-modern-header h3 {
+  margin: 0;
+  font-size: 1.9rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+#page-settings .settings-modern-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+#page-settings .settings-modern-section {
+  margin-bottom: 24px;
+}
+
+#page-settings .settings-modern-section h4 {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+#page-settings .settings-pref-list {
+  border-top: 1px solid #e6ebf5;
+}
+
+#page-settings .settings-pref-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e6ebf5;
+}
+
+#page-settings .settings-pref-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#page-settings .settings-pref-copy strong {
+  font-size: 0.92rem;
+  color: #111827;
+}
+
+#page-settings .settings-pref-copy span {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+#page-settings .settings-pref-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#page-settings .settings-modern-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #e6ebf5;
+  padding-top: 16px;
+}
+
+#page-settings .settings-cancel-btn {
+  width: auto;
+  border: 1px solid #d1d9ea;
+  background: #fff;
+  color: #475569;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#page-settings .settings-cancel-btn:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 860px) {
+  #modal-edit-profile .profile-edit-birth-select-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #page-settings .settings-modern {
+    padding: 18px;
+  }
+
+  #page-settings .settings-modern-header h3 {
+    font-size: 1.5rem;
+  }
+
+  #page-settings .settings-pref-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #page-settings .settings-modern-actions {
+    justify-content: stretch;
+    flex-direction: column-reverse;
+  }
+
+  #page-settings .settings-modern-actions > button {
+    width: 100%;
+  }
 }

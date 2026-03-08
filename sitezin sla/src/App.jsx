@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -92,7 +92,7 @@ function App() {
   }, [user?.id, loading]);
 
   if (loading) {
-    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessão...</p></div></div>;
+    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;
   }
 
   if (!user) {
@@ -127,7 +127,7 @@ function App() {
           <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
           <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
-          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Settings</a>
+          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configuracoes</a>
         </nav>
         <div className="sidebar-bottom">
           <span className="sidebar-email">{user.email}</span>
@@ -157,8 +157,8 @@ function App() {
               </div>
             )}
             <div className="topbar-icons">
-              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
-              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificações" /></a>
+              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configuracoes" /></a>
+              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
               <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
           </div>
@@ -168,14 +168,14 @@ function App() {
           <section className="repos-grid">
             <div className="credit-cards">
               <div className="card-header">
-                <h3>Meus repositórios</h3>
+                <h3>Meus repositorios</h3>
                 <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
               </div>
               <div className="cards-row"></div>
               <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">Github -&gt;</a>
             </div>
             <div className="recent">
-              <h3>Páginas Recentes</h3>
+              <h3>Paginas Recentes</h3>
               <div className="painel-superficie">
                 <ul></ul>
               </div>
@@ -195,7 +195,10 @@ function App() {
               </div>
             </div>
             <div className="highlight-section">
-              <h3>Mais Acessados</h3>
+              <div className="card-header">
+                <h3>Mais Acessados</h3>
+                <a href="#" className="ver-mais-link" id="ver-mais-accessed">Ver mais</a>
+              </div>
               <div className="painel-superficie">
                 <ul id="debut-accessed" className="highlight-list">
                   <li><span><i data-lucide="bar-chart-3"></i></span><b className="plus">Acesse itens para ver aqui</b></li>
@@ -206,15 +209,15 @@ function App() {
 
           <section className="charts-grid">
             <div className="painel-contribuicoes-github">
-              <h3>Contribuições GitHub</h3>
+              <h3>Contribuicoes GitHub</h3>
               <div className="painel-superficie">
                 <div className="github-graph-header">
                   <div className="github-total-wrap">
                     <strong id="github-total-contributions">-</strong>
-                    <small>contribuições no período</small>
+                    <small>contribuicoes no periodo</small>
                   </div>
                   <div className="github-controls">
-                    <label>Período</label>
+                    <label>Periodo</label>
                     <div className="github-chip-group" id="github-period-group">
                       <button type="button" className="github-chip github-period-btn" data-period="30">30d</button>
                       <button type="button" className="github-chip github-period-btn active" data-period="90">90d</button>
@@ -287,7 +290,7 @@ function App() {
             <aside className="red-notes-list-panel">
               <div className="red-notes-head">
                 <div className="red-notes-head-actions">
-                  <div className="red-notes-view-toggle" aria-label="Visualização">
+                  <div className="red-notes-view-toggle" aria-label="Visualizacao">
                     <button type="button" className="red-notes-view-btn active" id="red-notes-view-list" title="Lista"><i data-lucide="list"></i></button>
                     <button type="button" className="red-notes-view-btn" id="red-notes-view-grid" title="Grade"><i data-lucide="layout-grid"></i></button>
                   </div>
@@ -307,7 +310,7 @@ function App() {
                   <p id="red-note-empty-text">Clique em + para criar uma nota ou checklist.</p>
                 </div>
                 <div className="red-note-form" id="red-note-form" style={{ display: 'none' }}>
-                  <input type="text" id="red-note-title" placeholder="Título da nota" />
+                  <input type="text" id="red-note-title" placeholder="Titulo da nota" />
                   <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
                   <div className="red-note-actions">
                     <small id="red-note-meta"></small>
@@ -315,7 +318,7 @@ function App() {
                   </div>
                 </div>
                 <div className="red-checklist-form" id="red-checklist-form" style={{ display: 'none' }}>
-                  <input type="text" id="red-checklist-title" placeholder="Título da checklist" />
+                  <input type="text" id="red-checklist-title" placeholder="Titulo da checklist" />
                   <div className="red-checklist-progress" id="red-checklist-progress"></div>
                   <ul className="red-checklist-items" id="red-checklist-items"></ul>
                   <button type="button" className="red-checklist-add-btn" id="red-checklist-add-btn"><i data-lucide="plus"></i> Adicionar item</button>
@@ -336,149 +339,304 @@ function App() {
         <div className="era-page" id="page-folklore"><div className="era-toolbar"><div className="era-tags" id="tags-folklore"></div><button className="btn-add-item" data-era="folklore">+ Novo Item</button></div><div className="era-items" id="items-folklore"></div></div>
 
         <div className="era-page" id="page-evermore">
-          <section className="profile-page">
-            <div className="profile-header">
-              <div className="profile-avatar-large">
+          <section className="profile-page x-profile-shell">
+            <header className="x-profile-topbar">
+              <button type="button" className="x-profile-back" aria-label="Voltar">
+                <i data-lucide="arrow-left"></i>
+              </button>
+              <div className="x-profile-top-title">
+                <strong id="profile-name-top">Seu Nome</strong>
+                <small id="profile-headline-count">0 contribuicoes</small>
+              </div>
+            </header>
+
+            <div className="profile-cover" id="profile-cover">
+              <img loading="lazy" decoding="async" src="" alt="Header do perfil" className="profile-header-image" id="profile-header-image" />
+            </div>
+
+            <div className="x-profile-main">
+              <div className="profile-avatar-large x-avatar-floating">
                 <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img-large" id="profile-avatar" />
               </div>
-              <div className="profile-header-info">
+              <div className="x-profile-actions">
+                <a href="#" className="btn-edit-profile x-edit-profile" id="btn-edit-profile">Editar Perfil</a>
+              </div>
+            </div>
+
+            <div className="x-profile-content">
+              <div className="x-profile-header-info">
                 <h2 id="profile-name">Seu Nome</h2>
                 <p className="profile-username" id="profile-username">@seu_usuario</p>
                 <div className="profile-bio-wrap">
-                  <p className="profile-bio" id="profile-bio">Clique para adicionar uma descrição...</p>
-                  <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre você..." style={{ display: 'none' }}></textarea>
+                  <p className="profile-bio" id="profile-bio">Clique para adicionar uma descricao...</p>
+                  <textarea className="profile-bio-edit" id="profile-bio-edit" maxLength="160" placeholder="Escreva algo sobre voce..." style={{ display: 'none' }}></textarea>
                   <div className="profile-bio-footer" id="profile-bio-footer" style={{ display: 'none' }}>
                     <span className="bio-char-count" id="bio-char-count">0/160</span>
                     <div className="bio-footer-actions">
-                      <button className="bio-btn bio-btn-cancel" id="bio-cancel">Cancelar</button>
-                      <button className="bio-btn bio-btn-save" id="bio-save">Salvar</button>
+                      <button className="bio-btn bio-btn-cancel" id="bio-cancel" type="button">Cancelar</button>
+                      <button className="bio-btn bio-btn-save" id="bio-save" type="button">Salvar</button>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="profile-stats">
-              <div className="stat-card">
-                <div className="stat-number" id="stat-items">0</div>
-                <div className="stat-label">Itens</div>
+              <div className="x-profile-meta">
+                <span className="x-meta-item"><i data-lucide="map-pin"></i><span id="profile-location">-</span></span>
+                <span className="x-meta-item"><i data-lucide="cake"></i><span id="profile-birthdate">-</span></span>
+                <span className="x-meta-item"><i data-lucide="link-2"></i><a href="#" id="profile-website" className="detail-value is-empty">-</a></span>
+                <span className="x-meta-item"><i data-lucide="calendar-days"></i><span id="profile-joined">-</span></span>
               </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-playlists">0</div>
-                <div className="stat-label">Playlists</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-repos">0</div>
-                <div className="stat-label">Repositórios</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number" id="stat-tags">0</div>
-                <div className="stat-label">Tags</div>
+
+              <div className="x-profile-follow-row">
+                <span><strong id="stat-items">0</strong> Itens</span>
+                <span><strong id="stat-playlists">0</strong> Playlists</span>
+                <span><strong id="stat-repos">0</strong> Repositorios</span>
+                <span><strong id="stat-tags">0</strong> Tags</span>
               </div>
             </div>
 
-            <div className="profile-details">
-              <div className="painel-superficie">
-                <h3>Informações</h3>
-                <div className="profile-details-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value" id="profile-email">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Localização</span>
-                    <span className="detail-value" id="profile-location">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Aniversário</span>
-                    <span className="detail-value" id="profile-birthdate">-</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Este usuário desde</span>
-                    <span className="detail-value" id="profile-joined">-</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="profile-actions">
-              <a href="#" className="btn-edit-profile" id="btn-edit-profile">Editar Perfil</a>
+            <div className="x-profile-tabs" role="tablist" aria-label="Resumo do perfil">
+              <button type="button" className="x-tab active">Itens</button>
+              <button type="button" className="x-tab">Tags</button>
+              <button type="button" className="x-tab">Playlists</button>
+              <button type="button" className="x-tab">Repositorios</button>
             </div>
           </section>
         </div>
 
         <div className="era-page" id="page-settings">
           <section className="settings-page">
-            <div className="painel-superficie settings-card">
-              <nav className="settings-tabs">
-                <button className="tab active" data-tab="profile">Edit Profile</button>
-                <button className="tab" data-tab="preferences">Preferences</button>
-                <button className="tab" data-tab="security">Security</button>
-              </nav>
+            <div className="painel-superficie settings-card settings-modern">
+              <header className="settings-modern-header">
+                <h3>Configuracoes do Perfil</h3>
+                <p>Preferencias, backup e historico local. A edicao do perfil fica na aba Perfil (Evermore).</p>
+              </header>
 
-              <div className="tab-content active" id="tab-profile">
-                <div className="settings-form-layout">
-                  <div className="profile-avatar">
-                    <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
-                    <button className="avatar-edit" id="avatar-edit-btn"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
-                    <button className="avatar-remove" id="avatar-remove-btn" title="Remover foto" style={{ display: 'none' }}>&times;</button>
-                    <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
-                  </div>
-                  <div className="settings-form">
-                    <div className="form-grid">
-                      <div className="form-group"><label>Your Name</label><input id="settings-name" type="text" placeholder="Charlene Reed" /></div>
-                      <div className="form-group"><label>User Name</label><input id="settings-username" type="text" placeholder="Charlene Reed" /></div>
-                      <div className="form-group"><label>Email</label><input id="settings-email" type="email" placeholder="charlenereed@gmail.com" /></div>
-                      <div className="form-group"><label>Password</label><input id="settings-password" type="password" placeholder="**********" /></div>
-                      <div className="form-group"><label>Date of Birth</label><input id="settings-birthdate" type="date" /></div>
-                      <div className="form-group"><label>Present Address</label><input id="settings-present-address" type="text" placeholder="San Jose, California, USA" /></div>
-                      <div className="form-group"><label>Permanent Address</label><input id="settings-permanent-address" type="text" placeholder="San Jose, California, USA" /></div>
-                      <div className="form-group"><label>City</label><input id="settings-city" type="text" placeholder="San Jose" /></div>
-                      <div className="form-group"><label>Postal Code</label><input id="settings-postal-code" type="text" placeholder="45962" /></div>
-                      <div className="form-group"><label>Country</label><input id="settings-country" type="text" placeholder="USA" /></div>
+              <section className="settings-modern-section">
+                <h4>Dados</h4>
+                <div className="settings-pref-list">
+                  <div className="settings-pref-item">
+                    <div className="settings-pref-copy">
+                      <strong>Backup de dados</strong>
+                      <span>Exporte e importe seus dados sem perder informacoes.</span>
                     </div>
-                    <div className="form-actions"><button className="btn-save" id="settings-save-btn" type="button">Save</button></div>
-                    <p className="import-status" id="settings-save-status"></p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="tab-content" id="tab-preferences">
-                <div className="settings-section">
-                  <h4>Dados</h4>
-                  <p className="settings-desc">Exporte um backup dos seus itens ou importe de um arquivo anterior.</p>
-                  <div className="settings-actions-row">
-                    <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
-                    <div className="import-wrapper">
-                      <button className="btn-import" id="btn-import">Importar Backup</button>
-                      <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
+                    <div className="settings-pref-actions">
+                      <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
+                      <div className="import-wrapper">
+                        <button className="btn-import" id="btn-import">Importar Backup</button>
+                        <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
+                      </div>
                     </div>
                   </div>
-                  <p className="import-status" id="import-status"></p>
                 </div>
+                <p className="import-status" id="import-status"></p>
+              </section>
 
-                <div className="settings-section">
-                  <h4>Histórico local</h4>
-                  <p className="settings-desc">Últimas 10 versões locais para restauração rápida.</p>
-                  <div className="settings-actions-row">
-                    <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+              <section className="settings-modern-section">
+                <h4>Historico local</h4>
+                <div className="settings-pref-list">
+                  <div className="settings-pref-item">
+                    <div className="settings-pref-copy">
+                      <strong>Versoes locais</strong>
+                      <span>Ultimas 10 versoes para restauracao rapida.</span>
+                    </div>
+                    <div className="settings-pref-actions">
+                      <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+                    </div>
                   </div>
-                  <ul id="local-versions-list" className="local-versions-list">
-                    <li className="local-version-empty">Nenhuma versão local encontrada.</li>
-                  </ul>
-                  <p className="import-status" id="versions-status"></p>
                 </div>
-              </div>
+                <ul id="local-versions-list" className="local-versions-list">
+                  <li className="local-version-empty">Nenhuma versao local encontrada.</li>
+                </ul>
+                <p className="import-status" id="versions-status"></p>
+              </section>
 
-              <div className="tab-content" id="tab-security">
-                <p className="tab-placeholder">Security em breve.</p>
+              <div className="settings-modern-actions">
+                <button type="button" className="settings-cancel-btn" id="settings-close-btn">Fechar</button>
+                <button type="button" className="btn-save" id="settings-go-profile-btn">Ir para perfil</button>
               </div>
             </div>
           </section>
         </div>
       </section>
 
+      <div className="modal-overlay" id="modal-edit-profile">
+        <div className="modal-content profile-edit-modal-content profile-edit-twitter-shell">
+          <div className="modal-header profile-edit-topbar">
+            <div className="profile-edit-topbar-left">
+              <button type="button" className="modal-close profile-edit-close-ghost" id="modal-edit-profile-close"><i data-lucide="x"></i></button>
+              <h3>Editar perfil</h3>
+            </div>
+            <button type="button" className="btn-save profile-edit-save-top" id="settings-save-btn">Salvar</button>
+          </div>
 
+          <div className="profile-edit-scroll">
+            <section className="profile-edit-cover-wrap">
+              <div className="settings-header-preview" id="settings-header-preview">
+                <img loading="lazy" decoding="async" src="" alt="Previa do header" className="settings-header-preview-image" id="settings-header-preview-image" />
+                <div className="settings-header-actions profile-edit-cover-overlay-actions">
+                  <button type="button" className="btn-import profile-edit-cover-cta profile-edit-cover-icon-btn" data-action="edit-cover" id="header-edit-btn" title="Alterar header"><i data-lucide="camera"></i></button>
+                  <button type="button" className="btn-import profile-edit-cover-cta profile-edit-cover-icon-btn" data-action="remove-cover" id="header-remove-btn" style={{ display: 'none' }} title="Remover header"><i data-lucide="x"></i></button>
+                </div>
+              </div>
+              <input type="file" id="header-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
+            </section>
+
+            <section className="profile-edit-avatar-row">
+              <div className="profile-avatar profile-edit-avatar-floating">
+                <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
+                <button className="avatar-edit" id="avatar-edit-btn" type="button" title="Trocar foto"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
+                <button className="avatar-remove" id="avatar-remove-btn" type="button" title="Remover foto" style={{ display: 'none' }}>&times;</button>
+                <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
+              </div>
+              <div className="profile-edit-avatar-actions">
+                <button type="button" className="btn-import" id="profile-edit-photo-cta">Editar foto</button>
+                <button type="button" className="btn-import" id="settings-upload-btn">Enviar imagem</button>
+              </div>
+            </section>
+
+            <section className="profile-edit-form-grid">
+              <div className="form-group">
+                <label>Nome</label>
+                <input id="settings-name" type="text" placeholder="Seu nome" maxLength="50" />
+                <small id="counter-settings-name">0/50</small>
+              </div>
+              <div className="form-group">
+                <label>Usuario</label>
+                <input id="settings-username" type="text" placeholder="seu_usuario" />
+              </div>
+              <div className="form-group">
+                <label>Localizacao</label>
+                <input id="settings-city" type="text" placeholder="Sao Paulo" maxLength="30" />
+                <small id="counter-settings-city">0/30</small>
+              </div>
+              <div className="form-group">
+                <label>Website</label>
+                <input id="settings-website" type="text" placeholder="seusite.com" maxLength="100" />
+                <small id="counter-settings-website">0/100</small>
+              </div>
+              <div className="form-group form-group-full">
+                <label>Bio</label>
+                <textarea id="settings-bio" rows="4" maxLength="160" placeholder="Fale um pouco sobre voce..."></textarea>
+                <small id="counter-settings-bio">0/160</small>
+              </div>
+            </section>
+
+            <section className="profile-edit-birthdate-shell">
+              <input id="settings-birthdate" type="hidden" />
+              <button type="button" className="profile-edit-birth-trigger" id="profile-edit-birth-trigger" aria-expanded="false">
+                <div className="profile-edit-birth-trigger-row">
+                  <div>
+                    <div className="profile-edit-birth-trigger-label">Data de nascimento</div>
+                    <div className="profile-edit-birth-trigger-value" id="profile-edit-birth-summary">-</div>
+                  </div>
+                  <div className="profile-edit-birth-trigger-edit">Editar</div>
+                </div>
+              </button>
+              <div className="profile-edit-birth-panel" id="profile-edit-birth-panel">
+                <div className="profile-edit-birth-expanded">
+                  <div className="profile-edit-birth-expanded-head">
+                    <div className="profile-edit-birth-expanded-label">Data de nascimento</div>
+                    <button type="button" className="profile-edit-birth-expanded-cancel" id="profile-edit-birth-cancel">Cancelar</button>
+                  </div>
+
+                  <p className="profile-edit-birth-expanded-copy">
+                    Essa deve ser a data de nascimento da pessoa que usa a conta, seja a conta para uma empresa, para um evento ou para um gatinho.
+                  </p>
+
+                  <div className="profile-edit-birth-select-grid">
+                    <div className="profile-edit-select-wrap">
+                      <label className="profile-edit-select-label" htmlFor="settings-birth-month">Mes</label>
+                      <select id="settings-birth-month" className="profile-edit-select"></select>
+                      <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                    <div className="profile-edit-select-wrap">
+                      <label className="profile-edit-select-label" htmlFor="settings-birth-day">Dia</label>
+                      <select id="settings-birth-day" className="profile-edit-select"></select>
+                      <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                    <div className="profile-edit-select-wrap">
+                      <label className="profile-edit-select-label" htmlFor="settings-birth-year">Ano</label>
+                      <select id="settings-birth-year" className="profile-edit-select"></select>
+                      <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                  </div>
+
+                  <div className="profile-edit-birth-visibility">
+                    <div>
+                      <h3 className="profile-edit-birth-visibility-title">Quem pode ver isso?</h3>
+                      <p className="profile-edit-birth-visibility-copy">
+                        Voce pode controlar quem ve seu aniversario no X.{" "}
+                        <a href="#" className="profile-edit-birth-more" onClick={(e) => e.preventDefault()}>Saiba mais</a>
+                      </p>
+                    </div>
+
+                    <div className="profile-edit-select-wrap">
+                      <label className="profile-edit-select-label" htmlFor="profile-edit-birth-visibility-date">Mes e dia</label>
+                      <select id="profile-edit-birth-visibility-date" className="profile-edit-select" defaultValue="only-you">
+                        <option value="only-you">Somente voce</option>
+                        <option value="followers">Seus seguidores</option>
+                        <option value="everyone">Todos</option>
+                      </select>
+                      <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+                    </div>
+
+                    <div className="profile-edit-select-wrap">
+                      <label className="profile-edit-select-label" htmlFor="profile-edit-birth-visibility-year">Ano</label>
+                      <select id="profile-edit-birth-visibility-year" className="profile-edit-select" defaultValue="only-you">
+                        <option value="only-you">Somente voce</option>
+                        <option value="followers">Seus seguidores</option>
+                        <option value="everyone">Todos</option>
+                      </select>
+                      <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="profile-edit-birth-actions">
+                  <button type="button" className="profile-edit-birth-remove-link" id="profile-edit-birth-remove">Remover data de nascimento</button>
+                </div>
+              </div>
+            </section>
+
+            <p className="import-status" id="settings-save-status"></p>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal-overlay" id="modal-edit-photo">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Editar foto</h3>
+            <button type="button" className="modal-close" id="modal-edit-photo-close"><i data-lucide="x"></i></button>
+          </div>
+          <div className="edit-photo-preview-wrap" id="edit-photo-preview-wrap" data-type="profile">
+            <img src="" alt="Previa de edicao" id="edit-photo-preview" />
+            <div className="edit-photo-empty" id="edit-photo-empty">Selecione uma imagem para editar.</div>
+          </div>
+          <div className="edit-photo-controls">
+            <label htmlFor="edit-photo-zoom">Zoom</label>
+            <input id="edit-photo-zoom" type="range" min="1" max="3" step="0.1" defaultValue="1" />
+            <span id="edit-photo-zoom-value">1.0x</span>
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="modal-btn-confirm-delete" id="edit-photo-apply">Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal-overlay" id="modal-discard-profile">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3>Descartar alteracoes?</h3>
+          </div>
+          <p className="modal-delete-note-message">Voce tem alteracoes nao salvas no perfil.</p>
+          <div className="modal-actions">
+            <button type="button" className="modal-btn-cancel" id="discard-profile-cancel">Continuar editando</button>
+            <button type="button" className="modal-btn-confirm-delete" id="discard-profile-confirm">Descartar</button>
+          </div>
+        </div>
+      </div>
       <div className="modal-overlay" id="modal-edit-repo">
         <div className="modal-content">
           <div className="modal-header">
@@ -486,7 +644,7 @@ function App() {
               <div className="repo-edit-header-icon" aria-hidden="true">
                 <i data-lucide="folder-sync"></i>
               </div>
-              <h3>Editar Repositório Fixo</h3>
+              <h3>Editar Repositorio Fixo</h3>
             </div>
             <button className="modal-close" id="modal-edit-repo-close"><i data-lucide="x"></i></button>
           </div>
@@ -499,9 +657,9 @@ function App() {
             </div>
 
             <div className="form-group">
-              <label>Repositório do Fearless</label>
+              <label>Repositorio do Fearless</label>
               <select id="edit-repo-source" required>
-                <option value="">Selecione um repositório da Fearless</option>
+                <option value="">Selecione um repositorio da Fearless</option>
               </select>
             </div>
 
@@ -511,13 +669,13 @@ function App() {
             </div>
 
             <div className="form-group form-group-note">
-              <label>Descrição</label>
+              <label>Descricao</label>
               <textarea id="edit-repo-description" rows="4"></textarea>
-              <small className="repo-modal-hint">Somente repositórios criados na era Fearless podem ser fixados aqui.</small>
+              <small className="repo-modal-hint">Somente repositorios criados na era Fearless podem ser fixados aqui.</small>
             </div>
 
             <div className="repo-edit-actions">
-              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositório</button>
+              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositorio</button>
               <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
             </div>
           </form>
@@ -556,7 +714,7 @@ function App() {
             <h3>Excluir item</h3>
             <button type="button" className="modal-close" id="modal-delete-note-close"><i data-lucide="x"></i></button>
           </div>
-          <p className="modal-delete-note-message">Excluir este item? Esta ação não pode ser desfeita.</p>
+          <p className="modal-delete-note-message">Excluir este item? Esta acao nao pode ser desfeita.</p>
           <div className="modal-actions">
             <button type="button" className="modal-btn-cancel" id="modal-delete-note-cancel">Cancelar</button>
             <button type="button" className="modal-btn-confirm-delete" id="modal-delete-note-confirm">Excluir</button>
@@ -585,13 +743,13 @@ function App() {
               <label>Tipo</label>
               <select id="item-type">
                 <option value="link">Link</option>
-                <option value="repo">Repositório</option>
+                <option value="repo">Repositorio</option>
                 <option value="playlist">Playlist</option>
                 <option value="note">Nota</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Título</label>
+              <label>Titulo</label>
               <input type="text" id="item-title" required placeholder="Nome do item" />
             </div>
             <div className="form-group field-url">
@@ -599,11 +757,11 @@ function App() {
               <input type="url" id="item-url" placeholder="https://..." />
             </div>
             <div className="form-group field-content" style={{ display: 'none' }}>
-              <label>Conteúdo</label>
+              <label>Conteudo</label>
               <textarea id="item-content" rows="4" placeholder="Sua nota..."></textarea>
             </div>
             <div className="form-group">
-              <label>Tags <small>(separadas por vírgula)</small></label>
+              <label>Tags <small>(separadas por virgula)</small></label>
               <input type="text" id="item-tags" placeholder="tag1, tag2, tag3" />
             </div>
             <div className="form-group">
@@ -629,6 +787,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 
