@@ -148,6 +148,23 @@ const App = {
     if (splitBtn) splitBtn.classList.toggle("active", this.redNoteViewMode === "split");
   },
 
+  renderRedChecklistProgress(progressEl, done, total) {
+    if (!progressEl) return;
+    const safeDone = Number(done) || 0;
+    const safeTotal = Number(total) || 0;
+    if (!safeTotal) {
+      progressEl.style.display = "none";
+      progressEl.innerHTML = "";
+      return;
+    }
+
+    const percent = Math.max(0, Math.min(100, Math.round((safeDone / safeTotal) * 100)));
+    progressEl.style.display = "grid";
+    progressEl.innerHTML =
+      '<span class="red-checklist-progress-label">' + safeDone + " de " + safeTotal + " concluídos</span>" +
+      '<span class="red-checklist-progress-track"><span class="red-checklist-progress-fill" style="width:' + percent + '%"></span></span>';
+  },
+
   decorateMarkdownLinks(root) {
     if (!root) return;
     root.querySelectorAll("a").forEach((link) => {
@@ -1772,8 +1789,7 @@ const App = {
     const items = item.checklistItems || [];
     const done = items.filter((i) => i.completed).length;
     const total = items.length;
-    progressEl.textContent = total ? done + " de " + total + " concluídos" : "Nenhum item";
-    progressEl.style.display = total ? "block" : "none";
+    this.renderRedChecklistProgress(progressEl, done, total);
     itemsList.innerHTML = items.map((entry, idx) => {
       const raw = String(entry.text || "").trim();
       const safe = this.escapeHtml(raw || "Item");
@@ -1784,6 +1800,7 @@ const App = {
         '<button type="button" class="red-checklist-item-remove" aria-label="Remover"><i data-lucide="x"></i></button>' +
       '</li>';
     }).join("");
+    itemsList.classList.toggle("is-empty", total === 0);
     const stamp = new Date(item.updatedAt || item.createdAt || Date.now());
     meta.textContent = Number.isNaN(stamp.getTime()) ? "" : "Atualizada em " + stamp.toLocaleDateString("pt-BR") + " " + stamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     this.setupRedChecklistItemEvents();
@@ -1800,12 +1817,11 @@ const App = {
     if (!noteId) return;
 
     const updateProgress = () => {
-      if (!progressEl) return;
       const checks = [...container.querySelectorAll(".red-checklist-item-check")];
       const total = checks.length;
       const done = checks.filter((entry) => entry.checked).length;
-      progressEl.textContent = total ? done + " de " + total + " concluídos" : "Nenhum item";
-      progressEl.style.display = total ? "block" : "none";
+      container.classList.toggle("is-empty", total === 0);
+      this.renderRedChecklistProgress(progressEl, done, total);
     };
 
     container.querySelectorAll(".red-checklist-item-check").forEach((check) => {
@@ -1820,8 +1836,7 @@ const App = {
       });
     });
 
-    addBtn.replaceWith(addBtn.cloneNode(true));
-    document.getElementById("red-checklist-add-btn").addEventListener("click", () => {
+    const appendChecklistItem = () => {
       const idx = container.querySelectorAll(".red-checklist-item").length;
       const li = document.createElement("li");
       li.className = "red-checklist-item";
@@ -1842,7 +1857,24 @@ const App = {
       }
       updateProgress();
       if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
-    });
+      const textInput = li.querySelector(".red-checklist-item-text");
+      if (textInput) textInput.focus();
+    };
+
+    addBtn.replaceWith(addBtn.cloneNode(true));
+    const activeAddBtn = document.getElementById("red-checklist-add-btn");
+    if (activeAddBtn) {
+      activeAddBtn.addEventListener("click", () => appendChecklistItem());
+    }
+
+    if (container._redChecklistEmptyClickHandler) {
+      container.removeEventListener("click", container._redChecklistEmptyClickHandler);
+    }
+    container._redChecklistEmptyClickHandler = (event) => {
+      if (event.target !== container) return;
+      appendChecklistItem();
+    };
+    container.addEventListener("click", container._redChecklistEmptyClickHandler);
 
     deleteBtn.replaceWith(deleteBtn.cloneNode(true));
     document.getElementById("red-checklist-delete-btn").addEventListener("click", () => this.openDeleteNoteModal(noteId));

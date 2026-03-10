@@ -3692,32 +3692,73 @@ button {
 }
 
 .red-checklist-progress {
-  font-size: 0.8rem;
-  color: var(--muted);
+  font-size: 0.82rem;
+  color: #4b5563;
+  display: grid;
+  gap: 6px;
+}
+
+.red-checklist-progress-label {
+  font-weight: 600;
+}
+
+.red-checklist-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.red-checklist-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 86%, #ffffff 14%), var(--accent));
+  border-radius: 999px;
+  transition: width 0.2s ease;
 }
 
 .red-checklist-items {
   list-style: none;
-  padding: 0;
+  padding: 2px 2px 2px 0;
   margin: 0;
   overflow: auto;
   display: grid;
-  gap: 6px;
+  gap: 5px;
+  align-content: start;
+  grid-auto-rows: min-content;
+  min-height: 220px;
+}
+
+.red-checklist-items.is-empty {
+  border: 1px dashed #cfd8ea;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.red-checklist-items.is-empty::before {
+  content: "Clique na área para adicionar o primeiro item";
+  color: #6b7280;
+  font-size: 0.83rem;
+  font-weight: 500;
 }
 
 .red-checklist-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 4px 8px;
+  min-height: 36px;
   background: #fff;
 }
 
 .red-checklist-item-check {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--accent);
   flex-shrink: 0;
   cursor: pointer;
@@ -3734,10 +3775,10 @@ button {
 }
 
 .red-checklist-item-remove {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -3745,6 +3786,15 @@ button {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.red-checklist-item:hover .red-checklist-item-remove,
+.red-checklist-item:focus-within .red-checklist-item-remove {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .red-checklist-item-remove:hover {
@@ -3753,14 +3803,15 @@ button {
 }
 
 .red-checklist-add-btn {
-  width: auto;
-  display: inline-flex;
+  width: 100%;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px dashed var(--border);
-  border-radius: 8px;
-  background: transparent;
+  border-radius: 10px;
+  background: #f8fafc;
   color: var(--accent);
   font-size: 0.84rem;
   font-weight: 600;
@@ -3770,6 +3821,7 @@ button {
 
 .red-checklist-add-btn:hover {
   background: var(--accent-light);
+  border-color: color-mix(in oklab, var(--accent) 26%, #ffffff 74%);
 }
 
 @media (max-width: 980px) {
