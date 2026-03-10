@@ -976,17 +976,85 @@ button {
 .era-empty {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 48px 18px;
+  padding: 20px 18px;
   color: var(--muted);
+  min-height: clamp(220px, 42vh, 360px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .era-empty p:first-child {
   font-size: 1rem;
-  margin-bottom: 6px;
+  margin: 0;
 }
 
 .era-empty small {
   font-size: 0.82rem;
+}
+
+.era-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.era-empty-icon i,
+.era-empty-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.era-empty--1989 .era-empty-icon {
+  background: rgba(91, 164, 207, 0.24);
+  color: #2f8dbf;
+  box-shadow: 0 10px 22px rgba(91, 164, 207, 0.26);
+}
+
+.era-empty-cta {
+  margin-top: 6px;
+}
+
+.era-empty-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.era-empty-chip {
+  width: auto;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  transition: 0.2s;
+}
+
+.era-empty-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.era-empty--1989 .era-empty-chip:hover {
+  border-color: #5ba4cf;
+  color: #2f8dbf;
+  background: rgba(91, 164, 207, 0.16);
 }
 
 /* ===== CARDS DE ITEM ===== */

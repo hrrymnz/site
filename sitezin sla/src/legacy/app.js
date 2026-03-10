@@ -556,6 +556,10 @@ const App = {
   },
 
   openModal(era) {
+    this.openPrefilledModal(era);
+  },
+
+  openPrefilledModal(era, preset = {}) {
     const targetEra = era || this.currentEra;
     if (targetEra === "red") {
       this.openCreateRedModal();
@@ -565,10 +569,25 @@ const App = {
     if (!modal) return;
     const select = modal.querySelector("#item-category");
     const form = document.getElementById("form-add-item");
+    if (!form) return;
     form.reset();
     if (select) select.value = targetEra;
-    form.querySelector(".field-url").style.display = "block";
-    form.querySelector(".field-content").style.display = "none";
+
+    const typeField = form.querySelector("#item-type");
+    const titleField = form.querySelector("#item-title");
+    const urlField = form.querySelector("#item-url");
+    const contentField = form.querySelector("#item-content");
+    const tagsField = form.querySelector("#item-tags");
+    const isNote = (preset.type || "").toLowerCase() === "note";
+
+    if (typeField) typeField.value = preset.type || "link";
+    if (titleField) titleField.value = preset.title || "";
+    if (urlField) urlField.value = preset.url || "";
+    if (contentField) contentField.value = preset.content || "";
+    if (tagsField) tagsField.value = Array.isArray(preset.tags) ? preset.tags.join(", ") : "";
+
+    form.querySelector(".field-url").style.display = isNote ? "none" : "block";
+    form.querySelector(".field-content").style.display = isNote ? "block" : "none";
     modal.classList.add("visible");
   },
 
@@ -664,11 +683,79 @@ const App = {
         container.innerHTML = "";
         return;
       }
+
+      const emptyStateByEra = {
+        "1989": {
+          icon: "briefcase",
+          title: "Suas ferramentas ficam aqui",
+          subtitle: "Figma, Notion, Linear, VS Code web...",
+          cta: "+ Adicionar ferramenta",
+          suggestions: [
+            { label: "Figma", title: "Figma", url: "https://www.figma.com/" },
+            { label: "Notion", title: "Notion", url: "https://www.notion.so/" },
+            { label: "Linear", title: "Linear", url: "https://linear.app/" }
+          ]
+        },
+        lover: {
+          icon: "heart",
+          title: "Seus cantos favoritos da internet",
+          subtitle: "Os sites que voce abre so pra relaxar",
+          cta: "+ Adicionar favorito"
+        },
+        folklore: {
+          icon: "book-open",
+          title: "Leituras para quando tiver tempo",
+          subtitle: "Artigos, docs, threads, referencias",
+          cta: "+ Salvar leitura"
+        }
+      };
+
+      const emptyCfg = emptyStateByEra[era] || {
+        icon: "inbox",
+        title: "Nenhum item nessa era ainda.",
+        subtitle: 'Clique em "+ Novo Item" para adicionar.',
+        cta: "+ Novo Item"
+      };
+      const eraKey = this.normalizeEra(era);
+      const chipsMarkup = Array.isArray(emptyCfg.suggestions) && emptyCfg.suggestions.length
+        ? '<div class="era-empty-chips">' + emptyCfg.suggestions.map((chip) =>
+            '<button type="button" class="era-empty-chip" data-title="' + this.escapeHtml(chip.title || chip.label || "") + '" data-url="' + this.escapeHtml(chip.url || "") + '">' + this.escapeHtml(chip.label || "") + '</button>'
+          ).join("") + '</div>'
+        : "";
+
       container.innerHTML =
-        '<div class="era-empty">' +
-          '<p>Nenhum item nessa era ainda.</p>' +
-          '<p><small>Clique em "+ Novo Item" para adicionar.</small></p>' +
+        '<div class="era-empty era-empty--' + this.escapeHtml(eraKey) + '">' +
+          '<div class="era-empty-icon"><i data-lucide="' + emptyCfg.icon + '"></i></div>' +
+          '<p>' + this.escapeHtml(emptyCfg.title) + '</p>' +
+          '<small>' + this.escapeHtml(emptyCfg.subtitle) + '</small>' +
+          chipsMarkup +
+          '<button type="button" class="btn-add-item era-empty-cta" data-era="' + this.escapeHtml(era) + '">' + this.escapeHtml(emptyCfg.cta) + '</button>' +
         '</div>';
+
+      const emptyCta = container.querySelector(".era-empty-cta");
+      if (emptyCta) {
+        emptyCta.addEventListener("click", () => {
+          const safeEra = (window.CSS && typeof window.CSS.escape === "function") ? window.CSS.escape(era) : era;
+          const addBtn = document.querySelector('#page-' + safeEra + ' .btn-add-item[data-era="' + safeEra + '"]');
+          if (addBtn) {
+            addBtn.click();
+          } else {
+            this.openModal(era);
+          }
+        });
+      }
+
+      container.querySelectorAll(".era-empty-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          this.openPrefilledModal(era, {
+            type: "link",
+            title: String(chip.dataset.title || "").trim(),
+            url: String(chip.dataset.url || "").trim()
+          });
+        });
+      });
+
+      if (window.lucide && typeof window.lucide.createIcons === "function") { window.lucide.createIcons(); }
       return;
     }
 
