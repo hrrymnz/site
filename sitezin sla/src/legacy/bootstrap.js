@@ -1,82 +1,85 @@
 function initShellInteractions() {
-  document.querySelectorAll('.era-link').forEach((link) => {
-    if (link.dataset.boundClick === '1') return;
-    link.dataset.boundClick = '1';
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = link.dataset.target;
-      const eraColor = link.dataset.eraColor;
+  function bindNavigationBlocks() {
+    document.querySelectorAll('.era-link').forEach((link) => {
+      if (link.dataset.boundClick === '1') return;
+      link.dataset.boundClick = '1';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = link.dataset.target;
+        const eraColor = link.dataset.eraColor;
 
-      document.querySelectorAll('.era-link').forEach((l) => l.classList.remove('active'));
-      link.classList.add('active');
+        document.querySelectorAll('.era-link').forEach((l) => l.classList.remove('active'));
+        link.classList.add('active');
 
-      document.body.setAttribute('data-era', eraColor);
+        document.body.setAttribute('data-era', eraColor);
 
-      document.querySelectorAll('.era-page').forEach((p) => p.classList.remove('active'));
-      const nextPage = document.getElementById('page-' + target);
-      if (nextPage) nextPage.classList.add('active');
+        document.querySelectorAll('.era-page').forEach((p) => p.classList.remove('active'));
+        const nextPage = document.getElementById('page-' + target);
+        if (nextPage) nextPage.classList.add('active');
 
-      if (target === 'red' && window.App && typeof window.App.renderRedNotes === 'function') {
-        window.App.redSelectedNoteId = '';
-        window.App.renderRedNotes();
-      }
+        if (target === 'red' && window.App && typeof window.App.renderRedNotes === 'function') {
+          window.App.redSelectedNoteId = '';
+          window.App.renderRedNotes();
+        }
 
-      const topTitle = document.getElementById('topbar-title');
-      if (topTitle) topTitle.textContent = link.textContent.trim();
+        const topTitle = document.getElementById('topbar-title');
+        if (topTitle) topTitle.textContent = link.textContent.trim();
+      });
     });
-  });
 
-  const verMais = document.getElementById('ver-mais-repos');
-  if (verMais && verMais.dataset.boundClick !== '1') {
-    verMais.dataset.boundClick = '1';
-    verMais.addEventListener('click', (e) => {
-      e.preventDefault();
-      const fearlessLink = document.querySelector('.era-link[data-target="fearless"]');
-      if (fearlessLink) fearlessLink.click();
+    const verMais = document.getElementById('ver-mais-repos');
+    if (verMais && verMais.dataset.boundClick !== '1') {
+      verMais.dataset.boundClick = '1';
+      verMais.addEventListener('click', (e) => {
+        e.preventDefault();
+        const fearlessLink = document.querySelector('.era-link[data-target="fearless"]');
+        if (fearlessLink) fearlessLink.click();
+      });
+    }
+
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const link = document.querySelector('.era-link[data-target="' + CSS.escape(hash) + '"]');
+      if (link) link.click();
+    }
+
+    const settingsBtn = document.querySelector('.topbar-settings-btn');
+    if (settingsBtn && settingsBtn.dataset.boundClick !== '1') {
+      settingsBtn.dataset.boundClick = '1';
+      settingsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const settingsLink = document.querySelector('.era-link[data-target="settings"]');
+        if (settingsLink) settingsLink.click();
+      });
+    }
+
+    document.querySelectorAll('.settings-tabs .tab').forEach((tab) => {
+      if (tab.dataset.boundClick === '1') return;
+      tab.dataset.boundClick = '1';
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.settings-tabs .tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+        tab.classList.add('active');
+        const nextTab = document.getElementById('tab-' + tab.dataset.tab);
+        if (nextTab) nextTab.classList.add('active');
+      });
     });
   }
 
-  const hash = window.location.hash.replace('#', '');
-  if (hash) {
-    const link = document.querySelector('.era-link[data-target="' + CSS.escape(hash) + '"]');
-    if (link) link.click();
-  }
+  function bindWorkspaceSwitcher() {
+    const workspaceSwitcher = document.getElementById('workspace-switcher');
+    const workspaceSwitchStatus = document.getElementById('workspace-switch-status');
+    if (!workspaceSwitcher || !window.Storage) return;
 
-  const settingsBtn = document.querySelector('.topbar-settings-btn');
-  if (settingsBtn && settingsBtn.dataset.boundClick !== '1') {
-    settingsBtn.dataset.boundClick = '1';
-    settingsBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const settingsLink = document.querySelector('.era-link[data-target="settings"]');
-      if (settingsLink) settingsLink.click();
-    });
-  }
-
-  document.querySelectorAll('.settings-tabs .tab').forEach((tab) => {
-    if (tab.dataset.boundClick === '1') return;
-    tab.dataset.boundClick = '1';
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.settings-tabs .tab').forEach((t) => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
-      tab.classList.add('active');
-      const nextTab = document.getElementById('tab-' + tab.dataset.tab);
-      if (nextTab) nextTab.classList.add('active');
-    });
-  });
-
-
-  const workspaceSwitcher = document.getElementById('workspace-switcher');
-  const workspaceSwitchStatus = document.getElementById('workspace-switch-status');
-  if (workspaceSwitcher && window.Storage) {
-    const initialWorkspace = window.Storage.currentWorkspace || 'dev';
+    const initialWorkspace = window.Storage.currentWorkspace || 'default';
     workspaceSwitcher.value = initialWorkspace;
 
-    if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = "Espaço de trabalho: " + initialWorkspace;
+    if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = 'Espaco de trabalho: ' + initialWorkspace;
 
     if (workspaceSwitcher.dataset.boundChange !== '1') {
       workspaceSwitcher.dataset.boundChange = '1';
       workspaceSwitcher.addEventListener('change', async () => {
-        const nextWorkspace = workspaceSwitcher.value || 'dev';
+        const nextWorkspace = workspaceSwitcher.value || 'default';
         if (workspaceSwitchStatus) workspaceSwitchStatus.textContent = 'Trocando...';
         window.Storage.setWorkspace(nextWorkspace);
         await window.Storage.bootstrapPersistence();
@@ -96,6 +99,9 @@ function initShellInteractions() {
       });
     }
   }
+
+  bindNavigationBlocks();
+  bindWorkspaceSwitcher();
   const DEFAULT_AVATAR = 'imagens, icons/Sidebar/user 3 1.svg';
   const avatarImg = document.getElementById('avatar-img');
   const topbarIcon = document.querySelector('.profile-icon');
@@ -431,33 +437,85 @@ function initShellInteractions() {
       setEditPhotoModalOpen(false);
     }
   }
+  function bindBackupAndVersionControls() {
+    function refreshLocalVersions() {
+      const versionsList = document.getElementById('local-versions-list');
+      const versionsStatus = document.getElementById('versions-status');
+      if (!versionsList || !window.Storage || typeof window.Storage.listLocalVersions !== 'function') return;
 
+      const versions = window.Storage.listLocalVersions();
+      if (!versions.length) {
+        versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versao local encontrada.</li>';
+        return;
+      }
 
-  function refreshLocalVersions() {
-    const versionsList = document.getElementById('local-versions-list');
-    const versionsStatus = document.getElementById('versions-status');
-    if (!versionsList || !window.Storage || typeof window.Storage.listLocalVersions !== 'function') return;
+      versionsList.innerHTML = versions.map((v) => {
+        const label = v.label || 'auto-local';
+        const when = new Date(v.createdAt).toLocaleString('pt-BR');
+        return '<li class="local-version-item">' +
+          '<div class="local-version-meta"><strong>' + label + '</strong><small>' + when + '</small></div>' +
+          '<button type="button" class="btn-import local-restore-btn" data-version-id="' + v.id + '">Restaurar</button>' +
+        '</li>';
+      }).join('');
 
-    const versions = window.Storage.listLocalVersions();
-    if (!versions.length) {
-      versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versão local encontrada.</li>';
-      return;
+      versionsList.querySelectorAll('.local-restore-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const versionId = btn.dataset.versionId;
+          try {
+            window.Storage.restoreLocalVersion(versionId);
+
+            if (window.App && typeof window.App.renderAllEras === 'function') {
+              window.App.renderAllEras();
+            }
+            if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+              window.App.renderDebutHighlights();
+            }
+            if (typeof window.renderizarRecentes === 'function') {
+              window.renderizarRecentes();
+            }
+            if (typeof window.updateProfilePage === 'function') {
+              window.updateProfilePage();
+            }
+
+            refreshAvatar();
+            refreshProfileHeader();
+            refreshLocalVersions();
+
+            if (versionsStatus) {
+              versionsStatus.textContent = 'Versao restaurada com sucesso.';
+              versionsStatus.className = 'import-status success';
+            }
+          } catch {
+            if (versionsStatus) {
+              versionsStatus.textContent = 'Nao foi possivel restaurar essa versao.';
+              versionsStatus.className = 'import-status error';
+            }
+          }
+        });
+      });
     }
 
-    versionsList.innerHTML = versions.map((v) => {
-      const label = v.label || 'auto-local';
-      const when = new Date(v.createdAt).toLocaleString('pt-BR');
-      return '<li class="local-version-item">' +
-        '<div class="local-version-meta"><strong>' + label + '</strong><small>' + when + '</small></div>' +
-        '<button type="button" class="btn-import local-restore-btn" data-version-id="' + v.id + '">Restaurar</button>' +
-      '</li>';
-    }).join('');
+    const btnExport = document.getElementById('btn-export');
+    if (btnExport && btnExport.dataset.boundClick !== '1') {
+      btnExport.dataset.boundClick = '1';
+      btnExport.addEventListener('click', () => window.Storage.exportData());
+    }
 
-    versionsList.querySelectorAll('.local-restore-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const versionId = btn.dataset.versionId;
+    const btnImport = document.getElementById('btn-import');
+    const importFile = document.getElementById('import-file');
+    if (btnImport && importFile && btnImport.dataset.boundClick !== '1') {
+      btnImport.dataset.boundClick = '1';
+      btnImport.addEventListener('click', () => importFile.click());
+    }
+
+    if (importFile && importFile.dataset.boundChange !== '1') {
+      importFile.dataset.boundChange = '1';
+      importFile.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const status = document.getElementById('import-status');
         try {
-          window.Storage.restoreLocalVersion(versionId);
+          const count = await window.Storage.importData(file);
 
           if (window.App && typeof window.App.renderAllEras === 'function') {
             window.App.renderAllEras();
@@ -468,89 +526,41 @@ function initShellInteractions() {
           if (typeof window.renderizarRecentes === 'function') {
             window.renderizarRecentes();
           }
-          if (typeof window.updateProfilePage === 'function') {
-            window.updateProfilePage();
-          }
 
           refreshAvatar();
           refreshProfileHeader();
           refreshLocalVersions();
 
-
-          if (versionsStatus) {
-            versionsStatus.textContent = 'Versão restaurada com sucesso.';
-            versionsStatus.className = 'import-status success';
+          if (status) {
+            status.textContent = count + ' itens importados com sucesso!';
+            status.className = 'import-status success';
           }
         } catch {
-          if (versionsStatus) {
-            versionsStatus.textContent = 'Não foi possível restaurar essa versão.';
-            versionsStatus.className = 'import-status error';
+          if (status) {
+            status.textContent = 'Erro ao importar. Verifique o arquivo.';
+            status.className = 'import-status error';
           }
         }
+        e.target.value = '';
       });
-    });
-  }
-  const btnExport = document.getElementById('btn-export');
-  if (btnExport && btnExport.dataset.boundClick !== '1') {
-    btnExport.dataset.boundClick = '1';
-    btnExport.addEventListener('click', () => window.Storage.exportData());
-  }
+    }
 
-  const btnImport = document.getElementById('btn-import');
-  const importFile = document.getElementById('import-file');
-  if (btnImport && importFile && btnImport.dataset.boundClick !== '1') {
-    btnImport.dataset.boundClick = '1';
-    btnImport.addEventListener('click', () => importFile.click());
-  }
+    const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
+    if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
+      refreshVersionsBtn.dataset.boundClick = '1';
+      refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
+    }
 
-  if (importFile && importFile.dataset.boundChange !== '1') {
-    importFile.dataset.boundChange = '1';
-    importFile.addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const status = document.getElementById('import-status');
-      try {
-        const count = await window.Storage.importData(file);
+    refreshAvatar();
+    refreshProfileHeader();
+    refreshLocalVersions();
 
-        if (window.App && typeof window.App.renderAllEras === 'function') {
-          window.App.renderAllEras();
-        }
-        if (window.App && typeof window.App.renderDebutHighlights === 'function') {
-          window.App.renderDebutHighlights();
-        }
-        if (typeof window.renderizarRecentes === 'function') {
-          window.renderizarRecentes();
-        }
-
-        refreshAvatar();
-        refreshProfileHeader();
-        refreshLocalVersions();
-
-
-        if (status) {
-          status.textContent = count + ' itens importados com sucesso!';
-          status.className = 'import-status success';
-        }
-      } catch {
-        if (status) {
-          status.textContent = 'Erro ao importar. Verifique o arquivo.';
-          status.className = 'import-status error';
-        }
-      }
-      e.target.value = '';
-    });
+    return { refreshLocalVersions };
   }
 
-  const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
-  if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
-    refreshVersionsBtn.dataset.boundClick = '1';
-    refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
-  }
+  const { refreshLocalVersions } = bindBackupAndVersionControls();
 
-  refreshAvatar();
-  refreshProfileHeader();
-  refreshLocalVersions();
-
+  function bindAvatarHeaderPhotoControls() {
   if (editBtn && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';
     editBtn.addEventListener('click', (e) => {
@@ -705,6 +715,10 @@ function initShellInteractions() {
       }
     });
   });
+
+  }
+
+  bindAvatarHeaderPhotoControls();
 
   const saveBtn = document.getElementById('settings-save-btn');
   const saveStatus = document.getElementById('settings-save-status');
@@ -968,6 +982,9 @@ function initShellInteractions() {
     isBirthdateExpanded = false;
   }
 
+  let openEditProfileModal = null;
+
+  function bindProfileEditModalControls() {
   loadProfileForm();
   forceCloseBirthdatePanel();
 
@@ -1145,6 +1162,11 @@ function initShellInteractions() {
       }
     });
   }
+    return { openEditProfileModal };
+  }
+
+  const profileEditModalControls = bindProfileEditModalControls();
+  openEditProfileModal = profileEditModalControls.openEditProfileModal;
 
   // ===== PERFIL (EVERMORE) =====
   function updateProfilePage() {
@@ -1263,6 +1285,7 @@ function initShellInteractions() {
   updateProfilePage();
 
 
+  function bindProfileNavigationControls() {
   const profileBackBtn = document.querySelector('.x-profile-back');
   if (profileBackBtn && profileBackBtn.dataset.boundClick !== '1') {
     profileBackBtn.dataset.boundClick = '1';
@@ -1279,7 +1302,7 @@ function initShellInteractions() {
     btnEditProfile.dataset.boundClick = '1';
     btnEditProfile.addEventListener('click', (e) => {
       e.preventDefault();
-      openEditProfileModal();
+      if (typeof openEditProfileModal === 'function') openEditProfileModal();
     });
   }
 
@@ -1321,6 +1344,11 @@ function initShellInteractions() {
     });
   }
 
+  }
+
+  bindProfileNavigationControls();
+
+  function bindBioInlineEditorControls() {
   // ===== BIO INLINE EDIT =====
   const bioText = document.getElementById('profile-bio');
   const bioEdit = document.getElementById('profile-bio-edit');
@@ -1395,8 +1423,13 @@ function initShellInteractions() {
     bioSave.addEventListener('click', saveBio);
   }
 
+  }
+
+  bindBioInlineEditorControls();
+
   // Expor funcao para atualizar perfil
   window.updateProfilePage = updateProfilePage;
 }
 
 export default initShellInteractions;
+

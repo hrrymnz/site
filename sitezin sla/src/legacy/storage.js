@@ -19,6 +19,8 @@ const Storage = {
   PROFILE_SETTINGS_KEY: "swiftProfileSettings",
   UI_PREFS_KEY: "swiftUiPrefs",
   LOCAL_VERSIONS_KEY: "swiftLocalVersions",
+  AVATAR_KEY: "swiftAvatar",
+  HEADER_KEY: "swiftProfileHeader",
   STATE_SCOPE: "default",
   currentUserId: null,
   currentWorkspace: "default",
@@ -634,11 +636,7 @@ const Storage = {
     });
   },
 
-  // ===== 7) FOTO DE PERFIL =====
-  AVATAR_KEY: "swiftAvatar",
-  HEADER_KEY: "swiftProfileHeader",
-
-  // ===== 8) SETTINGS PROFILE =====
+  // ===== 7) SETTINGS PROFILE =====
   getProfileSettings() {
     return JSON.parse(localStorage.getItem(this.PROFILE_SETTINGS_KEY)) || {};
   },

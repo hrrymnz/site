@@ -63,7 +63,8 @@ const App = {
       reputation: "Reputation",
       lover: "Lover",
       folklore: "Folklore",
-      settings: "Settings"
+      evermore: "Evermore",
+      settings: "Configuracoes"
     };
     const key = this.normalizeEra(era);
     return labels[key] || "Debut";
@@ -405,7 +406,8 @@ const App = {
     { id: "__page-reputation", title: "Reputation", era: "reputation", keywords: [] },
     { id: "__page-lover", title: "Lover", era: "lover", keywords: [] },
     { id: "__page-folklore", title: "Folklore", era: "folklore", keywords: [] },
-    { id: "__page-settings", title: "Settings", era: "settings", keywords: ["configurações", "configurações", "preferências", "perfil", "profile", "backup", "exportar", "importar", "segurança"] }
+    { id: "__page-evermore", title: "Evermore", era: "evermore", keywords: ["perfil", "profile", "usuario", "conta"] },
+    { id: "__page-settings", title: "Configuracoes", era: "settings", keywords: ["configuracoes", "preferencias", "perfil", "profile", "backup", "exportar", "importar", "seguranca", "settings"] }
   ],
 
   searchPages(query) {
