@@ -1609,6 +1609,33 @@ button {
 .highlight-list .highlight-row.era-folklore { --recent-era-color: #756f65; --recent-row-bg: rgba(138, 131, 120, 0.06); }
 .highlight-list .highlight-row.era-settings { --recent-era-color: #3349ff; --recent-row-bg: rgba(51, 73, 255, 0.05); }
 
+/* Debut: alinhamento consistente entre Itens Fixados e Mais Acessados */
+#page-debut .highlights-grid {
+  align-items: start;
+}
+
+#page-debut .highlights-grid .highlight-section {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+}
+
+#page-debut .highlights-grid .highlight-section > .painel-superficie {
+  flex: none;
+  min-height: 152px;
+  display: flex;
+}
+
+#page-debut .highlights-grid .highlight-section .highlight-list {
+  width: 100%;
+  align-content: start;
+}
+
+#page-debut .highlights-grid .highlight-section .card-header h3 {
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
 .settings-section {
   padding: 10px 0;
 }
