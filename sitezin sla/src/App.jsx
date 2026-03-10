@@ -311,7 +311,16 @@ function App() {
                 </div>
                 <div className="red-note-form" id="red-note-form" style={{ display: 'none' }}>
                   <input type="text" id="red-note-title" placeholder="Titulo da nota" />
-                  <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
+                  <div className="red-note-toolbar">
+                    <div className="red-note-mode-group">
+                      <button type="button" className="red-note-mode-btn active" id="red-note-mode-preview">Preview</button>
+                      <button type="button" className="red-note-mode-btn" id="red-note-mode-split">Editar</button>
+                    </div>
+                  </div>
+                  <div className="red-note-md-layout is-preview" id="red-note-md-layout">
+                    <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
+                    <article id="red-note-preview" className="red-note-markdown-body markdown-body"></article>
+                  </div>
                   <div className="red-note-actions">
                     <small id="red-note-meta"></small>
                     <button type="button" className="red-note-save-btn" id="red-note-save-btn">Salvar</button>

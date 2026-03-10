@@ -19,6 +19,7 @@ const App = {
   redSelectedNoteId: "",
   redNoteDraft: null,
   redNoteSaveTimer: null,
+  redNoteViewMode: "preview",
   redNotesViewMode: "list",
   redNotesFilter: "all",
   pendingDeleteNoteId: null,
@@ -118,6 +119,33 @@ const App = {
     });
 
     return template.innerHTML;
+  },
+
+  renderRedNotePreview(markdown) {
+    const preview = document.getElementById("red-note-preview");
+    if (!preview) return;
+    const source = String(markdown || "");
+    const plain = source.trim();
+    if (!plain) {
+      preview.innerHTML = '<p class="red-note-preview-empty">Sem conteúdo.</p>';
+      return;
+    }
+
+    const safe = this.escapeHtml(source).replace(/\r?\n/g, "<br>");
+    preview.innerHTML = '<p class="red-note-preview-text">' + safe + "</p>";
+  },
+
+  setRedNoteViewMode(mode) {
+    this.redNoteViewMode = mode === "split" ? "split" : "preview";
+    const layout = document.getElementById("red-note-md-layout");
+    const previewBtn = document.getElementById("red-note-mode-preview");
+    const splitBtn = document.getElementById("red-note-mode-split");
+    if (layout) {
+      layout.classList.toggle("is-split", this.redNoteViewMode === "split");
+      layout.classList.toggle("is-preview", this.redNoteViewMode !== "split");
+    }
+    if (previewBtn) previewBtn.classList.toggle("active", this.redNoteViewMode === "preview");
+    if (splitBtn) splitBtn.classList.toggle("active", this.redNoteViewMode === "split");
   },
 
   decorateMarkdownLinks(root) {
@@ -1227,6 +1255,8 @@ const App = {
     const saveBtn = document.getElementById("red-note-save-btn");
     const deleteBtn = document.getElementById("red-note-delete-btn");
     const checklistSaveBtn = document.getElementById("red-checklist-save-btn");
+    const previewModeBtn = document.getElementById("red-note-mode-preview");
+    const splitModeBtn = document.getElementById("red-note-mode-split");
 
     if (!searchInput || !newBtn || !list || !titleInput || !contentInput || !saveBtn || !deleteBtn || !checklistSaveBtn) return;
     if (list.dataset.boundRedNotes === "1") return;
@@ -1317,14 +1347,24 @@ const App = {
       });
     };
 
+    if (previewModeBtn && splitModeBtn) {
+      previewModeBtn.addEventListener("click", () => this.setRedNoteViewMode("preview"));
+      splitModeBtn.addEventListener("click", () => this.setRedNoteViewMode("split"));
+    }
+
     titleInput.addEventListener("input", scheduleRedAutosave);
-    contentInput.addEventListener("input", scheduleRedAutosave);
+    contentInput.addEventListener("input", () => {
+      this.renderRedNotePreview(String(contentInput.value || ""));
+      scheduleRedAutosave();
+    });
 
     deleteBtn.addEventListener("click", () => {
       if (!this.redSelectedNoteId) return;
       this.openDeleteNoteModal(this.redSelectedNoteId);
     });
 
+    this.setRedNoteViewMode(this.redNoteViewMode);
+    this.renderRedNotePreview(String(contentInput.value || ""));
     this.setupCreateRedModal();
     this.setupRedEditorModal();
   },
@@ -1715,6 +1755,7 @@ const App = {
       }
       form.style.display = "none";
       if (checklistForm) checklistForm.style.display = "none";
+      this.renderRedNotePreview("");
       if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
       return;
     }
@@ -1737,6 +1778,8 @@ const App = {
     } else {
       if (document.activeElement !== titleInput) titleInput.value = selected.title || "";
       if (document.activeElement !== contentInput) contentInput.value = selected.content || "";
+      this.renderRedNotePreview(String(contentInput.value || ""));
+      this.setRedNoteViewMode(this.redNoteViewMode);
       const stamp = new Date(selected.updatedAt || selected.createdAt || Date.now());
       meta.textContent = Number.isNaN(stamp.getTime()) ? "" : "Atualizada em " + stamp.toLocaleDateString("pt-BR") + " " + stamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     }
