@@ -7,6 +7,9 @@
 // 5) Renderizacao por era + filtros
 // 6) Eventos dos cards + drag and drop
 // 7) Highlights da pagina Debut
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+
 const App = {
   currentEra: "debut",
   currentTagFilter: null,
@@ -23,6 +26,10 @@ const App = {
   pendingDeleteContext: null,
   redChecklistSaveTimer: null,
   spotifyCoverPending: {},
+  folkloreSelectedMarkdownId: "",
+  folkloreMarkdownViewMode: "preview",
+  folkloreMarkdownDraft: null,
+  folkloreMarkdownSaveTimer: null,
 
   // ===== HELPERS =====
   // Funcoes utilitarias para escapar texto, normalizar dados e construir labels da interface.
@@ -43,6 +50,43 @@ const App = {
 
   formatHost(url) {
     try { return new URL(url).hostname; } catch { return url; }
+  },
+
+  stripMarkdownToText(value) {
+    const raw = String(value || "");
+    return raw
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/`([^`]*)`/g, "$1")
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/^>\s+/gm, "")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/[*_~]/g, "")
+      .replace(/\r?\n+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  renderMarkdownHtml(markdown) {
+    const source = String(markdown || "");
+    let html = "";
+    try {
+      html = marked.parse(source, { gfm: true, breaks: true });
+    } catch {
+      html = "<p>" + this.escapeHtml(source).replace(/\n/g, "<br>") + "</p>";
+    }
+    if (DOMPurify && typeof DOMPurify.sanitize === "function") {
+      return DOMPurify.sanitize(html);
+    }
+    return html;
+  },
+
+  decorateMarkdownLinks(root) {
+    if (!root) return;
+    root.querySelectorAll("a").forEach((link) => {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
+    });
   },
 
   normalizeEra(era) {
@@ -181,6 +225,35 @@ const App = {
     '</div>';
   },
 
+  renderFolkloreMarkdownCard(item) {
+    const previewText = this.stripMarkdownToText(item.content).slice(0, 150);
+    const preview = previewText ? this.escapeHtml(previewText) : "Sem conteudo";
+    const updated = new Date(item.updatedAt || item.createdAt || Date.now());
+    const updatedLabel = Number.isNaN(updated.getTime())
+      ? ""
+      : "Atualizado em " + updated.toLocaleDateString("pt-BR");
+
+    return '<div class="item-card folklore-md-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
+      '<div class="item-card-header">' +
+        '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
+        '<div class="item-card-actions">' +
+          (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
+          '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
+            '<i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i>' +
+          '</button>' +
+          '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
+        '</div>' +
+      '</div>' +
+      '<strong class="item-title">' + this.escapeHtml(item.title || "Documento Markdown") + '</strong>' +
+      '<p class="item-content-preview">' + preview + (previewText.length === 150 ? "..." : "") + '</p>' +
+      (item.tags.length ? '<div class="item-tags">' + item.tags.map(t => '<span class="item-tag" data-tag="' + this.escapeHtml(t) + '">' + this.escapeHtml(t) + '</span>').join("") + '</div>' : '') +
+      '<div class="item-meta">' +
+        '<span>' + this.escapeHtml(updatedLabel) + '</span>' +
+        '<button type="button" class="folklore-open-md-btn" data-id="' + this.escapeHtml(item.id) + '">Abrir leitura</button>' +
+      '</div>' +
+    '</div>';
+  },
+
   getSpotifyEmbedUrl(url) {
     const value = String(url || "").trim();
     if (!value) return "";
@@ -288,6 +361,7 @@ const App = {
     const icons = {
       link: '<i data-lucide="link"></i>',
       note: '<i data-lucide="file-text"></i>',
+      markdown: '<i data-lucide="file-code-2"></i>',
       checklist: '<i data-lucide="check-square"></i>',
       repo: '<i data-lucide="folder-git-2"></i>',
       playlist: '<i data-lucide="music"></i>'
@@ -490,6 +564,14 @@ const App = {
 
       const item = e.target.closest(".search-result-item");
       if (item && item.dataset.id) {
+        const currentItem = Storage.getAll().find((entry) => entry.id === item.dataset.id);
+        if (currentItem && currentItem.category === "folklore" && currentItem.type === "markdown") {
+          e.preventDefault();
+          this.navigateToEra("folklore");
+          this.folkloreSelectedMarkdownId = currentItem.id;
+          this.folkloreMarkdownViewMode = "preview";
+          this.renderEra("folklore");
+        }
         Storage.trackAccess(item.dataset.id);
         results.classList.remove("visible");
         input.value = "";
@@ -526,9 +608,9 @@ const App = {
     });
 
     form.querySelector("#item-type").addEventListener("change", (e) => {
-      const isNote = e.target.value === "note";
-      form.querySelector(".field-url").style.display = isNote ? "none" : "block";
-      form.querySelector(".field-content").style.display = isNote ? "block" : "none";
+      const textMode = e.target.value === "note" || e.target.value === "markdown";
+      form.querySelector(".field-url").style.display = textMode ? "none" : "block";
+      form.querySelector(".field-content").style.display = textMode ? "block" : "none";
     });
 
     form.addEventListener("submit", (e) => {
@@ -570,24 +652,37 @@ const App = {
     const select = modal.querySelector("#item-category");
     const form = document.getElementById("form-add-item");
     if (!form) return;
+    const modalTitleEl = modal.querySelector(".modal-header h3");
     form.reset();
     if (select) select.value = targetEra;
 
     const typeField = form.querySelector("#item-type");
+    const typeFieldGroup = typeField ? typeField.closest(".form-group") : null;
     const titleField = form.querySelector("#item-title");
     const urlField = form.querySelector("#item-url");
     const contentField = form.querySelector("#item-content");
     const tagsField = form.querySelector("#item-tags");
-    const isNote = (preset.type || "").toLowerCase() === "note";
+    const defaultType = targetEra === "folklore" ? "markdown" : "link";
+    const nextType = String(preset.type || defaultType).toLowerCase();
+    const isTextMode = nextType === "note" || nextType === "markdown";
+    const lockType = !!preset.lockType;
+    const modalTitle = String(preset.modalTitle || (preset.title ? ("Adicionar " + preset.title) : "Novo Item"));
 
-    if (typeField) typeField.value = preset.type || "link";
+    if (modalTitleEl) modalTitleEl.textContent = modalTitle;
+    if (typeField) {
+      typeField.value = nextType;
+      typeField.disabled = lockType;
+    }
+    if (typeFieldGroup) {
+      typeFieldGroup.style.display = lockType ? "none" : "block";
+    }
     if (titleField) titleField.value = preset.title || "";
     if (urlField) urlField.value = preset.url || "";
     if (contentField) contentField.value = preset.content || "";
     if (tagsField) tagsField.value = Array.isArray(preset.tags) ? preset.tags.join(", ") : "";
 
-    form.querySelector(".field-url").style.display = isNote ? "none" : "block";
-    form.querySelector(".field-content").style.display = isNote ? "block" : "none";
+    form.querySelector(".field-url").style.display = isTextMode ? "none" : "block";
+    form.querySelector(".field-content").style.display = isTextMode ? "block" : "none";
     modal.classList.add("visible");
   },
 
@@ -595,6 +690,148 @@ const App = {
     document.querySelectorAll(".btn-add-item").forEach(btn => {
       btn.addEventListener("click", () => this.openModal(btn.dataset.era));
     });
+  },
+
+  openFolkloreMarkdownDocument(itemId) {
+    if (!itemId) return;
+    const item = Storage.getByCategory("folklore").find((entry) => entry.id === itemId && entry.type === "markdown");
+    if (!item) return;
+    this.folkloreSelectedMarkdownId = itemId;
+    this.folkloreMarkdownViewMode = "preview";
+    Storage.trackAccess(itemId);
+    this.renderEra("folklore");
+    this.renderDebutHighlights();
+    if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+  },
+
+  closeFolkloreMarkdownDocument() {
+    this.folkloreSelectedMarkdownId = "";
+    this.folkloreMarkdownDraft = null;
+    clearTimeout(this.folkloreMarkdownSaveTimer);
+    this.renderEra("folklore");
+  },
+
+  persistFolkloreMarkdownDraft(itemId, updates) {
+    this.folkloreMarkdownDraft = { id: itemId, ...updates };
+    clearTimeout(this.folkloreMarkdownSaveTimer);
+    this.folkloreMarkdownSaveTimer = setTimeout(() => {
+      if (!this.folkloreMarkdownDraft || this.folkloreMarkdownDraft.id !== itemId) return;
+      Storage.updateItem(itemId, {
+        title: this.folkloreMarkdownDraft.title,
+        content: this.folkloreMarkdownDraft.content,
+        updatedAt: new Date().toISOString()
+      });
+      this.renderDebutHighlights();
+      this.folkloreMarkdownDraft = null;
+    }, 220);
+  },
+
+  renderFolkloreMarkdownEditor(container, item) {
+    const safeTitle = this.escapeHtml(String(item.title || "Documento Markdown"));
+    const contentValue = String(item.content || "");
+    const safeContent = this.escapeHtml(contentValue);
+    const stamp = new Date(item.updatedAt || item.createdAt || Date.now());
+    const dateLabel = Number.isNaN(stamp.getTime())
+      ? ""
+      : "Atualizado em " + stamp.toLocaleDateString("pt-BR") + " " + stamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    container.innerHTML =
+      '<section class="folklore-md-shell">' +
+        '<header class="folklore-md-topbar">' +
+          '<button type="button" class="folklore-md-back-btn"><i data-lucide="arrow-left"></i> Voltar</button>' +
+          '<input type="text" class="folklore-md-title-input" value="' + safeTitle + '" maxlength="120" />' +
+          '<div class="folklore-md-toolbar-actions">' +
+            '<button type="button" class="folklore-md-mode-btn ' + (this.folkloreMarkdownViewMode === "preview" ? "active" : "") + '" data-mode="preview">Preview</button>' +
+            '<button type="button" class="folklore-md-mode-btn ' + (this.folkloreMarkdownViewMode === "split" ? "active" : "") + '" data-mode="split">Editar</button>' +
+            '<button type="button" class="folklore-md-upload-btn"><i data-lucide="upload"></i> Upload .md</button>' +
+            '<button type="button" class="folklore-md-delete-btn"><i data-lucide="trash-2"></i></button>' +
+          '</div>' +
+        '</header>' +
+        '<small class="folklore-md-meta">' + this.escapeHtml(dateLabel) + '</small>' +
+        '<input type="file" class="folklore-md-file-input" accept=".md,.txt,text/markdown,text/plain" />' +
+        '<div class="folklore-md-layout ' + (this.folkloreMarkdownViewMode === "split" ? "is-split" : "is-preview") + '">' +
+          '<textarea class="folklore-md-editor" spellcheck="false">' + safeContent + '</textarea>' +
+          '<article class="folklore-markdown-body markdown-body"></article>' +
+        '</div>' +
+      '</section>';
+
+    const backBtn = container.querySelector(".folklore-md-back-btn");
+    const modeButtons = container.querySelectorAll(".folklore-md-mode-btn");
+    const uploadBtn = container.querySelector(".folklore-md-upload-btn");
+    const deleteBtn = container.querySelector(".folklore-md-delete-btn");
+    const fileInput = container.querySelector(".folklore-md-file-input");
+    const titleInput = container.querySelector(".folklore-md-title-input");
+    const editor = container.querySelector(".folklore-md-editor");
+    const preview = container.querySelector(".folklore-markdown-body");
+    const layout = container.querySelector(".folklore-md-layout");
+
+    if (!titleInput || !editor || !preview || !layout || !fileInput) return;
+
+    const renderPreview = () => {
+      preview.innerHTML = this.renderMarkdownHtml(editor.value);
+      this.decorateMarkdownLinks(preview);
+    };
+
+    const setMode = (mode) => {
+      this.folkloreMarkdownViewMode = mode === "split" ? "split" : "preview";
+      layout.classList.toggle("is-split", this.folkloreMarkdownViewMode === "split");
+      layout.classList.toggle("is-preview", this.folkloreMarkdownViewMode !== "split");
+      modeButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.mode === this.folkloreMarkdownViewMode));
+    };
+
+    modeButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setMode(btn.dataset.mode || "preview");
+      });
+    });
+
+    titleInput.addEventListener("input", () => {
+      this.persistFolkloreMarkdownDraft(item.id, {
+        title: String(titleInput.value || "").trim() || "Sem titulo",
+        content: String(editor.value || "")
+      });
+    });
+
+    editor.addEventListener("input", () => {
+      renderPreview();
+      this.persistFolkloreMarkdownDraft(item.id, {
+        title: String(titleInput.value || "").trim() || "Sem titulo",
+        content: String(editor.value || "")
+      });
+    });
+
+    uploadBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = String((ev.target && ev.target.result) || "");
+        if (!String(titleInput.value || "").trim()) {
+          titleInput.value = String(file.name || "Anotacao").replace(/\.[^.]+$/, "");
+        }
+        editor.value = text;
+        renderPreview();
+        setMode("split");
+        this.persistFolkloreMarkdownDraft(item.id, {
+          title: String(titleInput.value || "").trim() || "Sem titulo",
+          content: text
+        });
+      };
+      reader.readAsText(file, "utf-8");
+      event.target.value = "";
+    });
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", () => {
+        this.openDeleteNoteModal(item.id, { era: "folklore", closeRedEditor: false });
+      });
+    }
+    if (backBtn) backBtn.addEventListener("click", () => this.closeFolkloreMarkdownDocument());
+
+    renderPreview();
+    setMode(this.folkloreMarkdownViewMode);
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
   },
 
   // ===== RENDER ERA PAGES =====
@@ -619,6 +856,16 @@ const App = {
       const redItems = Storage.getByCategory("red").filter((item) => item.type === "note" || item.type === "checklist");
       this.renderRedNotes(redItems);
       items = items.filter((item) => item.type !== "note" && item.type !== "checklist");
+    }
+
+    if (era === "folklore" && this.folkloreSelectedMarkdownId) {
+      const selectedMarkdown = Storage.getByCategory("folklore")
+        .find((item) => item.id === this.folkloreSelectedMarkdownId && item.type === "markdown");
+      if (selectedMarkdown) {
+        this.renderFolkloreMarkdownEditor(container, selectedMarkdown);
+        return;
+      }
+      this.folkloreSelectedMarkdownId = "";
     }
 
     if (era === "fearless" && items.length === 0) {
@@ -691,22 +938,32 @@ const App = {
           subtitle: "Figma, Notion, Linear, VS Code web...",
           cta: "+ Adicionar ferramenta",
           suggestions: [
-            { label: "Figma", title: "Figma", url: "https://www.figma.com/" },
-            { label: "Notion", title: "Notion", url: "https://www.notion.so/" },
-            { label: "Linear", title: "Linear", url: "https://linear.app/" }
+            { label: "Figma", title: "Figma", url: "https://www.figma.com/", tags: ["design"], modalTitle: "Adicionar Figma", lockType: true },
+            { label: "Notion", title: "Notion", url: "https://www.notion.so/", tags: ["gestao"], modalTitle: "Adicionar Notion", lockType: true },
+            { label: "Linear", title: "Linear", url: "https://linear.app/", tags: ["dev"], modalTitle: "Adicionar Linear", lockType: true }
           ]
         },
         lover: {
           icon: "heart",
           title: "Seus cantos favoritos da internet",
           subtitle: "Os sites que voce abre so pra relaxar",
-          cta: "+ Adicionar favorito"
+          cta: "+ Adicionar favorito",
+          suggestions: [
+            { label: "Netflix", title: "Netflix", url: "https://www.netflix.com/", tags: ["streaming"], modalTitle: "Adicionar Netflix", lockType: true },
+            { label: "YouTube", title: "YouTube", url: "https://www.youtube.com/", tags: ["video"], modalTitle: "Adicionar YouTube", lockType: true },
+            { label: "Twitter/X", title: "Twitter/X", url: "https://x.com/", tags: ["social"], modalTitle: "Adicionar Twitter/X", lockType: true }
+          ]
         },
         folklore: {
           icon: "book-open",
           title: "Leituras para quando tiver tempo",
           subtitle: "Artigos, docs, threads, referencias",
-          cta: "+ Salvar leitura"
+          cta: "+ Salvar leitura",
+          suggestions: [
+            { label: "dev.to", title: "dev.to", url: "https://dev.to/", tags: ["leitura"], modalTitle: "Salvar dev.to", lockType: true },
+            { label: "Medium", title: "Medium", url: "https://medium.com/", tags: ["leitura"], modalTitle: "Salvar Medium", lockType: true },
+            { label: "MDN", title: "MDN", url: "https://developer.mozilla.org/", tags: ["docs"], modalTitle: "Salvar MDN", lockType: true }
+          ]
         }
       };
 
@@ -719,7 +976,7 @@ const App = {
       const eraKey = this.normalizeEra(era);
       const chipsMarkup = Array.isArray(emptyCfg.suggestions) && emptyCfg.suggestions.length
         ? '<div class="era-empty-chips">' + emptyCfg.suggestions.map((chip) =>
-            '<button type="button" class="era-empty-chip" data-title="' + this.escapeHtml(chip.title || chip.label || "") + '" data-url="' + this.escapeHtml(chip.url || "") + '">' + this.escapeHtml(chip.label || "") + '</button>'
+            '<button type="button" class="era-empty-chip" data-title="' + this.escapeHtml(chip.title || chip.label || "") + '" data-url="' + this.escapeHtml(chip.url || "") + '" data-tags="' + this.escapeHtml((chip.tags || []).join(",")) + '" data-modal-title="' + this.escapeHtml(chip.modalTitle || "") + '" data-lock-type="' + (chip.lockType ? "1" : "0") + '">' + this.escapeHtml(chip.label || "") + '</button>'
           ).join("") + '</div>'
         : "";
 
@@ -747,10 +1004,17 @@ const App = {
 
       container.querySelectorAll(".era-empty-chip").forEach((chip) => {
         chip.addEventListener("click", () => {
+          const tags = String(chip.dataset.tags || "")
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean);
           this.openPrefilledModal(era, {
             type: "link",
             title: String(chip.dataset.title || "").trim(),
-            url: String(chip.dataset.url || "").trim()
+            url: String(chip.dataset.url || "").trim(),
+            tags,
+            modalTitle: String(chip.dataset.modalTitle || "").trim(),
+            lockType: chip.dataset.lockType === "1"
           });
         });
       });
@@ -763,6 +1027,9 @@ const App = {
       const safeUrl = this.sanitizeUrl(item.url);
       if (era === "fearless") {
         return this.renderFearlessRepoCard(item, safeUrl);
+      }
+      if (era === "folklore" && item.type === "markdown") {
+        return this.renderFolkloreMarkdownCard(item);
       }
       if (era === "speak-now" && /(?:open\.spotify\.com|^spotify:)/i.test(String(item.url || ""))) {
         const widget = this.renderSpeakNowPlaylistWidget(item, safeUrl);
@@ -1345,6 +1612,11 @@ const App = {
           this.renderDebutHighlights();
           if (typeof renderizarRecentes === "function") renderizarRecentes();
         }, 100);
+      });
+    });
+    container.querySelectorAll(".folklore-open-md-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.openFolkloreMarkdownDocument(btn.dataset.id);
       });
     });
 

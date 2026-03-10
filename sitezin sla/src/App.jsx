@@ -746,6 +746,7 @@ function App() {
                 <option value="repo">Repositorio</option>
                 <option value="playlist">Playlist</option>
                 <option value="note">Nota</option>
+                <option value="markdown">Markdown (Folklore)</option>
               </select>
             </div>
             <div className="form-group">
