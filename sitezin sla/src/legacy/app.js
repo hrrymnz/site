@@ -272,7 +272,7 @@ const App = {
       ? ""
       : "Atualizado em " + updated.toLocaleDateString("pt-BR");
 
-    return '<div class="item-card folklore-md-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
+    return '<div class="item-card folklore-md-card ' + (item.pinned ? "pinned" : "") + '" draggable="false" data-id="' + item.id + '">' +
       '<div class="item-card-header">' +
         '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
         '<div class="item-card-actions">' +
@@ -415,6 +415,7 @@ const App = {
     this.setupModal();
     this.setupAddButtons();
     this.setupFolkloreMarkdownUpload();
+    this.setupDeleteNoteModal();
     this.setupRedNotes();
 
     const prefs = Storage.getUiPrefs ? Storage.getUiPrefs() : {};
@@ -804,18 +805,48 @@ const App = {
   },
 
   persistFolkloreMarkdownDraft(itemId, updates) {
-    this.folkloreMarkdownDraft = { id: itemId, ...updates };
+    const selected = Storage.getAll().find((item) => item.id === itemId);
+    if (!selected || selected.type !== "markdown") return;
+
+    const nextTitle = String(updates && updates.title ? updates.title : "").trim() || "Sem titulo";
+    const nextContent = String(updates && updates.content ? updates.content : "");
+    const currentTitle = String(selected.title || "");
+    const currentContent = String(selected.content || "");
+
+    if (nextTitle === currentTitle && nextContent === currentContent) {
+      this.folkloreMarkdownDraft = null;
+      clearTimeout(this.folkloreMarkdownSaveTimer);
+      return;
+    }
+
+    this.folkloreMarkdownDraft = { id: itemId, title: nextTitle, content: nextContent };
     clearTimeout(this.folkloreMarkdownSaveTimer);
     this.folkloreMarkdownSaveTimer = setTimeout(() => {
       if (!this.folkloreMarkdownDraft || this.folkloreMarkdownDraft.id !== itemId) return;
+
+      const latest = Storage.getAll().find((item) => item.id === itemId);
+      if (!latest || latest.type !== "markdown") return;
+      const latestTitle = String(latest.title || "");
+      const latestContent = String(latest.content || "");
+      if (this.folkloreMarkdownDraft.title === latestTitle && this.folkloreMarkdownDraft.content === latestContent) {
+        this.folkloreMarkdownDraft = null;
+        return;
+      }
+
       Storage.updateItem(itemId, {
         title: this.folkloreMarkdownDraft.title,
         content: this.folkloreMarkdownDraft.content,
         updatedAt: new Date().toISOString()
       });
+      const meta = document.querySelector("#items-folklore .folklore-md-meta");
+      if (meta && this.folkloreSelectedMarkdownId === itemId) {
+        const stamp = new Date();
+        meta.textContent = "Atualizado em " + stamp.toLocaleDateString("pt-BR") + " " + stamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
       this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
       this.folkloreMarkdownDraft = null;
-    }, 220);
+    }, 350);
   },
 
   renderFolkloreMarkdownEditor(container, item) {
@@ -836,6 +867,7 @@ const App = {
             '<button type="button" class="folklore-md-mode-btn ' + (this.folkloreMarkdownViewMode === "preview" ? "active" : "") + '" data-mode="preview">Preview</button>' +
             '<button type="button" class="folklore-md-mode-btn ' + (this.folkloreMarkdownViewMode === "split" ? "active" : "") + '" data-mode="split">Editar</button>' +
             '<button type="button" class="folklore-md-upload-btn"><i data-lucide="upload"></i> Upload .md</button>' +
+            '<button type="button" class="folklore-md-save-btn"><i data-lucide="save"></i> Salvar</button>' +
             '<button type="button" class="folklore-md-delete-btn"><i data-lucide="trash-2"></i></button>' +
           '</div>' +
         '</header>' +
@@ -850,6 +882,7 @@ const App = {
     const backBtn = container.querySelector(".folklore-md-back-btn");
     const modeButtons = container.querySelectorAll(".folklore-md-mode-btn");
     const uploadBtn = container.querySelector(".folklore-md-upload-btn");
+    const saveBtn = container.querySelector(".folklore-md-save-btn");
     const deleteBtn = container.querySelector(".folklore-md-delete-btn");
     const fileInput = container.querySelector(".folklore-md-file-input");
     const titleInput = container.querySelector(".folklore-md-title-input");
@@ -905,18 +938,29 @@ const App = {
         editor.value = text;
         renderPreview();
         setMode("split");
-        this.persistFolkloreMarkdownDraft(item.id, {
-          title: String(titleInput.value || "").trim() || "Sem titulo",
-          content: text
-        });
       };
       reader.readAsText(file, "utf-8");
       event.target.value = "";
     });
 
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        this.folkloreMarkdownDraft = null;
+        clearTimeout(this.folkloreMarkdownSaveTimer);
+        Storage.updateItem(item.id, {
+          title: String(titleInput.value || "").trim() || "Sem titulo",
+          content: String(editor.value || ""),
+          updatedAt: new Date().toISOString()
+        });
+        this.renderDebutHighlights();
+        if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+        this.renderEra("folklore");
+      });
+    }
+
     if (deleteBtn) {
       deleteBtn.addEventListener("click", () => {
-        this.openDeleteNoteModal(item.id, { era: "folklore", closeRedEditor: false });
+        this.openDeleteNoteModal(item.id, { era: "folklore", closeRedEditor: false, clearRedSelection: false });
       });
     }
     if (backBtn) backBtn.addEventListener("click", () => this.closeFolkloreMarkdownDocument());
@@ -1115,6 +1159,7 @@ const App = {
       return;
     }
 
+    const draggableAttr = era === "folklore" ? "false" : "true";
     container.innerHTML = items.map(item => {
       const safeUrl = this.sanitizeUrl(item.url);
       if (era === "fearless") {
@@ -1127,7 +1172,7 @@ const App = {
         const widget = this.renderSpeakNowPlaylistWidget(item, safeUrl);
         if (widget) return widget;
       }
-      return '<div class="item-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
+      return '<div class="item-card ' + (item.pinned ? "pinned" : "") + '" draggable="' + draggableAttr + '" data-id="' + item.id + '">' +
         '<div class="item-card-header">' +
           '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
           '<div class="item-card-actions">' +
@@ -1179,9 +1224,11 @@ const App = {
     const list = document.getElementById("red-notes-list");
     const titleInput = document.getElementById("red-note-title");
     const contentInput = document.getElementById("red-note-content");
+    const saveBtn = document.getElementById("red-note-save-btn");
     const deleteBtn = document.getElementById("red-note-delete-btn");
+    const checklistSaveBtn = document.getElementById("red-checklist-save-btn");
 
-    if (!searchInput || !newBtn || !list || !titleInput || !contentInput || !deleteBtn) return;
+    if (!searchInput || !newBtn || !list || !titleInput || !contentInput || !saveBtn || !deleteBtn || !checklistSaveBtn) return;
     if (list.dataset.boundRedNotes === "1") return;
     list.dataset.boundRedNotes = "1";
 
@@ -1251,24 +1298,33 @@ const App = {
       if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
     });
 
-    const saveDraft = () => {
+    saveBtn.addEventListener("click", () => {
+      this.saveRedSelectedNote();
+    });
+
+    checklistSaveBtn.addEventListener("click", () => {
+      this.saveRedSelectedChecklist();
+    });
+
+    const scheduleRedAutosave = () => {
       const noteId = this.redSelectedNoteId;
       if (!noteId) return;
+      const selected = Storage.getAll().find((item) => item.id === noteId);
+      if (!selected || selected.type !== "note") return;
       this.persistRedNoteDraft(noteId, {
         title: String(titleInput.value || "").trim() || "Sem título",
         content: String(contentInput.value || "")
       });
     };
 
-    titleInput.addEventListener("input", saveDraft);
-    contentInput.addEventListener("input", saveDraft);
+    titleInput.addEventListener("input", scheduleRedAutosave);
+    contentInput.addEventListener("input", scheduleRedAutosave);
 
     deleteBtn.addEventListener("click", () => {
       if (!this.redSelectedNoteId) return;
       this.openDeleteNoteModal(this.redSelectedNoteId);
     });
 
-    this.setupDeleteNoteModal();
     this.setupCreateRedModal();
     this.setupRedEditorModal();
   },
@@ -1308,10 +1364,17 @@ const App = {
             App.redNoteDraft = null;
             App.renderRedNotes();
             App.renderEra("red");
+          } else if (ctx.era === "folklore") {
+            App.folkloreSelectedMarkdownId = "";
+            App.folkloreMarkdownDraft = null;
+            App.renderEra("folklore");
           } else if (ctx.era) {
             App.renderEra(ctx.era);
           }
 
+          if (typeof App.renderAllEras === "function") {
+            App.renderAllEras();
+          }
           App.renderDebutHighlights();
           if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
         }
@@ -1424,19 +1487,101 @@ const App = {
   },
 
   persistRedNoteDraft(noteId, updates) {
-    this.redNoteDraft = { id: noteId, ...updates };
+    const selected = Storage.getAll().find((item) => item.id === noteId);
+    if (!selected || selected.type !== "note") return;
+
+    const nextTitle = String(updates && updates.title ? updates.title : "").trim() || "Sem título";
+    const nextContent = String(updates && updates.content ? updates.content : "");
+    const currentTitle = String(selected.title || "");
+    const currentContent = String(selected.content || "");
+
+    if (nextTitle === currentTitle && nextContent === currentContent) {
+      this.redNoteDraft = null;
+      clearTimeout(this.redNoteSaveTimer);
+      return;
+    }
+
+    this.redNoteDraft = { id: noteId, title: nextTitle, content: nextContent };
     clearTimeout(this.redNoteSaveTimer);
     this.redNoteSaveTimer = setTimeout(() => {
       if (!this.redNoteDraft || this.redNoteDraft.id !== noteId) return;
+
+      const latest = Storage.getAll().find((item) => item.id === noteId);
+      if (!latest || latest.type !== "note") return;
+      const latestTitle = String(latest.title || "");
+      const latestContent = String(latest.content || "");
+      if (this.redNoteDraft.title === latestTitle && this.redNoteDraft.content === latestContent) {
+        this.redNoteDraft = null;
+        return;
+      }
+
       Storage.updateItem(noteId, {
         title: this.redNoteDraft.title,
         content: this.redNoteDraft.content,
         updatedAt: new Date().toISOString()
       });
-      this.renderRedNotes();
+      const meta = document.getElementById("red-note-meta");
+      if (meta) {
+        const stamp = new Date();
+        meta.textContent = "Atualizada em " + stamp.toLocaleDateString("pt-BR") + " " + stamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      }
       this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
       this.redNoteDraft = null;
-    }, 180);
+    }, 350);
+  },
+
+  saveRedSelectedNote() {
+    const noteId = this.redSelectedNoteId;
+    if (!noteId) return;
+    this.redNoteDraft = null;
+    clearTimeout(this.redNoteSaveTimer);
+    const selected = Storage.getAll().find((item) => item.id === noteId);
+    if (!selected || selected.type !== "note") return;
+
+    const titleInput = document.getElementById("red-note-title");
+    const contentInput = document.getElementById("red-note-content");
+    if (!titleInput || !contentInput) return;
+
+    Storage.updateItem(noteId, {
+      title: String(titleInput.value || "").trim() || "Sem título",
+      content: String(contentInput.value || ""),
+      updatedAt: new Date().toISOString()
+    });
+    this.renderRedNotes();
+    this.renderDebutHighlights();
+    if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+  },
+
+  saveRedSelectedChecklist() {
+    const noteId = this.redSelectedNoteId;
+    if (!noteId) return;
+    const selected = Storage.getAll().find((item) => item.id === noteId);
+    if (!selected || selected.type !== "checklist") return;
+
+    const titleInput = document.getElementById("red-checklist-title");
+    const container = document.getElementById("red-checklist-items");
+    if (!titleInput || !container) return;
+
+    const items = [];
+    container.querySelectorAll(".red-checklist-item").forEach((row, idx) => {
+      const check = row.querySelector(".red-checklist-item-check");
+      const text = row.querySelector(".red-checklist-item-text");
+      items.push({
+        id: "i-" + idx,
+        text: text && text.value ? String(text.value) : "",
+        completed: !!(check && check.checked)
+      });
+    });
+
+    Storage.updateItem(noteId, {
+      title: String(titleInput.value || "").trim() || "Checklist",
+      checklistItems: items,
+      updatedAt: new Date().toISOString()
+    });
+    this.renderRedNotes();
+    this.renderDebutHighlights();
+    if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
   },
 
   createRedNote() {
@@ -1629,60 +1774,61 @@ const App = {
 
   setupRedChecklistItemEvents() {
     const container = document.getElementById("red-checklist-items");
-    const titleInput = document.getElementById("red-checklist-title");
     const addBtn = document.getElementById("red-checklist-add-btn");
     const deleteBtn = document.getElementById("red-checklist-delete-btn");
-    if (!container || !titleInput || !addBtn || !deleteBtn) return;
+    const progressEl = document.getElementById("red-checklist-progress");
+    if (!container || !addBtn || !deleteBtn) return;
     const noteId = this.redSelectedNoteId;
     if (!noteId) return;
 
-    const self = this;
-    const persist = (rerender = false) => {
-      if (!App.redSelectedNoteId || App.redSelectedNoteId !== noteId) return;
-      const items = [];
-      container.querySelectorAll(".red-checklist-item").forEach((row, idx) => {
-        const check = row.querySelector(".red-checklist-item-check");
-        const text = row.querySelector(".red-checklist-item-text");
-        items.push({ id: "i-" + idx, text: (text && text.value) ? String(text.value) : "", completed: !!(check && check.checked) });
-      });
-      Storage.updateItem(noteId, {
-        title: (titleInput && titleInput.value) ? String(titleInput.value).trim() || "Checklist" : "Checklist",
-        checklistItems: items,
-        updatedAt: new Date().toISOString()
-      });
-      self.renderDebutHighlights();
-      if (rerender) self.renderRedNotes();
+    const updateProgress = () => {
+      if (!progressEl) return;
+      const checks = [...container.querySelectorAll(".red-checklist-item-check")];
+      const total = checks.length;
+      const done = checks.filter((entry) => entry.checked).length;
+      progressEl.textContent = total ? done + " de " + total + " concluídos" : "Nenhum item";
+      progressEl.style.display = total ? "block" : "none";
     };
 
-    const debouncedPersist = (rerender = false) => {
-      clearTimeout(self.redChecklistSaveTimer);
-      self.redChecklistSaveTimer = setTimeout(() => persist(rerender), 220);
-    };
-
-    container.querySelectorAll(".red-checklist-item-check").forEach((c) => c.addEventListener("change", () => debouncedPersist(true)));
-    container.querySelectorAll(".red-checklist-item-text").forEach((c) => c.addEventListener("input", () => debouncedPersist(false)));
+    container.querySelectorAll(".red-checklist-item-check").forEach((check) => {
+      check.addEventListener("change", updateProgress);
+    });
     container.querySelectorAll(".red-checklist-item-remove").forEach((btn) => {
       btn.addEventListener("click", () => {
         const row = btn.closest(".red-checklist-item");
         if (row) row.remove();
-        debouncedPersist(true);
+        updateProgress();
+        if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
       });
     });
-    titleInput.removeEventListener("input", titleInput._redChecklistTitleHandler);
-    titleInput._redChecklistTitleHandler = () => debouncedPersist(false);
-    titleInput.addEventListener("input", titleInput._redChecklistTitleHandler);
 
     addBtn.replaceWith(addBtn.cloneNode(true));
     document.getElementById("red-checklist-add-btn").addEventListener("click", () => {
-      const current = Storage.getAll().find((i) => i.id === noteId);
-      const prev = (current && Array.isArray(current.checklistItems)) ? [...current.checklistItems] : [];
-      prev.push({ id: "i-" + Date.now(), text: "", completed: false });
-      Storage.updateItem(noteId, { checklistItems: prev, updatedAt: new Date().toISOString() });
-      self.renderRedNotes();
+      const idx = container.querySelectorAll(".red-checklist-item").length;
+      const li = document.createElement("li");
+      li.className = "red-checklist-item";
+      li.dataset.idx = String(idx);
+      li.innerHTML = '<input type="checkbox" class="red-checklist-item-check" aria-label="Concluído" />' +
+        '<input type="text" class="red-checklist-item-text" value="" placeholder="Item" />' +
+        '<button type="button" class="red-checklist-item-remove" aria-label="Remover"><i data-lucide="x"></i></button>';
+      container.appendChild(li);
+      const check = li.querySelector(".red-checklist-item-check");
+      if (check) check.addEventListener("change", updateProgress);
+      const removeBtn = li.querySelector(".red-checklist-item-remove");
+      if (removeBtn) {
+        removeBtn.addEventListener("click", () => {
+          li.remove();
+          updateProgress();
+          if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+        });
+      }
+      updateProgress();
+      if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
     });
 
     deleteBtn.replaceWith(deleteBtn.cloneNode(true));
-    document.getElementById("red-checklist-delete-btn").addEventListener("click", () => self.openDeleteNoteModal(noteId));
+    document.getElementById("red-checklist-delete-btn").addEventListener("click", () => this.openDeleteNoteModal(noteId));
+    updateProgress();
   },
   setupItemEvents(container, era) {
     // Track access on URL click
@@ -1707,14 +1853,25 @@ const App = {
       });
     });
     container.querySelectorAll(".folklore-open-md-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         this.openFolkloreMarkdownDocument(btn.dataset.id);
+      });
+    });
+
+    container.querySelectorAll(".folklore-md-card").forEach((card) => {
+      card.addEventListener("click", (event) => {
+        if (event.target.closest(".item-btn-pin, .item-btn-delete, .item-tag, .folklore-open-md-btn")) return;
+        this.openFolkloreMarkdownDocument(card.dataset.id);
       });
     });
 
     // Pin/unpin
     container.querySelectorAll(".item-btn-pin").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         const item = Storage.getAll().find(i => i.id === btn.dataset.id);
         if (item) {
           Storage.updateItem(btn.dataset.id, { pinned: !item.pinned, pinnedAt: !item.pinned ? new Date().toISOString() : "" });
@@ -1726,7 +1883,9 @@ const App = {
 
     // Delete
     container.querySelectorAll(".item-btn-delete").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         this.openDeleteNoteModal(btn.dataset.id, { era, closeRedEditor: false });
       });
     });
@@ -1747,6 +1906,7 @@ const App = {
   // ===== DRAG & DROP =====
   // Ordenacao manual de cards dentro da mesma era e persistencia da ordem.
   setupDragDrop(container, era) {
+    if (era === "folklore") return;
     const cards = container.querySelectorAll(".item-card");
 
     cards.forEach(card => {
@@ -1837,7 +1997,7 @@ const App = {
           }
 
           return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
-            '<div class="highlight-link-main">' +
+            '<div class="highlight-link-main" data-id="' + this.escapeHtml(item.id) + '">' +
               '<span>' + this.typeIcon(item.type) + '</span>' +
               '<b class="plus">' + this.escapeHtml(item.title) + '</b>' +
             '</div>' +
@@ -1857,6 +2017,15 @@ const App = {
               setTimeout(() => {
                 this.redSelectedNoteId = itemId;
                 this.renderRedNotes();
+              }, 0);
+            }
+            if (currentItem && currentItem.category === "folklore" && currentItem.type === "markdown") {
+              event.preventDefault();
+              this.navigateToEra("folklore");
+              setTimeout(() => {
+                this.folkloreSelectedMarkdownId = itemId;
+                this.folkloreMarkdownViewMode = "preview";
+                this.renderEra("folklore");
               }, 0);
             }
             if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);

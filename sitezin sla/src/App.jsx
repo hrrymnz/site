@@ -314,6 +314,7 @@ function App() {
                   <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
                   <div className="red-note-actions">
                     <small id="red-note-meta"></small>
+                    <button type="button" className="red-note-save-btn" id="red-note-save-btn">Salvar</button>
                     <button type="button" className="red-note-delete-btn" id="red-note-delete-btn">Excluir</button>
                   </div>
                 </div>
@@ -324,6 +325,7 @@ function App() {
                   <button type="button" className="red-checklist-add-btn" id="red-checklist-add-btn"><i data-lucide="plus"></i> Adicionar item</button>
                   <div className="red-note-actions">
                     <small id="red-checklist-meta"></small>
+                    <button type="button" className="red-note-save-btn" id="red-checklist-save-btn">Salvar</button>
                     <button type="button" className="red-note-delete-btn" id="red-checklist-delete-btn">Excluir</button>
                   </div>
                 </div>

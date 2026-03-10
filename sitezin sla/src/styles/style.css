@@ -1326,6 +1326,7 @@ button {
 
 .folklore-md-mode-btn,
 .folklore-md-upload-btn,
+.folklore-md-save-btn,
 .folklore-md-delete-btn {
   width: auto;
   border: 1px solid var(--border);
@@ -1352,10 +1353,25 @@ button {
 
 .folklore-md-upload-btn i,
 .folklore-md-upload-btn svg,
+.folklore-md-save-btn i,
+.folklore-md-save-btn svg,
 .folklore-md-delete-btn i,
 .folklore-md-delete-btn svg {
   width: 14px;
   height: 14px;
+}
+
+.folklore-md-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: var(--accent);
+  color: #fff;
+  background: var(--accent);
+}
+
+.folklore-md-save-btn:hover {
+  filter: brightness(0.95);
 }
 
 .folklore-md-delete-btn {
@@ -3428,6 +3444,22 @@ button {
 
 .red-note-delete-btn:hover {
   filter: brightness(0.97);
+}
+
+.red-note-save-btn {
+  width: auto;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.red-note-save-btn:hover {
+  filter: brightness(0.95);
 }
 
 /* Modal Criar novo (Red) */
