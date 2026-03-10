@@ -305,37 +305,43 @@ function App() {
             </aside>
 
             <div id="red-note-editor-wrap" className="red-note-editor-wrap">
-              <article className="red-note-editor" id="red-note-editor">
+              <article className="red-note-editor folklore-md-shell" id="red-note-editor">
                 <div className="red-note-empty" id="red-note-empty" style={{ display: 'none' }}>
                   <p id="red-note-empty-text">Clique em + para criar uma nota ou checklist.</p>
                 </div>
                 <div className="red-note-form" id="red-note-form" style={{ display: 'none' }}>
-                  <input type="text" id="red-note-title" placeholder="Titulo da nota" />
-                  <div className="red-note-toolbar">
-                    <div className="red-note-mode-group">
-                      <button type="button" className="red-note-mode-btn active" id="red-note-mode-preview">Preview</button>
-                      <button type="button" className="red-note-mode-btn" id="red-note-mode-split">Editar</button>
+                  <header className="folklore-md-topbar red-note-topbar">
+                    <button type="button" className="folklore-md-back-btn" id="red-note-back-btn"><i data-lucide="arrow-left"></i> Voltar</button>
+                    <input type="text" id="red-note-title" className="folklore-md-title-input" placeholder="Titulo da nota" />
+                    <div className="folklore-md-toolbar-actions">
+                      <button type="button" className="folklore-md-mode-btn active" id="red-note-mode-preview">Preview</button>
+                      <button type="button" className="folklore-md-mode-btn" id="red-note-mode-split">Editar</button>
+                      <button type="button" className="folklore-md-save-btn" id="red-note-save-btn"><i data-lucide="save"></i> Salvar</button>
+                      <button type="button" className="folklore-md-delete-btn" id="red-note-delete-btn"><i data-lucide="trash-2"></i></button>
                     </div>
-                  </div>
-                  <div className="red-note-md-layout is-preview" id="red-note-md-layout">
-                    <textarea id="red-note-content" placeholder="Escreva sua nota..."></textarea>
-                    <article id="red-note-preview" className="red-note-markdown-body markdown-body"></article>
-                  </div>
-                  <div className="red-note-actions">
-                    <small id="red-note-meta"></small>
-                    <button type="button" className="red-note-save-btn" id="red-note-save-btn">Salvar</button>
-                    <button type="button" className="red-note-delete-btn" id="red-note-delete-btn">Excluir</button>
+                  </header>
+                  <small id="red-note-meta" className="folklore-md-meta"></small>
+                  <div className="folklore-md-layout red-note-md-layout is-preview" id="red-note-md-layout">
+                    <textarea id="red-note-content" className="folklore-md-editor" placeholder="Escreva sua nota..."></textarea>
+                    <article id="red-note-preview" className="red-note-markdown-body folklore-markdown-body"></article>
                   </div>
                 </div>
                 <div className="red-checklist-form" id="red-checklist-form" style={{ display: 'none' }}>
-                  <input type="text" id="red-checklist-title" placeholder="Titulo da checklist" />
-                  <div className="red-checklist-progress" id="red-checklist-progress"></div>
-                  <ul className="red-checklist-items" id="red-checklist-items"></ul>
-                  <button type="button" className="red-checklist-add-btn" id="red-checklist-add-btn"><i data-lucide="plus"></i> Adicionar item</button>
-                  <div className="red-note-actions">
-                    <small id="red-checklist-meta"></small>
-                    <button type="button" className="red-note-save-btn" id="red-checklist-save-btn">Salvar</button>
-                    <button type="button" className="red-note-delete-btn" id="red-checklist-delete-btn">Excluir</button>
+                  <header className="folklore-md-topbar red-note-topbar">
+                    <button type="button" className="folklore-md-back-btn" id="red-checklist-back-btn"><i data-lucide="arrow-left"></i> Voltar</button>
+                    <input type="text" id="red-checklist-title" className="folklore-md-title-input" placeholder="Titulo da checklist" />
+                    <div className="folklore-md-toolbar-actions">
+                      <button type="button" className="folklore-md-save-btn" id="red-checklist-save-btn"><i data-lucide="save"></i> Salvar</button>
+                      <button type="button" className="folklore-md-delete-btn" id="red-checklist-delete-btn"><i data-lucide="trash-2"></i></button>
+                    </div>
+                  </header>
+                  <small id="red-checklist-meta" className="folklore-md-meta"></small>
+                  <div className="folklore-md-layout red-checklist-layout is-preview">
+                    <div className="red-checklist-body">
+                      <div className="red-checklist-progress" id="red-checklist-progress"></div>
+                      <ul className="red-checklist-items" id="red-checklist-items"></ul>
+                      <button type="button" className="red-checklist-add-btn" id="red-checklist-add-btn"><i data-lucide="plus"></i> Adicionar item</button>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -738,16 +744,6 @@ function App() {
             <button type="button" className="modal-btn-cancel" id="modal-delete-note-cancel">Cancelar</button>
             <button type="button" className="modal-btn-confirm-delete" id="modal-delete-note-confirm">Excluir</button>
           </div>
-        </div>
-      </div>
-
-      <div className="modal-overlay" id="red-editor-modal">
-        <div className="modal-content red-editor-modal-content">
-          <div className="modal-header">
-            <h3>Editar</h3>
-            <button type="button" className="modal-close" id="red-editor-modal-close"><i data-lucide="x"></i></button>
-          </div>
-          <div id="red-editor-modal-body"></div>
         </div>
       </div>
 

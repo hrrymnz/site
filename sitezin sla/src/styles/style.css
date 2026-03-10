@@ -3133,15 +3133,28 @@ button {
   display: none;
 }
 
+.red-notes-shell.red-notes-shell--editor-only {
+  grid-template-columns: 1fr;
+}
+
+.red-notes-shell.red-notes-shell--editor-only .red-notes-list-panel {
+  display: none;
+}
+
 .red-note-editor-wrap {
   min-height: 0;
 }
 
-.red-notes-list-panel,
-.red-note-editor {
+.red-notes-list-panel {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 0;
+}
+
+.red-note-editor {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .red-notes-list-panel {
@@ -3382,49 +3395,17 @@ button {
 .red-note-form {
   height: 100%;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
-  padding: 14px;
-}
-
-.red-note-toolbar {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.red-note-mode-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.red-note-mode-btn {
-  width: auto;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--muted);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.red-note-mode-btn.active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
+  padding: 0;
 }
 
 .red-note-md-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  min-height: 290px;
+  min-height: 440px;
 }
 
 .red-note-md-layout.is-preview {
-  grid-template-columns: 1fr;
+  display: block;
 }
 
 .red-note-md-layout.is-preview #red-note-content {
@@ -3432,6 +3413,7 @@ button {
 }
 
 .red-note-md-layout.is-split {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -3451,22 +3433,28 @@ button {
 }
 
 #red-note-content {
+  border: 0;
+  border-radius: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
   resize: none;
   width: 100%;
-  min-height: 300px;
-  padding: 12px;
-  line-height: 1.5;
-  font-size: 0.9rem;
+  min-height: 440px;
+  padding: 14px;
+  line-height: 1.55;
+  font-size: 0.84rem;
 }
 
 .red-note-markdown-body {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
   background: #fff;
-  color: var(--text);
-  padding: 12px;
-  min-height: 300px;
+  color: #1f2937;
+  padding: 22px 26px;
+  min-height: 440px;
   overflow: auto;
+  line-height: 1.62;
 }
 
 .red-note-preview-text {
@@ -3489,16 +3477,22 @@ button {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
 }
 
-.red-note-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
+.red-note-topbar .red-note-save-btn {
+  border: 1px solid var(--accent);
+  color: #fff;
+  background: var(--accent);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
-.red-note-actions small {
-  color: var(--muted);
+.red-note-topbar .red-note-delete-btn {
+  border: 1px solid #f0c4c0;
+  color: #b83b31;
+  background: #fff5f4;
+  padding: 6px 10px;
   font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .red-note-delete-btn {
@@ -3657,36 +3651,27 @@ button {
   filter: brightness(0.97);
 }
 
-/* Editor em popup (Red) */
-.red-editor-modal-content {
-  width: 560px;
-  max-width: 92vw;
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-#red-editor-modal-body {
-  flex: 1;
-  min-height: 360px;
-  overflow-y: auto;
-}
-
-#red-editor-modal-body .red-note-editor {
-  min-height: 340px;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
 /* Checklist editor (Red) */
 .red-checklist-form {
   height: 100%;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
+  padding: 0;
+}
+
+.red-checklist-layout {
+  min-height: 440px;
+  display: block;
+}
+
+.red-checklist-body {
+  min-height: 440px;
   padding: 14px;
+  background: #fff;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
 }
 
 #red-checklist-title {
@@ -3802,11 +3787,16 @@ button {
   }
 
   #red-note-content {
-    min-height: 220px;
+    min-height: 320px;
   }
 
   .red-note-markdown-body {
-    min-height: 220px;
+    min-height: 320px;
+  }
+
+  .red-checklist-layout,
+  .red-checklist-body {
+    min-height: 320px;
   }
 }
 

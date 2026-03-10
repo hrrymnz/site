@@ -988,7 +988,7 @@ const App = {
 
     if (deleteBtn) {
       deleteBtn.addEventListener("click", () => {
-        this.openDeleteNoteModal(item.id, { era: "folklore", closeRedEditor: false, clearRedSelection: false });
+        this.openDeleteNoteModal(item.id, { era: "folklore", clearRedSelection: false });
       });
     }
     if (backBtn) backBtn.addEventListener("click", () => this.closeFolkloreMarkdownDocument());
@@ -1255,6 +1255,8 @@ const App = {
     const saveBtn = document.getElementById("red-note-save-btn");
     const deleteBtn = document.getElementById("red-note-delete-btn");
     const checklistSaveBtn = document.getElementById("red-checklist-save-btn");
+    const noteBackBtn = document.getElementById("red-note-back-btn");
+    const checklistBackBtn = document.getElementById("red-checklist-back-btn");
     const previewModeBtn = document.getElementById("red-note-mode-preview");
     const splitModeBtn = document.getElementById("red-note-mode-split");
 
@@ -1363,10 +1365,25 @@ const App = {
       this.openDeleteNoteModal(this.redSelectedNoteId);
     });
 
+    if (noteBackBtn) {
+      noteBackBtn.addEventListener("click", () => {
+        this.redSelectedNoteId = "";
+        this.redNoteDraft = null;
+        clearTimeout(this.redNoteSaveTimer);
+        this.renderRedNotes();
+      });
+    }
+
+    if (checklistBackBtn) {
+      checklistBackBtn.addEventListener("click", () => {
+        this.redSelectedNoteId = "";
+        this.renderRedNotes();
+      });
+    }
+
     this.setRedNoteViewMode(this.redNoteViewMode);
     this.renderRedNotePreview(String(contentInput.value || ""));
     this.setupCreateRedModal();
-    this.setupRedEditorModal();
   },
 
   setupDeleteNoteModal() {
@@ -1433,7 +1450,6 @@ const App = {
       ? Storage.getAll().find((entry) => entry.id === noteId)
       : null;
     const era = options.era || this.normalizeEra((fromItem && fromItem.category) || this.currentEra || "debut");
-    const shouldCloseRedEditor = options.closeRedEditor !== false;
 
     App.pendingDeleteNoteId = noteId;
     App.pendingDeleteContext = {
@@ -1441,11 +1457,6 @@ const App = {
       era,
       clearRedSelection: !!options.clearRedSelection
     };
-
-    if (shouldCloseRedEditor) {
-      const editorModal = document.getElementById("red-editor-modal");
-      if (editorModal) editorModal.classList.remove("visible");
-    }
 
     const modal = document.getElementById("modal-delete-note");
     if (modal) {
@@ -1502,28 +1513,6 @@ const App = {
       modal.classList.add("visible");
     }
     if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
-  },
-
-  setupRedEditorModal() {
-    const modal = document.getElementById("red-editor-modal");
-    const closeBtn = document.getElementById("red-editor-modal-close");
-    const body = document.getElementById("red-editor-modal-body");
-    const wrap = document.getElementById("red-note-editor-wrap");
-    const editor = document.getElementById("red-note-editor");
-    if (!modal || !closeBtn || !body || !wrap || !editor) return;
-    if (modal.dataset.bound === "1") return;
-    modal.dataset.bound = "1";
-
-    const close = () => {
-      if (editor.parentNode === body) wrap.appendChild(editor);
-      modal.classList.remove("visible");
-      App.redSelectedNoteId = "";
-      App.renderRedNotes();
-      if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
-    };
-
-    closeBtn.addEventListener("click", close);
-    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
   },
 
   persistRedNoteDraft(noteId, updates) {
@@ -1730,21 +1719,12 @@ const App = {
     list.classList.toggle("red-notes-list--grid", this.redNotesViewMode === "grid");
 
     const shell = document.getElementById("red-notes-shell");
-    const editorModal = document.getElementById("red-editor-modal");
-    const editorModalBody = document.getElementById("red-editor-modal-body");
-    const editorWrap = document.getElementById("red-note-editor-wrap");
-    const editorEl = document.getElementById("red-note-editor");
 
     const selected = ordered.find((item) => item.id === this.redSelectedNoteId);
 
     if (!selected) {
       if (shell) shell.classList.add("red-notes-shell--list-only");
-      if (editorModal) {
-        editorModal.classList.remove("visible");
-      }
-      if (editorEl && editorModalBody && editorWrap && editorEl.parentNode === editorModalBody) {
-        editorWrap.appendChild(editorEl);
-      }
+      if (shell) shell.classList.remove("red-notes-shell--editor-only");
       // So mostra o placeholder se nao houver nenhum item
       if (ordered.length === 0) {
         emptyState.style.display = "grid";
@@ -1760,13 +1740,8 @@ const App = {
       return;
     }
 
-    if (shell) shell.classList.add("red-notes-shell--list-only");
-    if (editorEl && editorModalBody && editorWrap) {
-      if (editorEl.parentNode !== editorModalBody) editorModalBody.appendChild(editorEl);
-      if (editorModal) {
-        editorModal.classList.add("visible");
-      }
-    }
+    if (shell) shell.classList.remove("red-notes-shell--list-only");
+    if (shell) shell.classList.add("red-notes-shell--editor-only");
 
     emptyState.style.display = "none";
     const isChecklist = selected.type === "checklist";
@@ -1929,7 +1904,7 @@ const App = {
       btn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.openDeleteNoteModal(btn.dataset.id, { era, closeRedEditor: false });
+        this.openDeleteNoteModal(btn.dataset.id, { era });
       });
     });
 
