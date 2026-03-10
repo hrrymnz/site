@@ -8,7 +8,6 @@
 // 6) Eventos dos cards + drag and drop
 // 7) Highlights da pagina Debut
 import { marked } from "marked";
-import DOMPurify from "dompurify";
 
 const App = {
   currentEra: "debut",
@@ -75,10 +74,50 @@ const App = {
     } catch {
       html = "<p>" + this.escapeHtml(source).replace(/\n/g, "<br>") + "</p>";
     }
-    if (DOMPurify && typeof DOMPurify.sanitize === "function") {
-      return DOMPurify.sanitize(html);
+    return this.sanitizeMarkdownHtml(html);
+  },
+
+  sanitizeMarkdownHtml(html) {
+    const template = document.createElement("template");
+    template.innerHTML = String(html || "");
+
+    const blockedTags = new Set(["script", "style", "iframe", "object", "embed", "link", "meta"]);
+    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+    const toRemove = [];
+
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const tagName = String(node.tagName || "").toLowerCase();
+      if (blockedTags.has(tagName)) {
+        toRemove.push(node);
+        continue;
+      }
+
+      [...node.attributes].forEach((attr) => {
+        const name = String(attr.name || "").toLowerCase();
+        const value = String(attr.value || "");
+
+        if (name.startsWith("on")) {
+          node.removeAttribute(attr.name);
+          return;
+        }
+
+        if ((name === "href" || name === "src") && /^\s*javascript:/i.test(value)) {
+          node.removeAttribute(attr.name);
+          return;
+        }
+
+        if (name === "style") {
+          node.removeAttribute(attr.name);
+        }
+      });
     }
-    return html;
+
+    toRemove.forEach((node) => {
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+    });
+
+    return template.innerHTML;
   },
 
   decorateMarkdownLinks(root) {
@@ -375,6 +414,7 @@ const App = {
     this.setupSearch();
     this.setupModal();
     this.setupAddButtons();
+    this.setupFolkloreMarkdownUpload();
     this.setupRedNotes();
 
     const prefs = Storage.getUiPrefs ? Storage.getUiPrefs() : {};
@@ -688,8 +728,60 @@ const App = {
 
   setupAddButtons() {
     document.querySelectorAll(".btn-add-item").forEach(btn => {
+      if (btn.id === "btn-upload-folklore-md") return;
       btn.addEventListener("click", () => this.openModal(btn.dataset.era));
     });
+  },
+
+  setupFolkloreMarkdownUpload() {
+    const trigger = document.getElementById("btn-upload-folklore-md");
+    const input = document.getElementById("input-upload-folklore-md");
+    if (!trigger || !input) return;
+
+    if (trigger.dataset.boundClick !== "1") {
+      trigger.dataset.boundClick = "1";
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        input.click();
+      });
+    }
+
+    if (input.dataset.boundChange !== "1") {
+      input.dataset.boundChange = "1";
+      input.addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        this.importFolkloreMarkdownFile(file);
+        event.target.value = "";
+      });
+    }
+  },
+
+  importFolkloreMarkdownFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = String((ev.target && ev.target.result) || "");
+      const inferredTitle = String(file.name || "Anotacao Markdown")
+        .replace(/\.[^.]+$/, "")
+        .trim();
+      const created = Storage.addItem({
+        type: "markdown",
+        title: inferredTitle || "Anotacao Markdown",
+        content: text,
+        tags: ["markdown"],
+        category: "folklore",
+        pinned: false
+      });
+      this.folkloreSelectedMarkdownId = created.id;
+      this.folkloreMarkdownViewMode = "split";
+      this.folkloreMarkdownDraft = null;
+      this.renderEra("folklore");
+      this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+    };
+    reader.readAsText(file, "utf-8");
   },
 
   openFolkloreMarkdownDocument(itemId) {

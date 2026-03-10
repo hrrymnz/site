@@ -336,7 +336,15 @@ function App() {
         <div className="era-page" id="page-1989"><div className="era-toolbar"><div className="era-tags" id="tags-1989"></div><button className="btn-add-item" data-era="1989">+ Novo Item</button></div><div className="era-items" id="items-1989"></div></div>
         <div className="era-page" id="page-reputation"><div className="era-toolbar"><div className="era-tags" id="tags-reputation"></div><button className="btn-add-item" data-era="reputation">+ Novo Item</button></div><div className="era-items" id="items-reputation"></div></div>
         <div className="era-page" id="page-lover"><div className="era-toolbar"><div className="era-tags" id="tags-lover"></div><button className="btn-add-item" data-era="lover">+ Novo Item</button></div><div className="era-items" id="items-lover"></div></div>
-        <div className="era-page" id="page-folklore"><div className="era-toolbar"><div className="era-tags" id="tags-folklore"></div><button className="btn-add-item" data-era="folklore">+ Novo Item</button></div><div className="era-items" id="items-folklore"></div></div>
+        <div className="era-page" id="page-folklore">
+          <div className="era-toolbar">
+            <div className="era-tags" id="tags-folklore"></div>
+            <button className="btn-add-item btn-upload-md" id="btn-upload-folklore-md" data-era="folklore">Upload .md</button>
+            <input type="file" id="input-upload-folklore-md" accept=".md,.txt,text/markdown,text/plain" style={{ display: 'none' }} />
+            <button className="btn-add-item" data-era="folklore">+ Novo Item</button>
+          </div>
+          <div className="era-items" id="items-folklore"></div>
+        </div>
 
         <div className="era-page" id="page-evermore">
           <section className="profile-page x-profile-shell">

@@ -964,6 +964,16 @@ button {
   transform: translateY(-1px);
 }
 
+.btn-upload-md {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.btn-upload-md:hover {
+  background: var(--accent-light);
+}
+
 /* ===== GRID DE ITENS DAS ERAS ===== */
 
 .era-items {
