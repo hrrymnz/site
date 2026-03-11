@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   /*
     Mapa rapido do CSS:
     1) Variaveis e tema por era
@@ -599,14 +599,10 @@ h3 {
 }
 
 button {
-  width: 100%;
   border: 0;
   border-radius: 8px;
-  background: var(--accent);
-  color: white;
-  padding: 10px;
-  font-weight: 700;
   cursor: pointer;
+  font-family: inherit;
 }
 
 /* ===== RESPONSIVIDADE ===== */
@@ -622,38 +618,6 @@ button {
 .settings-card {
   padding: 24px;
 }
-
-.settings-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
-}
-
-.settings-tabs .tab {
-  background: none;
-  border: none;
-  padding: 10px 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--muted);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: 0.2s;
-  font-family: "Inter", sans-serif;
-}
-
-.settings-tabs .tab:hover { color: var(--text); }
-
-.settings-tabs .tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
-}
-
-.tab-content { display: none; }
-.tab-content.active { display: block; }
 
 .settings-form-layout {
   display: flex;

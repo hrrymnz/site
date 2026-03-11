@@ -132,18 +132,87 @@ const Storage = {
   ],
   DEFAULT_PINNED_REPOS: [],
 
+  safeParse(key, fallback) {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined || raw === "") return fallback;
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed == null ? fallback : parsed;
+    } catch {
+      return fallback;
+    }
+  },
+
+  generateId() {
+    if (typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function") {
+      try {
+        return crypto.randomUUID();
+      } catch {
+        // Fallback abaixo cobre ambientes sem suporte ou com erro na API.
+      }
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  },
+
+  normalizeItem(raw) {
+    const base = raw && typeof raw === "object" ? raw : {};
+    const normalized = { ...base };
+
+    let id = typeof base.id === "string" ? base.id.trim() : "";
+    if (!id) {
+      id = this.generateId();
+    }
+    normalized.id = id;
+
+    const type = (base.type != null ? String(base.type) : "link").trim() || "link";
+    normalized.type = type;
+
+    normalized.title = (base.title != null ? String(base.title) : "").trim();
+    normalized.url = (base.url != null ? String(base.url) : "").trim();
+    normalized.content = base.content != null ? String(base.content) : "";
+    normalized.category = (base.category != null ? String(base.category) : "debut").trim() || "debut";
+
+    if (Array.isArray(base.tags)) {
+      normalized.tags = base.tags
+        .filter((t) => typeof t === "string")
+        .map((t) => t.trim())
+        .filter(Boolean);
+    } else {
+      normalized.tags = [];
+    }
+
+    if (type === "checklist") {
+      const checklist = Array.isArray(base.checklistItems) ? base.checklistItems : [];
+      normalized.checklistItems = checklist
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return null;
+          const text = entry.text != null ? String(entry.text).trim() : "";
+          const completed = !!entry.completed;
+          if (!text) return null;
+          return { text, completed };
+        })
+        .filter(Boolean);
+    } else if (Object.prototype.hasOwnProperty.call(normalized, "checklistItems")) {
+      if (!Array.isArray(normalized.checklistItems)) {
+        delete normalized.checklistItems;
+      }
+    }
+
+    return normalized;
+  },
+
   getAll() {
-    return JSON.parse(localStorage.getItem(this.KEY)) || [];
+    return this.safeParse(this.KEY, []);
   },
 
   getSnapshot() {
     return {
       items: this.getAll(),
-      orders: JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {},
+      orders: this.safeParse(this.ORDER_KEY, {}),
       reposPinned: this.getPinnedRepos(),
-      reposRecentes: JSON.parse(localStorage.getItem(this.REPOS_RECENTES_KEY)) || [],
-      githubPrefs: JSON.parse(localStorage.getItem(this.GITHUB_PREFS_KEY)) || {},
-      githubCache: JSON.parse(localStorage.getItem(this.GITHUB_CACHE_KEY)) || {},
+      reposRecentes: this.safeParse(this.REPOS_RECENTES_KEY, []),
+      githubPrefs: this.safeParse(this.GITHUB_PREFS_KEY, {}),
+      githubCache: this.safeParse(this.GITHUB_CACHE_KEY, {}),
       profileSettings: this.getProfileSettings(),
       uiPrefs: this.getUiPrefs(),
       workspace: this.currentWorkspace || "default",
@@ -161,7 +230,8 @@ const Storage = {
       : (Array.isArray(data.swiftItems) ? data.swiftItems : null);
 
     if (importedItems) {
-      localStorage.setItem(this.KEY, JSON.stringify(importedItems));
+      const normalizedItems = importedItems.map((item) => this.normalizeItem(item));
+      localStorage.setItem(this.KEY, JSON.stringify(normalizedItems));
     }
 
     if (data.orders && typeof data.orders === "object") {
@@ -403,7 +473,7 @@ const Storage = {
   },
 
   getPinnedRepos() {
-    const saved = JSON.parse(localStorage.getItem(this.REPOS_PINNED_KEY));
+    const saved = this.safeParse(this.REPOS_PINNED_KEY, []);
     if (!Array.isArray(saved) || !saved.length) {
       return this.DEFAULT_PINNED_REPOS.map(repo => ({ ...repo }));
     }
@@ -445,10 +515,10 @@ const Storage = {
   },
 
   getUiPrefs() {
-    return JSON.parse(localStorage.getItem(this.UI_PREFS_KEY)) || {
+    return this.safeParse(this.UI_PREFS_KEY, {
       quickFilter: "all",
       tag: "__all__"
-    };
+    });
   },
 
   saveUiPrefs(prefs = {}) {
@@ -459,7 +529,7 @@ const Storage = {
   },
 
   listLocalVersions() {
-    return JSON.parse(localStorage.getItem(this.LOCAL_VERSIONS_KEY)) || [];
+    return this.safeParse(this.LOCAL_VERSIONS_KEY, []);
   },
 
   createLocalVersion(label = "auto-local", snapshot = null) {
@@ -498,7 +568,7 @@ const Storage = {
   addItem(data) {
     const items = this.getAll();
     const newItem = {
-      id: crypto.randomUUID(),
+      id: this.generateId(),
       type: data.type || "link",
       title: data.title || "",
       url: data.url || "",
@@ -606,12 +676,12 @@ const Storage = {
   // ===== 5) ORDENACAO POR ERA =====
   getOrder(category) {
     // Ordem customizada por era: { fearless: [id1, id2...], red: [...] }
-    const orders = JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {};
+    const orders = this.safeParse(this.ORDER_KEY, {});
     return orders[category] || [];
   },
 
   saveOrder(category, orderedIds) {
-    const orders = JSON.parse(localStorage.getItem(this.ORDER_KEY)) || {};
+    const orders = this.safeParse(this.ORDER_KEY, {});
     orders[category] = orderedIds;
     localStorage.setItem(this.ORDER_KEY, JSON.stringify(orders));
     this.scheduleSync();
@@ -638,7 +708,7 @@ const Storage = {
 
   // ===== 7) SETTINGS PROFILE =====
   getProfileSettings() {
-    return JSON.parse(localStorage.getItem(this.PROFILE_SETTINGS_KEY)) || {};
+    return this.safeParse(this.PROFILE_SETTINGS_KEY, {});
   },
 
   saveProfileSettings(profileData) {
