@@ -201,6 +201,368 @@ const Storage = {
     return normalized;
   },
 
+  isPlainObject(value) {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+  },
+
+  normalizePlainObject(raw) {
+    return this.isPlainObject(raw) ? { ...raw } : {};
+  },
+
+  normalizeOrderMap(raw, validIds = null, idMap = null) {
+    if (!this.isPlainObject(raw)) return {};
+
+    const normalized = {};
+    Object.entries(raw).forEach(([category, ids]) => {
+      const key = String(category || "").trim();
+      if (!key || !Array.isArray(ids)) return;
+
+      const seen = new Set();
+      const nextIds = [];
+
+      ids.forEach((entry) => {
+        let id = typeof entry === "string" ? entry.trim() : String(entry || "").trim();
+        if (!id) return;
+        if (idMap && idMap[id]) id = idMap[id];
+        if (validIds && !validIds.has(id)) return;
+        if (seen.has(id)) return;
+        seen.add(id);
+        nextIds.push(id);
+      });
+
+      if (nextIds.length) {
+        normalized[key] = nextIds;
+      }
+    });
+
+    return normalized;
+  },
+
+  normalizePinnedRepo(raw, idMap = null) {
+    const base = raw && typeof raw === "object" ? raw : {};
+    let sourceId = String(base.sourceId || "").trim();
+    if (sourceId && idMap && idMap[sourceId]) {
+      sourceId = idMap[sourceId];
+    }
+
+    const normalized = {
+      sourceId,
+      estilo: base.estilo === "light" ? "light" : "primary",
+      nome: String(base.nome || "").trim(),
+      descricao: String(base.descricao || "").trim(),
+      slug: String(base.slug || "").trim(),
+      url: String(base.url || "").trim()
+    };
+
+    if (!normalized.sourceId && !normalized.slug && !normalized.url && !normalized.nome) {
+      return null;
+    }
+
+    return normalized;
+  },
+
+  normalizeReposRecentes(raw) {
+    if (!Array.isArray(raw)) return [];
+
+    return raw
+      .map((entry) => {
+        if (typeof entry === "string") {
+          const slug = entry.trim();
+          if (!slug) return null;
+          return { slug, titulo: slug };
+        }
+
+        if (!entry || typeof entry !== "object") return null;
+
+        const slug = String(entry.slug || "").trim();
+        if (!slug) return null;
+
+        const titulo = String(entry.titulo || entry.title || entry.nome || slug).trim() || slug;
+        return { slug, titulo };
+      })
+      .filter(Boolean);
+  },
+
+  normalizeProfileSettings(raw) {
+    const base = this.normalizePlainObject(raw);
+    const normalized = {};
+
+    Object.entries(base).forEach(([key, value]) => {
+      const nextKey = String(key || "").trim();
+      if (!nextKey) return;
+      normalized[nextKey] = value == null ? "" : String(value).trim();
+    });
+
+    return normalized;
+  },
+
+  normalizeUiPrefs(raw, withDefaults = false) {
+    const base = this.normalizePlainObject(raw);
+    const normalized = {};
+
+    if (typeof base.quickFilter === "string" && base.quickFilter.trim()) {
+      normalized.quickFilter = base.quickFilter.trim();
+    }
+
+    if (typeof base.tag === "string" && base.tag.trim()) {
+      normalized.tag = base.tag.trim();
+    }
+
+    if (withDefaults) {
+      return {
+        quickFilter: normalized.quickFilter || "all",
+        tag: normalized.tag || "__all__"
+      };
+    }
+
+    return normalized;
+  },
+
+  isFilledValue(value) {
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim() !== "";
+    if (Array.isArray(value)) return value.length > 0;
+    if (this.isPlainObject(value)) return Object.keys(value).length > 0;
+    return true;
+  },
+
+  mergeObjectsFillMissing(current, imported) {
+    const base = this.normalizePlainObject(current);
+    const source = this.normalizePlainObject(imported);
+    const merged = { ...base };
+
+    Object.entries(source).forEach(([key, importedValue]) => {
+      const currentValue = merged[key];
+
+      if (this.isPlainObject(currentValue) && this.isPlainObject(importedValue)) {
+        merged[key] = this.mergeObjectsFillMissing(currentValue, importedValue);
+        return;
+      }
+
+      if (!this.isFilledValue(currentValue) && this.isFilledValue(importedValue)) {
+        merged[key] = importedValue;
+      }
+    });
+
+    return merged;
+  },
+
+  getItemIdentity(raw) {
+    const item = this.normalizeItem(raw);
+    const type = String(item.type || "").trim().toLowerCase();
+    const category = String(item.category || "").trim().toLowerCase();
+    const title = String(item.title || "").trim().toLowerCase();
+    const url = String(item.url || "").trim().toLowerCase();
+    const content = String(item.content || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .slice(0, 1000);
+
+    if (type === "checklist") {
+      const checklistKey = Array.isArray(item.checklistItems)
+        ? item.checklistItems
+            .map((entry) => `${String(entry.text || "").trim().toLowerCase()}::${entry.completed ? "1" : "0"}`)
+            .join("|")
+        : "";
+      return [type, category, title, content, checklistKey].join("::");
+    }
+
+    if (url) {
+      return [type, category, title, url].join("::");
+    }
+
+    return [type, category, title, content].join("::");
+  },
+
+  mergeItemsNonDestructive(importedItems) {
+    const currentItems = Array.isArray(this.getAll()) ? this.getAll().slice() : [];
+    const mergedItems = currentItems.slice();
+    const existingIds = new Set();
+    const identityToId = new Map();
+    const idMap = {};
+    let addedCount = 0;
+
+    currentItems.forEach((item) => {
+      const itemId = typeof item?.id === "string" ? item.id.trim() : "";
+      if (itemId) {
+        existingIds.add(itemId);
+        idMap[itemId] = itemId;
+      }
+
+      const identity = this.getItemIdentity(item);
+      if (identity && itemId && !identityToId.has(identity)) {
+        identityToId.set(identity, itemId);
+      }
+    });
+
+    if (!Array.isArray(importedItems)) {
+      return { items: mergedItems, addedCount, idMap };
+    }
+
+    importedItems.forEach((rawItem) => {
+      const item = this.normalizeItem(rawItem);
+
+      if (existingIds.has(item.id)) {
+        idMap[item.id] = item.id;
+        return;
+      }
+
+      const identity = this.getItemIdentity(item);
+      const matchedId = identity ? identityToId.get(identity) : "";
+      if (matchedId) {
+        idMap[item.id] = matchedId;
+        return;
+      }
+
+      mergedItems.push(item);
+      existingIds.add(item.id);
+      idMap[item.id] = item.id;
+      if (identity) {
+        identityToId.set(identity, item.id);
+      }
+      addedCount += 1;
+    });
+
+    return { items: mergedItems, addedCount, idMap };
+  },
+
+  mergeOrdersNonDestructive(importedOrders, validIds, idMap = null) {
+    const current = this.normalizeOrderMap(this.safeParse(this.ORDER_KEY, {}), validIds);
+    const incoming = this.normalizeOrderMap(importedOrders, validIds, idMap);
+    const merged = { ...current };
+
+    Object.entries(incoming).forEach(([category, ids]) => {
+      const existing = Array.isArray(merged[category]) ? merged[category] : [];
+      const seen = new Set(existing);
+      const next = existing.slice();
+
+      ids.forEach((id) => {
+        if (seen.has(id)) return;
+        seen.add(id);
+        next.push(id);
+      });
+
+      if (next.length) {
+        merged[category] = next;
+      }
+    });
+
+    return merged;
+  },
+
+  mergePinnedReposNonDestructive(importedRepos, idMap = null) {
+    const current = this.getPinnedRepos()
+      .map((repo) => this.normalizePinnedRepo(repo))
+      .filter(Boolean);
+    const incoming = Array.isArray(importedRepos)
+      ? importedRepos.map((repo) => this.normalizePinnedRepo(repo, idMap)).filter(Boolean)
+      : [];
+
+    const merged = current.slice();
+    const seen = new Set(
+      current.map((repo) => {
+        if (repo.sourceId) return `id:${repo.sourceId}`;
+        return `meta:${repo.slug.toLowerCase()}|${repo.url.toLowerCase()}|${repo.nome.toLowerCase()}`;
+      })
+    );
+
+    incoming.forEach((repo) => {
+      const key = repo.sourceId
+        ? `id:${repo.sourceId}`
+        : `meta:${repo.slug.toLowerCase()}|${repo.url.toLowerCase()}|${repo.nome.toLowerCase()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(repo);
+    });
+
+    return merged;
+  },
+
+  mergeReposRecentesNonDestructive(importedRecentes) {
+    const current = this.normalizeReposRecentes(this.safeParse(this.REPOS_RECENTES_KEY, []));
+    const incoming = this.normalizeReposRecentes(importedRecentes);
+    const merged = current.slice();
+    const seen = new Set(current.map((repo) => repo.slug.toLowerCase()));
+
+    incoming.forEach((repo) => {
+      const slug = repo.slug.toLowerCase();
+      if (seen.has(slug)) return;
+      seen.add(slug);
+      merged.push(repo);
+    });
+
+    return merged.slice(0, 10);
+  },
+
+  mergeSnapshotNonDestructive(data) {
+    if (!data || typeof data !== "object") {
+      return { addedItemsCount: 0 };
+    }
+
+    const importedItems = Array.isArray(data.items)
+      ? data.items
+      : (Array.isArray(data.swiftItems) ? data.swiftItems : []);
+
+    const itemMerge = this.mergeItemsNonDestructive(importedItems);
+    localStorage.setItem(this.KEY, JSON.stringify(itemMerge.items));
+
+    const validIds = new Set(
+      itemMerge.items
+        .map((item) => (typeof item?.id === "string" ? item.id.trim() : ""))
+        .filter(Boolean)
+    );
+
+    const mergedOrders = this.mergeOrdersNonDestructive(data.orders, validIds, itemMerge.idMap);
+    localStorage.setItem(this.ORDER_KEY, JSON.stringify(mergedOrders));
+
+    const mergedPinnedRepos = this.mergePinnedReposNonDestructive(data.reposPinned, itemMerge.idMap);
+    localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(mergedPinnedRepos));
+
+    const mergedRecentRepos = this.mergeReposRecentesNonDestructive(data.reposRecentes);
+    localStorage.setItem(this.REPOS_RECENTES_KEY, JSON.stringify(mergedRecentRepos));
+
+    const mergedGithubPrefs = this.mergeObjectsFillMissing(
+      this.normalizePlainObject(this.safeParse(this.GITHUB_PREFS_KEY, {})),
+      this.normalizePlainObject(data.githubPrefs)
+    );
+    localStorage.setItem(this.GITHUB_PREFS_KEY, JSON.stringify(mergedGithubPrefs));
+
+    const mergedGithubCache = this.mergeObjectsFillMissing(
+      this.normalizePlainObject(this.safeParse(this.GITHUB_CACHE_KEY, {})),
+      this.normalizePlainObject(data.githubCache)
+    );
+    localStorage.setItem(this.GITHUB_CACHE_KEY, JSON.stringify(mergedGithubCache));
+
+    const mergedProfileSettings = this.mergeObjectsFillMissing(
+      this.normalizeProfileSettings(this.safeParse(this.PROFILE_SETTINGS_KEY, {})),
+      this.normalizeProfileSettings(data.profileSettings)
+    );
+    localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(mergedProfileSettings));
+
+    const mergedUiPrefs = this.mergeObjectsFillMissing(
+      this.normalizeUiPrefs(this.safeParse(this.UI_PREFS_KEY, null), false),
+      this.normalizeUiPrefs(data.uiPrefs, false)
+    );
+    localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(mergedUiPrefs));
+
+    if (data.fearlessSeeded === true || localStorage.getItem(this.FEARLESS_SEED_KEY) === "1") {
+      localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
+    }
+
+    const currentAvatar = localStorage.getItem(this.AVATAR_KEY) || "";
+    if (!currentAvatar && data.avatar) {
+      localStorage.setItem(this.AVATAR_KEY, data.avatar);
+    }
+
+    const currentHeader = localStorage.getItem(this.HEADER_KEY) || "";
+    if (!currentHeader && data.profileHeader) {
+      localStorage.setItem(this.HEADER_KEY, data.profileHeader);
+    }
+
+    return { addedItemsCount: itemMerge.addedCount };
+  },
+
   getAll() {
     return this.safeParse(this.KEY, []);
   },
@@ -515,10 +877,7 @@ const Storage = {
   },
 
   getUiPrefs() {
-    return this.safeParse(this.UI_PREFS_KEY, {
-      quickFilter: "all",
-      tag: "__all__"
-    });
+    return this.normalizeUiPrefs(this.safeParse(this.UI_PREFS_KEY, null), true);
   },
 
   saveUiPrefs(prefs = {}) {
@@ -774,13 +1133,13 @@ const Storage = {
             ? data.items
             : (Array.isArray(data.swiftItems) ? data.swiftItems : null);
 
-          this.applySnapshot(data);
+          const mergeResult = this.mergeSnapshotNonDestructive(data);
           this.scheduleSync();
           await this.createServerVersion("import-backup", this.getSnapshot()).catch(() => {
             // Import nao falha caso o versionamento remoto falhe.
           });
 
-          resolve(importedItems ? importedItems.length : 0);
+          resolve(importedItems ? mergeResult.addedItemsCount : 0);
         } catch (err) {
           reject(err);
         }
