@@ -165,6 +165,13 @@ const App = {
       '<span class="red-checklist-progress-track"><span class="red-checklist-progress-fill" style="width:' + percent + '%"></span></span>';
   },
 
+  getRedListPreview(item, maxLength = 88) {
+    const source = String(item && item.content ? item.content : "");
+    const compact = source.replace(/\s+/g, " ").trim();
+    if (!compact) return "Sem conteúdo";
+    return compact.slice(0, Math.max(0, Number(maxLength) || 88));
+  },
+
   decorateMarkdownLinks(root) {
     if (!root) return;
     root.querySelectorAll("a").forEach((link) => {
@@ -1290,21 +1297,20 @@ const App = {
 
     const viewListBtn = document.getElementById("red-notes-view-list");
     const viewGridBtn = document.getElementById("red-notes-view-grid");
-    if (viewListBtn && viewGridBtn) {
-      viewListBtn.addEventListener("click", () => {
-        this.redNotesViewMode = "list";
-        viewListBtn.classList.add("active");
-        viewGridBtn.classList.remove("active");
-        this.renderRedNotes();
-        if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
-      });
-      viewGridBtn.addEventListener("click", () => {
-        this.redNotesViewMode = "grid";
-        viewGridBtn.classList.add("active");
-        viewListBtn.classList.remove("active");
-        this.renderRedNotes();
-        if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
-      });
+    const viewGrid3x3Btn = document.getElementById("red-notes-view-grid-3x3");
+    const updateViewMode = (mode) => {
+      this.redNotesViewMode = mode;
+      this.renderRedNotes();
+      if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+    };
+    if (viewListBtn) {
+      viewListBtn.addEventListener("click", () => updateViewMode("list"));
+    }
+    if (viewGridBtn) {
+      viewGridBtn.addEventListener("click", () => updateViewMode("grid"));
+    }
+    if (viewGrid3x3Btn) {
+      viewGrid3x3Btn.addEventListener("click", () => updateViewMode("grid-3x3"));
     }
 
     const tagsContainer = document.getElementById("tags-red");
@@ -1706,6 +1712,7 @@ const App = {
       ? visible.map((item) => {
           const isActive = item.id === this.redSelectedNoteId;
           const isChecklist = item.type === "checklist";
+          const isLargeGrid = this.redNotesViewMode === "grid-3x3";
           const items = item.checklistItems || [];
           const done = items.filter((i) => i.completed).length;
           const total = items.length;
@@ -1713,7 +1720,7 @@ const App = {
           const progressLabel = total ? (done + " de " + total + " concluidos") : "Nenhum item";
           const preview = isChecklist
             ? progressLabel
-            : (String(item.content || "").replace(/\s+/g, " ").trim().slice(0, 88) || "Sem conteúdo");
+            : this.getRedListPreview(item, isLargeGrid ? 180 : 88);
           const title = this.escapeHtml(String(item.title || (isChecklist ? "Checklist" : "Sem título")));
           const timestamp = new Date(item.updatedAt || item.createdAt || Date.now());
           const dateLabel = Number.isNaN(timestamp.getTime()) ? "" : timestamp.toLocaleDateString("pt-BR");
@@ -1743,6 +1750,14 @@ const App = {
       : '<li class="red-note-list-empty">Nenhum item encontrado.</li>';
 
     list.classList.toggle("red-notes-list--grid", this.redNotesViewMode === "grid");
+    list.classList.toggle("red-notes-list--grid-3x3", this.redNotesViewMode === "grid-3x3");
+
+    const viewListBtn = document.getElementById("red-notes-view-list");
+    const viewGridBtn = document.getElementById("red-notes-view-grid");
+    const viewGrid3x3Btn = document.getElementById("red-notes-view-grid-3x3");
+    if (viewListBtn) viewListBtn.classList.toggle("active", this.redNotesViewMode === "list");
+    if (viewGridBtn) viewGridBtn.classList.toggle("active", this.redNotesViewMode === "grid");
+    if (viewGrid3x3Btn) viewGrid3x3Btn.classList.toggle("active", this.redNotesViewMode === "grid-3x3");
 
     const shell = document.getElementById("red-notes-shell");
 

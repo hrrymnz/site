@@ -3261,17 +3261,23 @@ button {
   padding: 4px 10px 12px;
   overflow: auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
 .red-notes-list.red-notes-list--grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
+.red-notes-list.red-notes-list--grid-3x3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .red-note-list-empty,
-.red-notes-list.red-notes-list--grid .red-note-list-empty {
+.red-notes-list.red-notes-list--grid .red-note-list-empty,
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-empty {
   grid-column: 1 / -1;
 }
 
@@ -3375,6 +3381,35 @@ button {
   font-size: 0.72rem;
   font-weight: 600;
   color: #6b7280;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-item {
+  min-height: 236px;
+  padding: 16px;
+  align-content: start;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-body {
+  gap: 10px;
+  height: 100%;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-preview {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  -webkit-line-clamp: 6;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-progress {
+  gap: 8px;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-progress-track {
+  height: 5px;
+}
+
+.red-notes-list.red-notes-list--grid-3x3 .red-note-list-date {
+  margin-top: auto;
 }
 
 .red-note-list-progress.is-complete .red-note-list-progress-fill {
@@ -3861,8 +3896,11 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .red-notes-list,
   .red-notes-list.red-notes-list--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .red-notes-list.red-notes-list--grid-3x3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3890,15 +3928,17 @@ button {
 }
 
 @media (max-width: 1280px) {
-  .red-notes-list,
   .red-notes-list.red-notes-list--grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .red-notes-list.red-notes-list--grid-3x3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
-  .red-notes-list,
-  .red-notes-list.red-notes-list--grid {
+  .red-notes-list.red-notes-list--grid-3x3 {
     grid-template-columns: 1fr;
   }
 }

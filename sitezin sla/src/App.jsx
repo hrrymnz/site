@@ -289,14 +289,15 @@ function App() {
           <section className="red-notes-shell red-notes-shell--list-only" id="red-notes-shell">
             <aside className="red-notes-list-panel">
               <div className="red-notes-head">
-                <div className="red-notes-head-actions">
-                  <div className="red-notes-view-toggle" aria-label="Visualizacao">
-                    <button type="button" className="red-notes-view-btn active" id="red-notes-view-list" title="Lista"><i data-lucide="list"></i></button>
-                    <button type="button" className="red-notes-view-btn" id="red-notes-view-grid" title="Grade"><i data-lucide="layout-grid"></i></button>
+                  <div className="red-notes-head-actions">
+                    <div className="red-notes-view-toggle" aria-label="Visualizacao">
+                      <button type="button" className="red-notes-view-btn active" id="red-notes-view-list" title="Lista"><i data-lucide="list"></i></button>
+                      <button type="button" className="red-notes-view-btn" id="red-notes-view-grid" title="Grade"><i data-lucide="layout-grid"></i></button>
+                      <button type="button" className="red-notes-view-btn" id="red-notes-view-grid-3x3" title="Grade 3x3"><i data-lucide="grid-3x3"></i></button>
+                    </div>
+                    <button type="button" className="red-notes-fab" id="red-notes-new-btn" title="Nova nota ou checklist"><i data-lucide="plus"></i></button>
                   </div>
-                  <button type="button" className="red-notes-fab" id="red-notes-new-btn" title="Nova nota ou checklist"><i data-lucide="plus"></i></button>
                 </div>
-              </div>
               <div className="red-notes-search-wrap">
                 <i data-lucide="search"></i>
                 <input type="text" id="red-notes-search" placeholder="Buscar..." />
@@ -801,7 +802,6 @@ function App() {
 }
 
 export default App;
-
 
 
 
