@@ -127,7 +127,7 @@ function App() {
           <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
           <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
-          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configuracoes</a>
+          <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
         </nav>
         <div className="sidebar-bottom">
           <span className="sidebar-email">{user.email}</span>
@@ -157,7 +157,7 @@ function App() {
               </div>
             )}
             <div className="topbar-icons">
-              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configuracoes" /></a>
+              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
               <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
               <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
@@ -208,16 +208,16 @@ function App() {
           </section>
 
           <section className="charts-grid">
-            <div className="painel-contribuicoes-github">
-              <h3>Contribuicoes GitHub</h3>
+            <div className="painel-contribuições-github">
+              <h3>Contribuições GitHub</h3>
               <div className="painel-superficie">
                 <div className="github-graph-header">
                   <div className="github-total-wrap">
                     <strong id="github-total-contributions">-</strong>
-                    <small>contribuicoes no periodo</small>
+                    <small>Contribuições no período</small>
                   </div>
                   <div className="github-controls">
-                    <label>Periodo</label>
+                    <label>Período</label>
                     <div className="github-chip-group" id="github-period-group">
                       <button type="button" className="github-chip github-period-btn" data-period="30">30d</button>
                       <button type="button" className="github-chip github-period-btn active" data-period="90">90d</button>
@@ -227,9 +227,9 @@ function App() {
                 </div>
                 <div className="contribution-body">
                   <div className="contribution-weekdays" aria-hidden="true">
-                    <span className="weekday-mon">Mon</span>
-                    <span className="weekday-wed">Wed</span>
-                    <span className="weekday-fri">Fri</span>
+                    <span className="weekday-mon">Seg</span>
+                    <span className="weekday-wed">Qua</span>
+                    <span className="weekday-fri">Sex</span>
                   </div>
                   <div className="contribution-graph-wrap">
                     <div className="contribution-months" id="contribution-months"></div>
@@ -237,15 +237,15 @@ function App() {
                   </div>
                 </div>
                 <div className="contribution-footer">
-                  <small className="contribution-help">Contributions calendar</small>
+                  <small className="contribution-help">Calendário de contribuições</small>
                   <div className="contribution-legend" aria-label="Contribution intensity legend">
-                    <span>Less</span>
+                    <span>Menos</span>
                     <span className="contribution-day level-0 legend-cell"></span>
                     <span className="contribution-day level-1 legend-cell"></span>
                     <span className="contribution-day level-2 legend-cell"></span>
                     <span className="contribution-day level-3 legend-cell"></span>
                     <span className="contribution-day level-4 legend-cell"></span>
-                    <span>More</span>
+                    <span>Mais</span>
                   </div>
                 </div>
               </div>
@@ -356,7 +356,7 @@ function App() {
         <div className="era-page" id="page-folklore">
           <div className="era-toolbar">
             <div className="era-tags" id="tags-folklore"></div>
-            <button className="btn-add-item btn-upload-md" id="btn-upload-folklore-md" data-era="folklore">Upload .md</button>
+            <button className="btn-add-item btn-upload-md" id="btn-upload-folklore-md" data-era="folklore">Carregar.md</button>
             <input type="file" id="input-upload-folklore-md" accept=".md,.txt,text/markdown,text/plain" style={{ display: 'none' }} />
             <button className="btn-add-item" data-era="folklore">+ Novo Item</button>
           </div>
@@ -371,7 +371,7 @@ function App() {
               </button>
               <div className="x-profile-top-title">
                 <strong id="profile-name-top">Seu Nome</strong>
-                <small id="profile-headline-count">0 contribuicoes</small>
+                <small id="profile-headline-count">0 Contribuições</small>
               </div>
             </header>
 
@@ -433,8 +433,8 @@ function App() {
           <section className="settings-page">
             <div className="painel-superficie settings-card settings-modern">
               <header className="settings-modern-header">
-                <h3>Configuracoes do Perfil</h3>
-                <p>Preferencias, backup e historico local. A edicao do perfil fica na aba Perfil (Evermore).</p>
+                <h3>Configurações do Perfil</h3>
+                <p>Preferências, backup e histórico local. A edição do perfil fica na aba Perfil (Evermore).</p>
               </header>
 
               <section className="settings-modern-section">
@@ -458,12 +458,12 @@ function App() {
               </section>
 
               <section className="settings-modern-section">
-                <h4>Historico local</h4>
+                <h4>Histórico local</h4>
                 <div className="settings-pref-list">
                   <div className="settings-pref-item">
                     <div className="settings-pref-copy">
-                      <strong>Versoes locais</strong>
-                      <span>Ultimas 10 versoes para restauracao rapida.</span>
+                      <strong>Versões locais</strong>
+                      <span>Últimas 10 versões para restauração rápida.</span>
                     </div>
                     <div className="settings-pref-actions">
                       <button type="button" className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
@@ -471,7 +471,7 @@ function App() {
                   </div>
                 </div>
                 <ul id="local-versions-list" className="local-versions-list">
-                  <li className="local-version-empty">Nenhuma versao local encontrada.</li>
+                  <li className="local-version-empty">Nenhuma versão local encontrada.</li>
                 </ul>
                 <p className="import-status" id="versions-status"></p>
               </section>
@@ -511,12 +511,10 @@ function App() {
               <div className="profile-avatar profile-edit-avatar-floating">
                 <img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Avatar" className="avatar-img" id="avatar-img" />
                 <button className="avatar-edit" id="avatar-edit-btn" type="button" title="Trocar foto"><img loading="lazy" decoding="async" src="imagens, icons/Settings/editorFoto.svg" alt="Editar foto" /></button>
-                <button className="avatar-remove" id="avatar-remove-btn" type="button" title="Remover foto" style={{ display: 'none' }}>&times;</button>
+                <button className="avatar-remove" id="avatar-remove-btn" type="button" title="Remover foto" style={{ display: 'none' }}>
+                  <img loading="lazy" decoding="async" src="/remove-transparent.png" alt="" aria-hidden="true" />
+                </button>
                 <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} />
-              </div>
-              <div className="profile-edit-avatar-actions">
-                <button type="button" className="btn-import" id="profile-edit-photo-cta">Editar foto</button>
-                <button type="button" className="btn-import" id="settings-upload-btn">Enviar imagem</button>
               </div>
             </section>
 
@@ -527,11 +525,11 @@ function App() {
                 <small id="counter-settings-name">0/50</small>
               </div>
               <div className="form-group">
-                <label>Usuario</label>
+                <label>Usuário</label>
                 <input id="settings-username" type="text" placeholder="seu_usuario" />
               </div>
               <div className="form-group">
-                <label>Localizacao</label>
+                <label>Localização</label>
                 <input id="settings-city" type="text" placeholder="Sao Paulo" maxLength="30" />
                 <small id="counter-settings-city">0/30</small>
               </div>
@@ -571,7 +569,7 @@ function App() {
 
                   <div className="profile-edit-birth-select-grid">
                     <div className="profile-edit-select-wrap">
-                      <label className="profile-edit-select-label" htmlFor="settings-birth-month">Mes</label>
+                      <label className="profile-edit-select-label" htmlFor="settings-birth-month">Mês</label>
                       <select id="settings-birth-month" className="profile-edit-select"></select>
                       <span className="profile-edit-select-chevron" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
                     </div>
@@ -591,13 +589,13 @@ function App() {
                     <div>
                       <h3 className="profile-edit-birth-visibility-title">Quem pode ver isso?</h3>
                       <p className="profile-edit-birth-visibility-copy">
-                        Voce pode controlar quem ve seu aniversario no X.{" "}
+                        Você pode controlar quem vê seu aniversario.{" "}
                         <a href="#" className="profile-edit-birth-more" onClick={(e) => e.preventDefault()}>Saiba mais</a>
                       </p>
                     </div>
 
                     <div className="profile-edit-select-wrap">
-                      <label className="profile-edit-select-label" htmlFor="profile-edit-birth-visibility-date">Mes e dia</label>
+                      <label className="profile-edit-select-label" htmlFor="profile-edit-birth-visibility-date">Mês e dia</label>
                       <select id="profile-edit-birth-visibility-date" className="profile-edit-select" defaultValue="only-you">
                         <option value="only-you">Somente voce</option>
                         <option value="followers">Seus seguidores</option>
@@ -653,9 +651,9 @@ function App() {
       <div className="modal-overlay" id="modal-discard-profile">
         <div className="modal-content">
           <div className="modal-header">
-            <h3>Descartar alteracoes?</h3>
+            <h3>Descartar alterações?</h3>
           </div>
-          <p className="modal-delete-note-message">Voce tem alteracoes nao salvas no perfil.</p>
+          <p className="modal-delete-note-message">Você tem alterações não salvas no perfil.</p>
           <div className="modal-actions">
             <button type="button" className="modal-btn-cancel" id="discard-profile-cancel">Continuar editando</button>
             <button type="button" className="modal-btn-confirm-delete" id="discard-profile-confirm">Descartar</button>
@@ -684,7 +682,7 @@ function App() {
             <div className="form-group">
               <label>Repositorio do Fearless</label>
               <select id="edit-repo-source" required>
-                <option value="">Selecione um repositorio da Fearless</option>
+                <option value="">Selecione um repositorio de Fearless</option>
               </select>
             </div>
 
@@ -694,7 +692,7 @@ function App() {
             </div>
 
             <div className="form-group form-group-note">
-              <label>Descricao</label>
+              <label>Descrição</label>
               <textarea id="edit-repo-description" rows="4"></textarea>
               <small className="repo-modal-hint">Somente repositorios criados na era Fearless podem ser fixados aqui.</small>
             </div>
@@ -773,7 +771,7 @@ function App() {
               <input type="url" id="item-url" placeholder="https://..." />
             </div>
             <div className="form-group field-content" style={{ display: 'none' }}>
-              <label>Conteudo</label>
+              <label>Conteúdo</label>
               <textarea id="item-content" rows="4" placeholder="Sua nota..."></textarea>
             </div>
             <div className="form-group">
@@ -803,8 +801,6 @@ function App() {
 }
 
 export default App;
-
-
 
 
 

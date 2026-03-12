@@ -1,4 +1,4 @@
-function initShellInteractions() {
+﻿function initShellInteractions() {
   function bindNavigationBlocks() {
     document.querySelectorAll('.era-link').forEach((link) => {
       if (link.dataset.boundClick === '1') return;
@@ -236,6 +236,46 @@ function initShellInteractions() {
     return snapshot;
   }
 
+  function isDefaultAvatarSrc(src) {
+    const value = String(src || '');
+    if (!value) return true;
+    return value.includes('user 3 1.svg') || value.includes('user%203%201.svg');
+  }
+
+  function persistProfileMediaFromModal() {
+    if (!window.Storage) return;
+
+    const currentAvatarSrc = avatarImg ? String(avatarImg.src || '') : '';
+    if (isDefaultAvatarSrc(currentAvatarSrc)) {
+      if (typeof window.Storage.removeAvatar === 'function') {
+        window.Storage.removeAvatar();
+      }
+      resetAvatar();
+    } else {
+      if (typeof window.Storage.saveAvatar === 'function') {
+        window.Storage.saveAvatar(currentAvatarSrc);
+      }
+      applyAvatar(currentAvatarSrc);
+    }
+
+    const currentHeaderSrc = settingsHeaderPreviewImage ? String(settingsHeaderPreviewImage.src || '') : '';
+    const hasHeaderImage = !!settingsHeaderPreview
+      && settingsHeaderPreview.classList.contains('has-image')
+      && !!currentHeaderSrc;
+
+    if (hasHeaderImage) {
+      if (typeof window.Storage.saveProfileHeader === 'function') {
+        window.Storage.saveProfileHeader(currentHeaderSrc);
+      }
+      applyProfileHeader(currentHeaderSrc);
+    } else {
+      if (typeof window.Storage.removeProfileHeader === 'function') {
+        window.Storage.removeProfileHeader();
+      }
+      resetProfileHeader();
+    }
+  }
+
   function hasProfileEditUnsavedChanges() {
     if (!profileEditOriginalSnapshot) return false;
     const current = getCurrentProfileEditSnapshot();
@@ -320,7 +360,7 @@ function initShellInteractions() {
         canvas.height = outputHeight;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          reject(new Error('Canvas indisponível'));
+          reject(new Error('Canvas indisponivel'));
           return;
         }
 
@@ -347,7 +387,7 @@ function initShellInteractions() {
 
         resolve(canvas.toDataURL('image/png'));
       };
-      img.onerror = () => reject(new Error('Falha ao carregar imagem para edição'));
+      img.onerror = () => reject(new Error('Falha ao carregar imagem para edicao'));
       img.src = sourceUrl;
     });
   }
@@ -399,11 +439,11 @@ function initShellInteractions() {
     applyEditPhotoTransform();
   }
 
-  function handleEditPhoto(type) {
+  function handleEditPhoto(type, sourceOverride = '') {
     editingPhotoType = type === 'cover' ? 'cover' : 'profile';
     const profileImage = avatarImg ? avatarImg.src : '';
     const coverImage = (settingsHeaderPreviewImage && settingsHeaderPreviewImage.src) || (profileHeaderImage && profileHeaderImage.src) || '';
-    photoToEdit = editingPhotoType === 'profile' ? profileImage : coverImage;
+    photoToEdit = sourceOverride || (editingPhotoType === 'profile' ? profileImage : coverImage);
     photoEditZoom = 1;
     photoEditPosition = { x: 0, y: 0 };
     photoEditIsDragging = false;
@@ -431,10 +471,16 @@ function initShellInteractions() {
         applyAvatar(editedDataUrl);
       }
       console.log('Zoom aplicado:', zoomLevel);
-    } catch {
-      // Mantém o estado atual sem quebrar fluxo.
-    } finally {
+      if (saveStatus) {
+        saveStatus.textContent = '';
+        saveStatus.className = 'import-status';
+      }
       setEditPhotoModalOpen(false);
+    } catch {
+      if (saveStatus) {
+        saveStatus.textContent = 'Nao foi possivel aplicar a imagem agora.';
+        saveStatus.className = 'import-status error';
+      }
     }
   }
   function bindBackupAndVersionControls() {
@@ -612,7 +658,7 @@ function initShellInteractions() {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       if (file.size > 2 * 1024 * 1024) {
-        alert('Imagem muito grande. Máximo: 2 MB.');
+        alert('Imagem muito grande. Maximo: 2 MB.');
         e.target.value = '';
         return;
       }
@@ -689,18 +735,14 @@ function initShellInteractions() {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       if (file.size > 4 * 1024 * 1024) {
-        alert('Imagem muito grande. Máximo: 4 MB.');
+        alert('Imagem muito grande. Maximo: 4 MB.');
         e.target.value = '';
         return;
       }
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataUrl = ev.target.result;
-        if (window.Storage && typeof window.Storage.saveProfileHeader === 'function') {
-          window.Storage.saveProfileHeader(dataUrl);
-        }
-        applyProfileHeader(dataUrl);
-        handleEditPhoto('cover');
+        handleEditPhoto('cover', dataUrl);
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -833,8 +875,8 @@ function initShellInteractions() {
     const normalized = normalizeWebsiteUrl(value);
     if (!normalized) return '';
     try {
-      // Só retorna href quando a URL é válida no parser nativo.
-      // Alguns domínios "xn--" inválidos para o parser ainda exibem texto curto.
+      // So retorna href quando a URL e valida no parser nativo.
+      // Alguns dominios "xn--" invalidos para o parser ainda exibem texto curto.
       new URL(normalized);
       return normalized;
     } catch {
@@ -919,7 +961,7 @@ function initShellInteractions() {
     if (birthMonthSelect.dataset.filled === '1') return;
 
     const months = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ].map((label, idx) => ({ value: idx + 1, label }));
     fillSelect(birthMonthSelect, months, 1);
@@ -1155,31 +1197,35 @@ function initShellInteractions() {
       });
 
       try {
-        if (typeof window.Storage.saveProfileAndAllData === 'function') {
-          await window.Storage.saveProfileAndAllData(payload);
-        } else {
+        if (typeof window.Storage.saveProfileSettings === 'function') {
           window.Storage.saveProfileSettings(payload);
-          if (typeof window.Storage.pushStateToServer === 'function') {
-            await window.Storage.pushStateToServer();
-          }
-          if (typeof window.Storage.createServerVersion === 'function') {
-            await window.Storage.createServerVersion('settings-profile-save');
-          }
         }
+        persistProfileMediaFromModal();
         refreshLocalVersions();
-
+        updateProfilePage();
+        profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
         if (saveStatus) {
           saveStatus.textContent = 'Perfil e dados gerais salvos com sucesso!';
           saveStatus.className = 'import-status success';
-          updateProfilePage();
-          profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
-          performCloseEditProfileModal();
         }
+        performCloseEditProfileModal();
       } catch {
         if (saveStatus) {
-          saveStatus.textContent = 'Salvo localmente. Não foi possível sincronizar com o servidor agora.';
+          saveStatus.textContent = 'Nao foi possivel salvar o perfil agora.';
           saveStatus.className = 'import-status error';
         }
+        return;
+      }
+
+      try {
+        if (typeof window.Storage.pushStateToServer === 'function') {
+          await window.Storage.pushStateToServer();
+        }
+        if (typeof window.Storage.createServerVersion === 'function') {
+          await window.Storage.createServerVersion('settings-profile-save');
+        }
+      } catch {
+        // Sync remota nao bloqueia o salvamento local nem o fechamento do modal.
       }
     });
   }
@@ -1220,12 +1266,12 @@ function initShellInteractions() {
         profileBio.textContent = bio;
         profileBio.classList.remove('is-placeholder');
       } else {
-        profileBio.textContent = 'Clique para adicionar uma descrição...';
+        profileBio.textContent = 'Clique para adicionar uma descricao...';
         profileBio.classList.add('is-placeholder');
       }
     }
 
-    // Atualizar informações
+    // Atualizar informacoes
     const profileWebsite = document.getElementById('profile-website');
     if (profileWebsite) {
       const websiteText = String(profileData.website || '').trim();
@@ -1289,7 +1335,7 @@ function initShellInteractions() {
     const profileHeadlineCount = document.getElementById('profile-headline-count');
     if (profileHeadlineCount) {
       const contributionsTotal = getProfileContributionTotal();
-      profileHeadlineCount.textContent = contributionsTotal + ' contribuições';
+      profileHeadlineCount.textContent = contributionsTotal + ' contribuicoes';
     }
 
     const statPlaylists = document.getElementById('stat-playlists');
@@ -1317,7 +1363,7 @@ function initShellInteractions() {
     });
   }
 
-  // Botão de editar perfil (Evermore)
+  // Botao de editar perfil (Evermore)
   const btnEditProfile = document.getElementById('btn-edit-profile');
   if (btnEditProfile && btnEditProfile.dataset.boundClick !== '1') {
     btnEditProfile.dataset.boundClick = '1';
@@ -1453,4 +1499,6 @@ function initShellInteractions() {
 }
 
 export default initShellInteractions;
+
+
 

@@ -665,14 +665,11 @@ button {
   position: absolute;
   top: -2px;
   right: -2px;
-  width: 22px;
-  height: 22px;
-  background: #e74c3c;
-  color: white;
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
   border: 2px solid white;
   border-radius: 50%;
-  font-size: 14px;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -681,8 +678,15 @@ button {
   transition: background 0.2s;
 }
 
+.avatar-remove img {
+  width: 20px;
+  height: 21px;
+  display: block;
+  object-fit: contain;
+}
+
 .avatar-remove:hover {
-  background: #c0392b;
+  background: #ff0000;
 }
 
 .settings-form { flex: 1; }
@@ -4226,6 +4230,7 @@ button {
   position: relative;
   margin: 0;
   height: 200px;
+  z-index: 1;
 }
 
 #modal-edit-profile .profile-edit-form-grid .form-group {
@@ -4304,16 +4309,30 @@ button {
 }
 
 #modal-edit-profile .settings-header-preview {
+  position: relative;
   max-width: none;
   height: 200px;
   border-radius: 0;
   border: none;
+  overflow: hidden;
   background: linear-gradient(135deg, #223040 0%, #1a2733 48%, #121a22 100%);
+}
+
+#modal-edit-profile .settings-header-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+#modal-edit-profile .settings-header-preview.has-image .settings-header-preview-image {
+  display: block;
 }
 
 #modal-edit-profile .settings-header-actions.profile-edit-cover-overlay-actions {
   position: absolute;
   inset: 0;
+  z-index: 2;
   margin-top: 0;
   display: flex;
   align-items: center;
@@ -4345,6 +4364,8 @@ button {
 }
 
 #modal-edit-profile .profile-edit-avatar-row {
+  position: relative;
+  z-index: 3;
   margin: -64px 16px 24px;
   align-items: flex-end;
   justify-content: space-between;
@@ -4353,10 +4374,10 @@ button {
 #modal-edit-profile .profile-edit-avatar-floating {
   width: 132px;
   height: 132px;
-  border: 4px solid #000;
   border-radius: 999px;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
+  z-index: 4;
   flex-shrink: 0;
 }
 
@@ -4365,14 +4386,17 @@ button {
   height: 100%;
   display: block;
   object-fit: cover;
+  border: 6px solid #000;
+  border-radius: 999px;
+  background: #000;
 }
 
 #modal-edit-profile .avatar-edit {
   position: absolute;
   right: 8px;
   bottom: 8px;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -4395,14 +4419,10 @@ button {
 }
 
 #modal-edit-profile .avatar-remove {
-  top: 8px;
-  right: 8px;
+  top: 9px;
+  right: 9px;
   border-color: #000;
   z-index: 3;
-}
-
-#modal-edit-profile .profile-edit-avatar-actions {
-  gap: 8px;
 }
 
 #modal-edit-profile .import-status {
