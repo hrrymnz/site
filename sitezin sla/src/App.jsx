@@ -66,6 +66,14 @@ function App() {
         history.replaceState(null, '', window.location.pathname + window.location.search + '#debut');
       }
 
+      try {
+        await Storage.bootstrapPersistence();
+      } catch {
+        // Mantem interface responsiva mesmo se a hidratacao remota falhar.
+      }
+
+      if (cancelled) return;
+
       initLegacyApp();
       initShellInteractions();
       initRepositorios();
@@ -73,28 +81,21 @@ function App() {
         window.lucide.createIcons();
       }
 
-      Storage.bootstrapPersistence()
-        .then(() => {
-          if (cancelled) return;
-          if (window.App && typeof window.App.renderAllEras === 'function') {
-            window.App.renderAllEras();
-          }
-          if (window.App && typeof window.App.renderDebutHighlights === 'function') {
-            window.App.renderDebutHighlights();
-          }
-          if (typeof window.renderizarRecentes === 'function') {
-            window.renderizarRecentes();
-          }
-          if (typeof window.updateProfilePage === 'function') {
-            window.updateProfilePage();
-          }
-          if (window.lucide && typeof window.lucide.createIcons === 'function') {
-            window.lucide.createIcons();
-          }
-        })
-        .catch(() => {
-          // Mantem interface responsiva mesmo se a hidratacao remota falhar.
-        });
+      if (window.App && typeof window.App.renderAllEras === 'function') {
+        window.App.renderAllEras();
+      }
+      if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+        window.App.renderDebutHighlights();
+      }
+      if (typeof window.renderizarRecentes === 'function') {
+        window.renderizarRecentes();
+      }
+      if (typeof window.updateProfilePage === 'function') {
+        window.updateProfilePage();
+      }
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
     };
 
     boot();

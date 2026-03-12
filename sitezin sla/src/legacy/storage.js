@@ -1040,6 +1040,60 @@ const Storage = {
     return record;
   },
 
+  async fetchLatestServerVersionRecord(limit = 10) {
+    if (!this.hasSupabase) return null;
+
+    const { data, error } = await supabase
+      .from('app_state_versions')
+      .select('state, created_at, label')
+      .eq('scope', this.STATE_SCOPE)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error || !Array.isArray(data)) return null;
+
+    const meaningful = data.find((entry) => entry?.state && this.snapshotScore(entry.state) > 0);
+    if (!meaningful) return null;
+
+    return {
+      state: meaningful.state,
+      updated_at: String(meaningful.created_at || ""),
+      label: String(meaningful.label || "")
+    };
+  },
+
+  async fetchBestServerStateRecord() {
+    const record = await this.fetchServerStateRecord();
+    const recordScore = record?.state ? this.snapshotScore(record.state) : 0;
+
+    if (record && recordScore > 0) return record;
+
+    const versionRecord = await this.fetchLatestServerVersionRecord();
+    const versionScore = versionRecord?.state ? this.snapshotScore(versionRecord.state) : 0;
+
+    if (!versionRecord || versionScore <= recordScore) {
+      return record;
+    }
+
+    // Auto-recupera a linha principal quando o historico remoto ainda esta integro.
+    try {
+      await supabase
+        .from('app_state')
+        .upsert(
+          {
+            scope: this.STATE_SCOPE,
+            state: versionRecord.state,
+            updated_at: versionRecord.updated_at || new Date().toISOString()
+          },
+          { onConflict: 'scope' }
+        );
+    } catch {
+      // Se a escrita falhar, ainda tentamos hidratar a UI a partir da versao.
+    }
+
+    return versionRecord;
+  },
+
   // @deprecated Mantido para evolucao futura de restore remoto por versao.
   // Nao ha consumo ativo na UI atual (ciclo atual usa historico local).
   async listServerVersions(limit = 30) {
@@ -1120,7 +1174,7 @@ const Storage = {
   async hydrateFromServer() {
     if (!this.hasSupabase) return false;
     try {
-      const record = await this.fetchServerStateRecord();
+      const record = await this.fetchBestServerStateRecord();
       if (!record || !record.state) return false;
       this.applySnapshot(record.state);
       this.lastRemoteUpdatedAt = String(record.updated_at || "");
@@ -1139,7 +1193,7 @@ const Storage = {
 
     this.remoteRefreshInFlight = true;
     try {
-      const record = await this.fetchServerStateRecord();
+      const record = await this.fetchBestServerStateRecord();
       if (!record || !record.state) return false;
 
       const remoteUpdatedAt = String(record.updated_at || "");
@@ -1184,7 +1238,7 @@ const Storage = {
 
     if (this.hasSupabase) {
       try {
-        const record = await this.fetchServerStateRecord();
+        const record = await this.fetchBestServerStateRecord();
         if (record && record.state) {
           loaded = true;
 
@@ -1369,7 +1423,6 @@ const Storage = {
     // Sem seed automatico: repositorios devem ser adicionados manualmente na era Fearless.
     if (localStorage.getItem(this.FEARLESS_SEED_KEY) !== "1") {
       localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
-      this.scheduleSync();
     }
   },
 
