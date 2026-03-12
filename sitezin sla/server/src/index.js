@@ -7,9 +7,23 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
+const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const hasSupabaseAuthConfig = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+const enableUnscopedItemsApi = process.env.ENABLE_UNSCOPED_ITEMS_API === 'true';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (!allowedOrigins.length || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin nao permitida pelo servidor.'));
+  }
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -38,6 +52,63 @@ const testConnection = () => {
 };
 testConnection();
 
+async function resolveSupabaseUser(req) {
+  if (!hasSupabaseAuthConfig) return null;
+
+  const authHeader = String(req.headers.authorization || '');
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match || !match[1]) return null;
+
+  try {
+    const response = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: process.env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${match[1]}`
+      }
+    });
+
+    if (!response.ok) return null;
+    const user = await response.json();
+    return user && user.id ? user : null;
+  } catch {
+    return null;
+  }
+}
+
+async function requireSupabaseAuth(req, res, next) {
+  if (!hasSupabaseAuthConfig) {
+    return res.status(500).json({
+      error: 'Auth do servidor nao configurada. Defina SUPABASE_URL e SUPABASE_ANON_KEY.'
+    });
+  }
+
+  const user = await resolveSupabaseUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Nao autenticado.' });
+  }
+
+  req.authUser = user;
+  next();
+}
+
+function requireOwnScope(req, res, next) {
+  const requestedScope = String(req.params.scope || '').trim();
+  const currentUserId = String(req.authUser?.id || '').trim();
+
+  if (!requestedScope || !currentUserId || requestedScope !== currentUserId) {
+    return res.status(403).json({ error: 'Acesso negado a escopo de outro usuario.' });
+  }
+
+  next();
+}
+
+function rejectUnscopedItemsApi(req, res, next) {
+  if (enableUnscopedItemsApi) return next();
+  return res.status(403).json({
+    error: 'API legacy de items desativada por seguranca. Defina ENABLE_UNSCOPED_ITEMS_API=true apenas em ambiente privado.'
+  });
+}
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
@@ -46,7 +117,7 @@ app.get('/health', (req, res) => {
 // ===== ITEMS Routes =====
 
 // GET todos os items
-app.get('/api/items', async (req, res) => {
+app.get('/api/items', rejectUnscopedItemsApi, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM items ORDER BY created_at DESC'
@@ -59,7 +130,7 @@ app.get('/api/items', async (req, res) => {
 });
 
 // GET items por categoria (era)
-app.get('/api/items/:era', async (req, res) => {
+app.get('/api/items/:era', rejectUnscopedItemsApi, async (req, res) => {
   try {
     const { era } = req.params;
     const result = await pool.query(
@@ -74,7 +145,7 @@ app.get('/api/items/:era', async (req, res) => {
 });
 
 // POST novo item
-app.post('/api/items', async (req, res) => {
+app.post('/api/items', rejectUnscopedItemsApi, async (req, res) => {
   try {
     const { title, url, content, category, type } = req.body;
     
@@ -95,7 +166,7 @@ app.post('/api/items', async (req, res) => {
 });
 
 // PUT atualizar item
-app.put('/api/items/:id', async (req, res) => {
+app.put('/api/items/:id', rejectUnscopedItemsApi, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, url, content, category, type, pinned } = req.body;
@@ -117,7 +188,7 @@ app.put('/api/items/:id', async (req, res) => {
 });
 
 // DELETE item
-app.delete('/api/items/:id', async (req, res) => {
+app.delete('/api/items/:id', rejectUnscopedItemsApi, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -140,7 +211,7 @@ app.delete('/api/items/:id', async (req, res) => {
 // ===== APP STATE Routes =====
 
 // GET estado completo persistido (backup vivo do frontend)
-app.get('/api/state/:scope', async (req, res) => {
+app.get('/api/state/:scope', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   try {
     const { scope } = req.params;
     const result = await pool.query(
@@ -160,7 +231,7 @@ app.get('/api/state/:scope', async (req, res) => {
 });
 
 // PUT upsert do estado completo persistido
-app.put('/api/state/:scope', async (req, res) => {
+app.put('/api/state/:scope', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   try {
     const { scope } = req.params;
     const { state } = req.body;
@@ -186,7 +257,7 @@ app.put('/api/state/:scope', async (req, res) => {
 });
 
 // POST cria uma versao historica do estado atual (ou do estado informado)
-app.post('/api/state/:scope/versions', async (req, res) => {
+app.post('/api/state/:scope/versions', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   try {
     const { scope } = req.params;
     const { state, label } = req.body || {};
@@ -215,7 +286,7 @@ app.post('/api/state/:scope/versions', async (req, res) => {
 });
 
 // GET lista versoes de estado para um escopo
-app.get('/api/state/:scope/versions', async (req, res) => {
+app.get('/api/state/:scope/versions', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   try {
     const { scope } = req.params;
     const limitRaw = Number(req.query.limit);
@@ -238,7 +309,7 @@ app.get('/api/state/:scope/versions', async (req, res) => {
 });
 
 // GET detalha uma versao especifica
-app.get('/api/state/:scope/versions/:versionId', async (req, res) => {
+app.get('/api/state/:scope/versions/:versionId', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   try {
     const { scope, versionId } = req.params;
     const result = await pool.query(
@@ -261,7 +332,7 @@ app.get('/api/state/:scope/versions/:versionId', async (req, res) => {
 });
 
 // POST restaura uma versao e a torna estado atual
-app.post('/api/state/:scope/versions/:versionId/restore', async (req, res) => {
+app.post('/api/state/:scope/versions/:versionId/restore', requireSupabaseAuth, requireOwnScope, async (req, res) => {
   const client = await pool.connect();
   try {
     const { scope, versionId } = req.params;
