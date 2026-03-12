@@ -4360,6 +4360,19 @@ body.app-theme-dark #red-checklist-title {
   border-color: color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
 }
 
+body.app-theme-dark .red-note-topbar .folklore-md-title-input,
+body.app-theme-dark #red-note-title {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
+}
+
+body.app-theme-dark .red-note-topbar .folklore-md-title-input::placeholder,
+body.app-theme-dark #red-note-title::placeholder,
+body.app-theme-dark #red-checklist-title::placeholder {
+  color: color-mix(in oklab, var(--muted) 82%, var(--text) 18%);
+}
+
 body.app-theme-dark .red-checklist-progress-track,
 body.app-theme-dark .red-note-list-progress-track {
   background: rgba(255, 255, 255, 0.09);

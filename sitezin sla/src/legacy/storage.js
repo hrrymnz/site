@@ -21,6 +21,7 @@ const Storage = {
   LOCAL_VERSIONS_KEY: "swiftLocalVersions",
   AVATAR_KEY: "swiftAvatar",
   HEADER_KEY: "swiftProfileHeader",
+  STATE_META_KEY: "swiftStateMeta",
   STATE_SCOPE: "default",
   currentUserId: null,
   currentWorkspace: "default",
@@ -132,6 +133,7 @@ const Storage = {
     this.HEADER_KEY = prefix + "swiftProfileHeader";
     this.UI_PREFS_KEY = prefix + "swiftUiPrefs";
     this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
+    this.STATE_META_KEY = prefix + "swiftStateMeta";
   },
 
 
@@ -198,6 +200,27 @@ const Storage = {
     } catch {
       return fallback;
     }
+  },
+
+  toTimestampMs(value) {
+    if (!value) return 0;
+    const ms = new Date(String(value)).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+  },
+
+  getLocalStateMeta() {
+    return this.normalizePlainObject(this.safeParse(this.STATE_META_KEY, {}));
+  },
+
+  getLocalStateUpdatedAt() {
+    return String(this.getLocalStateMeta().updatedAt || "");
+  },
+
+  setLocalStateUpdatedAt(updatedAt = "") {
+    const nextUpdatedAt = String(updatedAt || new Date().toISOString()).trim();
+    if (!nextUpdatedAt) return "";
+    localStorage.setItem(this.STATE_META_KEY, JSON.stringify({ updatedAt: nextUpdatedAt }));
+    return nextUpdatedAt;
   },
 
   generateId() {
@@ -718,6 +741,7 @@ const Storage = {
   },
 
   scheduleSync() {
+    this.setLocalStateUpdatedAt();
     this.hasPendingSync = true;
     this.setSyncStatus(this.hasSupabase ? "saving" : "local");
     clearTimeout(this.syncTimer);
@@ -845,7 +869,7 @@ const Storage = {
       return;
     }
     const snapshot = this.getSnapshot();
-    const updatedAt = new Date().toISOString();
+    const updatedAt = this.setLocalStateUpdatedAt(this.getLocalStateUpdatedAt() || new Date().toISOString());
     this.setSyncStatus("saving");
 
     const { error } = await supabase
@@ -859,6 +883,7 @@ const Storage = {
 
     this.hasPendingSync = false;
     this.lastRemoteUpdatedAt = updatedAt;
+    this.setLocalStateUpdatedAt(updatedAt);
     this.setSyncStatus("saved");
     this.maybeScheduleVersion(snapshot, "auto");
   },
@@ -870,6 +895,7 @@ const Storage = {
       if (!record || !record.state) return false;
       this.applySnapshot(record.state);
       this.lastRemoteUpdatedAt = String(record.updated_at || "");
+      this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || new Date().toISOString());
       this.hasPendingSync = false;
       this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
       return true;
@@ -906,6 +932,7 @@ const Storage = {
 
       this.applySnapshot(record.state);
       this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+      this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || new Date().toISOString());
       this.hasPendingSync = false;
       this.lastVersionSignature = this.buildSnapshotSignature(this.getSnapshot());
       this.setSyncStatus("saved", "Atualizado do servidor");
@@ -921,17 +948,45 @@ const Storage = {
   async bootstrapPersistence() {
     const localBeforeHydrate = this.getSnapshot();
     const localScore = this.snapshotScore(localBeforeHydrate);
+    const localSignature = this.buildSnapshotSignature(localBeforeHydrate);
+    const localUpdatedAt = this.getLocalStateUpdatedAt();
+    let loaded = false;
+    let shouldRecoverLocal = false;
 
-    const loaded = await this.hydrateFromServer();
+    if (this.hasSupabase) {
+      try {
+        const record = await this.fetchServerStateRecord();
+        if (record && record.state) {
+          loaded = true;
 
-    if (loaded) {
-      const serverScore = this.snapshotScore(this.getSnapshot());
-      if (localScore > serverScore) {
-        this.applySnapshot(localBeforeHydrate);
-        this.scheduleSync();
-        this.createServerVersion("recover-local-priority", localBeforeHydrate).catch(() => {
-          // Evita quebrar bootstrap por falha de rede.
-        });
+          const remoteSnapshot = record.state;
+          const remoteUpdatedAt = String(record.updated_at || "");
+          const remoteSignature = this.buildSnapshotSignature(remoteSnapshot);
+          const localMs = this.toTimestampMs(localUpdatedAt);
+          const remoteMs = this.toTimestampMs(remoteUpdatedAt);
+          const remoteScore = this.snapshotScore(remoteSnapshot);
+
+          if (remoteSignature === localSignature) {
+            this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+            this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || localUpdatedAt || new Date().toISOString());
+            this.hasPendingSync = false;
+            this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
+          } else if (
+            (localMs && (!remoteMs || localMs > remoteMs)) ||
+            (!localMs && localScore > remoteScore)
+          ) {
+            this.lastRemoteUpdatedAt = remoteUpdatedAt;
+            shouldRecoverLocal = true;
+          } else {
+            this.applySnapshot(remoteSnapshot);
+            this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+            this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || new Date().toISOString());
+            this.hasPendingSync = false;
+            this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
+          }
+        }
+      } catch {
+        this.setSyncStatus(this.hasSupabase ? "error" : "local");
       }
     }
 
@@ -944,6 +999,11 @@ const Storage = {
       this.scheduleSync();
       this.createServerVersion("bootstrap-init", currentSnapshot).catch(() => {
         // Ignora erro para manter bootstrap resiliente.
+      });
+    } else if (shouldRecoverLocal) {
+      this.scheduleSync();
+      this.createServerVersion("recover-local-priority", localBeforeHydrate).catch(() => {
+        // Evita quebrar bootstrap por falha de rede.
       });
     }
   },
