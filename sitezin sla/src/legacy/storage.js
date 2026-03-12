@@ -1081,6 +1081,14 @@ const Storage = {
       .insert({ scope: this.STATE_SCOPE, state: version.state, label: 'restore-from-' + versionId });
 
     this.applySnapshot(version.state);
+    this.setLocalStateUpdatedAt(new Date().toISOString());
+    this.createLocalVersion(`restore-server-${versionId}`, this.getSnapshot());
+    this.addNotification({
+      category: "backup",
+      level: "success",
+      title: "Versão restaurada",
+      message: "Uma versão do servidor foi restaurada com sucesso."
+    });
     return version;
   },
 

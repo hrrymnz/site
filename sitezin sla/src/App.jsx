@@ -479,7 +479,7 @@ function App() {
             <div className="painel-superficie settings-card settings-modern">
               <header className="settings-modern-header">
                 <h3>Configurações gerais</h3>
-                <p>Preferências, backup e histórico local.</p>
+                <p>Preferências, backup e histórico.</p>
               </header>
 
               <section className="settings-modern-section">
@@ -515,12 +515,12 @@ function App() {
               </section>
 
               <section className="settings-modern-section">
-                <h4>Histórico local</h4>
+                <h4>Histórico de versões</h4>
                 <div className="settings-pref-list">
                   <div className="settings-pref-item">
                     <div className="settings-pref-copy">
-                      <strong>Versões locais</strong>
-                      <span>Últimas 10 versões para restauração rápida.</span>
+                      <strong>Versões salvas</strong>
+                      <span>Até 5 versões locais e 5 versões do servidor para restauração rápida.</span>
                     </div>
                     <div className="settings-pref-actions">
                       <button type="button" className="btn-export" id="btn-refresh-versions">Atualizar lista</button>

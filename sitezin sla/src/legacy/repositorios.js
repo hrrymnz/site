@@ -35,6 +35,25 @@ function getGithubCacheKey() {
   return "githubDashboardCache";
 }
 
+function normalizarInicioDoDia(data) {
+  const valor = new Date(data);
+  valor.setHours(0, 0, 0, 0);
+  return valor;
+}
+
+function formatarChaveDataLocal(data) {
+  const valor = normalizarInicioDoDia(data);
+  const ano = valor.getFullYear();
+  const mes = String(valor.getMonth() + 1).padStart(2, "0");
+  const dia = String(valor.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function parseDataLocal(chave) {
+  const [ano, mes, dia] = String(chave || "").split("-").map(Number);
+  return new Date(ano, (mes || 1) - 1, dia || 1);
+}
+
 // ===== 2) CARDS FIXOS E RECENTES =====
 const REPO_PIN_SLOTS = 2;
 
@@ -646,11 +665,11 @@ async function obterContribuicoesGithub(forceRefresh = false) {
 
 function obterJanelaDias(periodoDias) {
   const dias = [];
-  const hoje = new Date();
+  const hoje = normalizarInicioDoDia(new Date());
   for (let i = periodoDias - 1; i >= 0; i -= 1) {
     const dia = new Date(hoje);
     dia.setDate(hoje.getDate() - i);
-    dias.push(dia.toISOString().slice(0, 10));
+    dias.push(formatarChaveDataLocal(dia));
   }
   return dias;
 }
@@ -713,8 +732,12 @@ function preencherGraficoContribuicoes(dias, total) {
   mesesContainer.innerHTML = "";
   totalEl.textContent = String(total);
 
+  const primeiraData = dias.length ? parseDataLocal(dias[0].date) : null;
+  const deslocamentoInicial = primeiraData ? primeiraData.getDay() : 0;
+  const totalCelulas = deslocamentoInicial + dias.length;
+
   // Define quantidade de semanas exibidas; minimo 5 para não colapsar visualmente.
-  const colunas = Math.max(5, Math.ceil(dias.length / 7));
+  const colunas = Math.max(5, Math.ceil(totalCelulas / 7));
   container.style.setProperty("--graph-columns", String(colunas));
   mesesContainer.style.setProperty("--graph-columns", String(colunas));
 
@@ -723,9 +746,9 @@ function preencherGraficoContribuicoes(dias, total) {
 
   // Renderiza o nome do mes apenas quando entra em um novo mes no fluxo de dias.
   dias.forEach((day, idx) => {
-    const data = new Date(day.date + "T00:00:00");
+    const data = parseDataLocal(day.date);
     const mesKey = data.getFullYear() + "-" + data.getMonth();
-    const semanaColuna = Math.floor(idx / 7) + 1;
+    const semanaColuna = Math.floor((deslocamentoInicial + idx) / 7) + 1;
 
     if (!mesesRenderizados.has(mesKey)) {
       const label = document.createElement("span");
@@ -737,6 +760,13 @@ function preencherGraficoContribuicoes(dias, total) {
     }
   });
 
+  for (let i = 0; i < deslocamentoInicial; i += 1) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "contribution-day contribution-day-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+    container.appendChild(placeholder);
+  }
+
   // Renderiza cada celula do heatmap com nivel de intensidade (0 a 4).
   dias.forEach(day => {
     const bloco = document.createElement("div");
@@ -745,6 +775,14 @@ function preencherGraficoContribuicoes(dias, total) {
     bloco.title = `${day.date} - ${day.count || 0} contribuições`;
     container.appendChild(bloco);
   });
+
+  const preenchimentoFinal = (colunas * 7) - totalCelulas;
+  for (let i = 0; i < preenchimentoFinal; i += 1) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "contribution-day contribution-day-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+    container.appendChild(placeholder);
+  }
 }
 
 function renderizarGraficoContribuicoes(dataContribuicoes) {

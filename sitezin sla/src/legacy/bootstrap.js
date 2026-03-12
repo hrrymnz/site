@@ -524,56 +524,85 @@ function initShellInteractions() {
     }
   }
   function bindBackupAndVersionControls() {
-    function refreshLocalVersions() {
+    async function refreshLocalVersions() {
       const versionsList = document.getElementById('local-versions-list');
       const versionsStatus = document.getElementById('versions-status');
       if (!versionsList || !window.Storage || typeof window.Storage.listLocalVersions !== 'function') return;
 
-      const versions = window.Storage.listLocalVersions();
+      const localVersions = window.Storage.listLocalVersions().slice(0, 5).map((entry) => ({
+        id: String(entry.id || '').trim(),
+        label: entry.label || 'auto-local',
+        createdAt: entry.createdAt,
+        source: 'local'
+      }));
+
+      let serverVersions = [];
+      if (typeof window.Storage.listServerVersions === 'function') {
+        try {
+          const remoteEntries = await window.Storage.listServerVersions(5);
+          serverVersions = Array.isArray(remoteEntries)
+            ? remoteEntries.slice(0, 5).map((entry) => ({
+              id: String(entry.id || '').trim(),
+              label: entry.label || 'auto-server',
+              createdAt: entry.created_at,
+              source: 'server'
+            }))
+            : [];
+        } catch {
+          serverVersions = [];
+        }
+      }
+
+      const versions = [...serverVersions, ...localVersions]
+        .filter((entry) => entry.id && entry.createdAt)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
       if (!versions.length) {
-        versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versao local encontrada.</li>';
+        versionsList.innerHTML = '<li class="local-version-empty">Nenhuma versao encontrada.</li>';
         return;
       }
 
       versionsList.innerHTML = versions.map((v) => {
-        const label = v.label || 'auto-local';
         const when = new Date(v.createdAt).toLocaleString('pt-BR');
+        const sourceLabel = v.source === 'server' ? 'Servidor' : 'Local';
+        const sourceClass = v.source === 'server' ? 'is-server' : 'is-local';
         return '<li class="local-version-item">' +
-          '<div class="local-version-meta"><strong>' + label + '</strong><small>' + when + '</small></div>' +
-          '<button type="button" class="btn-import local-restore-btn" data-version-id="' + v.id + '">Restaurar</button>' +
+          '<div class="local-version-meta">' +
+            '<div class="local-version-title-row">' +
+              '<strong>' + v.label + '</strong>' +
+              '<span class="local-version-source ' + sourceClass + '">' + sourceLabel + '</span>' +
+            '</div>' +
+            '<small>' + when + '</small>' +
+          '</div>' +
+          '<button type="button" class="btn-import local-restore-btn" data-version-id="' + v.id + '" data-version-source="' + v.source + '">Restaurar</button>' +
         '</li>';
       }).join('');
 
       versionsList.querySelectorAll('.local-restore-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const versionId = btn.dataset.versionId;
+          const versionSource = btn.dataset.versionSource || 'local';
           try {
-            window.Storage.restoreLocalVersion(versionId);
-
-            if (window.App && typeof window.App.renderAllEras === 'function') {
-              window.App.renderAllEras();
-            }
-            if (window.App && typeof window.App.renderDebutHighlights === 'function') {
-              window.App.renderDebutHighlights();
-            }
-            if (typeof window.renderizarRecentes === 'function') {
-              window.renderizarRecentes();
-            }
-            if (typeof window.updateProfilePage === 'function') {
-              window.updateProfilePage();
+            if (versionSource === 'server' && typeof window.Storage.restoreServerVersion === 'function') {
+              await window.Storage.restoreServerVersion(versionId);
+            } else {
+              window.Storage.restoreLocalVersion(versionId);
             }
 
-            refreshAvatar();
-            refreshProfileHeader();
-            refreshLocalVersions();
+            refreshAllUiFromStorage();
+            await refreshLocalVersions();
 
             if (versionsStatus) {
-              versionsStatus.textContent = 'Versao restaurada com sucesso.';
+              versionsStatus.textContent = versionSource === 'server'
+                ? 'Versao do servidor restaurada com sucesso.'
+                : 'Versao local restaurada com sucesso.';
               versionsStatus.className = 'import-status success';
             }
           } catch {
             if (versionsStatus) {
-              versionsStatus.textContent = 'Nao foi possivel restaurar essa versao.';
+              versionsStatus.textContent = versionSource === 'server'
+                ? 'Nao foi possivel restaurar essa versao do servidor.'
+                : 'Nao foi possivel restaurar essa versao.';
               versionsStatus.className = 'import-status error';
             }
           }
@@ -633,7 +662,7 @@ function initShellInteractions() {
 
           refreshAvatar();
           refreshProfileHeader();
-          refreshLocalVersions();
+          await refreshLocalVersions();
 
           if (status) {
             status.textContent = count + ' itens importados com sucesso!';
@@ -652,9 +681,9 @@ function initShellInteractions() {
     const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
     if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
       refreshVersionsBtn.dataset.boundClick = '1';
-      refreshVersionsBtn.addEventListener('click', (e) => {
+      refreshVersionsBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        refreshLocalVersions();
+        await refreshLocalVersions();
       });
     }
 

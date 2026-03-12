@@ -234,8 +234,7 @@ body.app-theme-dark .login-theme-switch-thumb {
 .dashboard {
   width: 100%;
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 230px 1fr;
+  display: block;
   background: var(--card);
   overflow: hidden;
 }
@@ -253,6 +252,12 @@ body.app-theme-dark .login-theme-switch-thumb {
   display: flex;
   flex-direction: column;
   gap: 22px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 230px;
+  height: 100vh;
+  overflow: hidden;
   border-right: 1px solid var(--border);
 }
 
@@ -345,16 +350,25 @@ body.app-theme-dark .login-theme-switch-thumb {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  margin-left: 230px;
+  width: calc(100% - 230px);
+  padding-top: 92px;
 }
 
 /* ===== TOPO ===== */
 
 .topbar {
+  position: fixed;
+  top: 0;
+  left: 230px;
+  right: 0;
+  z-index: 40;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   padding: 18px;
+  background: var(--card);
   border-bottom: 1px solid var(--border);
 }
 
@@ -1434,6 +1448,13 @@ button {
   padding: 14px 18px;
   flex-wrap: wrap;
   border-bottom: 1px solid var(--border);
+}
+
+#page-red .era-toolbar {
+  min-height: 30px;
+  box-sizing: border-box;
+  padding-top: 16.5px;
+  padding-bottom: 16.5px;
 }
 
 .era-tags {
@@ -3098,8 +3119,28 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
 /* ===== RESPONSIVIDADE ===== */
 
 @media (max-width: 980px) {
-  .dashboard { grid-template-columns: 1fr; }
-  .sidebar { gap: 14px; }
+  .dashboard { display: grid; grid-template-columns: 1fr; }
+  .content {
+    margin-left: 0;
+    width: auto;
+    padding-top: 0;
+  }
+  .sidebar {
+    gap: 14px;
+    position: static;
+    top: auto;
+    left: auto;
+    width: auto;
+    height: auto;
+    overflow-y: visible;
+  }
+  .topbar {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: auto;
+  }
   .menu { grid-template-columns: repeat(3, 1fr); }
   .repos-grid,
   .charts-grid { grid-template-columns: 1fr; }
@@ -3282,6 +3323,11 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   height: 10px;
   border-radius: 2px;
   background: #ebedf0;
+}
+
+.contribution-day-placeholder {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.12);
 }
 
 .contribution-day.level-0 { background: #ebedf0; }
@@ -3844,9 +3890,41 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   gap: 2px;
 }
 
+.local-version-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .local-version-meta strong {
   font-size: 0.86rem;
   color: var(--text);
+}
+
+.local-version-source {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border);
+  background: var(--cartao-suave);
+  color: var(--muted);
+}
+
+.local-version-source.is-local {
+  background: color-mix(in oklab, var(--accent) 10%, var(--cartao-suave) 90%);
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 22%, var(--border) 78%);
+}
+
+.local-version-source.is-server {
+  background: rgba(46, 168, 111, 0.12);
+  color: #2ea86f;
+  border-color: rgba(46, 168, 111, 0.25);
 }
 
 .local-version-meta small,
@@ -6131,6 +6209,23 @@ body.app-theme-dark #page-settings .local-version-item {
   border-color: var(--dark-border-strong);
 }
 
+body.app-theme-dark #page-settings .local-version-source {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 24%, var(--border) 76%);
+}
+
+body.app-theme-dark #page-settings .local-version-source.is-local {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-elevated) 82%);
+  color: color-mix(in oklab, var(--accent) 70%, var(--text) 30%);
+}
+
+body.app-theme-dark #page-settings .local-version-source.is-server {
+  background: rgba(46, 168, 111, 0.16);
+  color: #78d6a5;
+  border-color: rgba(120, 214, 165, 0.24);
+}
+
 body.app-theme-dark #page-settings .btn-import,
 body.app-theme-dark #page-settings .settings-cancel-btn,
 body.app-theme-dark #page-settings .local-restore-btn {
@@ -6566,3 +6661,8 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
     margin: 0;
   }
 }
+
+
+
+
+
