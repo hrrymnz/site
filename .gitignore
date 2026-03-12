@@ -3,7 +3,6 @@ node_modules/
 sitezin sla/node_modules/
 
 # build files
-sitezin sla/dist/
 sitezin sla/.vite/
 
 # wrangler files
