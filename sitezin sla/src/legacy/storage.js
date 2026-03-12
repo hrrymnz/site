@@ -28,6 +28,8 @@ const Storage = {
   hasPendingSync: false,
   lastRemoteUpdatedAt: "",
   remoteRefreshInFlight: false,
+  syncStatus: "idle",
+  syncStatusMessage: "Pronto para sincronizar",
   syncTimer: null,
   versionTimer: null,
   lastVersionAt: 0,
@@ -38,11 +40,41 @@ const Storage = {
     return !!supabase;
   },
 
+  getSyncStatus() {
+    return {
+      status: this.syncStatus || "idle",
+      message: this.syncStatusMessage || "Pronto para sincronizar"
+    };
+  },
+
+  emitSyncStatus() {
+    if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+    window.dispatchEvent(new CustomEvent("storage-sync-status", {
+      detail: this.getSyncStatus()
+    }));
+  },
+
+  setSyncStatus(status = "idle", message = "") {
+    const fallbackMessages = {
+      idle: "Pronto para sincronizar",
+      saving: "Salvando...",
+      saved: "Salvo no servidor",
+      error: "Erro de sincronizacao",
+      local: "Somente local"
+    };
+
+    this.syncStatus = status;
+    this.syncStatusMessage = String(message || fallbackMessages[status] || fallbackMessages.idle);
+    this.emitSyncStatus();
+    return this.getSyncStatus();
+  },
+
   setUser(userId, workspacesEnabled = false) {
     this.currentUserId = userId;
     this.workspacesEnabled = !!workspacesEnabled;
     this.hasPendingSync = false;
     this.lastRemoteUpdatedAt = "";
+    this.setSyncStatus(this.hasSupabase ? "idle" : "local");
 
     if (this.workspacesEnabled) {
       const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
@@ -687,9 +719,11 @@ const Storage = {
 
   scheduleSync() {
     this.hasPendingSync = true;
+    this.setSyncStatus(this.hasSupabase ? "saving" : "local");
     clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.pushStateToServer().catch(() => {
+        this.setSyncStatus(this.hasSupabase ? "error" : "local");
         // Mantem funcionamento offline/local mesmo sem backend disponivel.
       });
     }, 300);
@@ -806,18 +840,26 @@ const Storage = {
   },
 
   async pushStateToServer() {
-    if (!this.hasSupabase) return;
+    if (!this.hasSupabase) {
+      this.setSyncStatus("local");
+      return;
+    }
     const snapshot = this.getSnapshot();
     const updatedAt = new Date().toISOString();
+    this.setSyncStatus("saving");
 
     const { error } = await supabase
       .from('app_state')
       .upsert({ scope: this.STATE_SCOPE, state: snapshot, updated_at: updatedAt }, { onConflict: 'scope' });
 
-    if (error) throw new Error("Falha ao salvar estado: " + error.message);
+    if (error) {
+      this.setSyncStatus("error");
+      throw new Error("Falha ao salvar estado: " + error.message);
+    }
 
     this.hasPendingSync = false;
     this.lastRemoteUpdatedAt = updatedAt;
+    this.setSyncStatus("saved");
     this.maybeScheduleVersion(snapshot, "auto");
   },
 
@@ -829,8 +871,10 @@ const Storage = {
       this.applySnapshot(record.state);
       this.lastRemoteUpdatedAt = String(record.updated_at || "");
       this.hasPendingSync = false;
+      this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
       return true;
     } catch {
+      this.setSyncStatus(this.hasSupabase ? "error" : "local");
       return false;
     }
   },
@@ -849,6 +893,7 @@ const Storage = {
 
       if (remoteSignature === localSignature) {
         this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+        this.setSyncStatus("saved", "Salvo no servidor");
         return false;
       }
 
@@ -863,8 +908,10 @@ const Storage = {
       this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
       this.hasPendingSync = false;
       this.lastVersionSignature = this.buildSnapshotSignature(this.getSnapshot());
+      this.setSyncStatus("saved", "Atualizado do servidor");
       return true;
     } catch {
+      this.setSyncStatus("error");
       return false;
     } finally {
       this.remoteRefreshInFlight = false;

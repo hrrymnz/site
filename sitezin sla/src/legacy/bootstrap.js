@@ -1359,6 +1359,29 @@
     if (statTags) statTags.textContent = tagsCount;
   }
 
+  function bindSyncStatusIndicator() {
+    const indicator = document.getElementById('sync-status-indicator');
+    if (!indicator || indicator.dataset.boundSyncStatus === '1') return;
+
+    indicator.dataset.boundSyncStatus = '1';
+
+    const applySyncStatus = (detail = {}) => {
+      const status = String(detail.status || 'idle');
+      const message = String(detail.message || 'Pronto para sincronizar');
+      indicator.dataset.status = status;
+      indicator.textContent = message;
+      indicator.title = message;
+    };
+
+    window.addEventListener('storage-sync-status', (event) => {
+      applySyncStatus(event.detail || {});
+    });
+
+    if (window.Storage && typeof window.Storage.getSyncStatus === 'function') {
+      applySyncStatus(window.Storage.getSyncStatus());
+    }
+  }
+
   function refreshAllUiFromStorage() {
     if (window.App && typeof window.App.renderAllEras === 'function') {
       window.App.renderAllEras();
@@ -1434,6 +1457,7 @@
 
   // Atualizar perfil ao carregar
   updateProfilePage();
+  bindSyncStatusIndicator();
   bindRemoteStateRefresh();
 
 

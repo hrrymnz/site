@@ -141,6 +141,7 @@ body.app-theme-dark .menu a,
 body.app-theme-dark .sidebar-email,
 body.app-theme-dark .logout-btn,
 body.app-theme-dark .topbar h2,
+body.app-theme-dark .sync-status-indicator,
 body.app-theme-dark .search-input,
 body.app-theme-dark .search-input::placeholder,
 body.app-theme-dark .search-result-info small,
@@ -350,10 +351,65 @@ body.app-theme-dark .login-theme-switch-thumb {
   font-weight: 400;
 }
 
+.topbar-heading {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.sync-status-indicator {
+  width: fit-content;
+  max-width: min(100%, 220px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-status-indicator::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 18%, transparent);
+  flex-shrink: 0;
+}
+
+.sync-status-indicator[data-status="idle"] {
+  color: #617089;
+}
+
+.sync-status-indicator[data-status="saving"] {
+  color: var(--accent);
+}
+
+.sync-status-indicator[data-status="saved"] {
+  color: #2ea86f;
+}
+
+.sync-status-indicator[data-status="error"] {
+  color: #d95b5b;
+}
+
+.sync-status-indicator[data-status="local"] {
+  color: #c48a3f;
 }
 
 .search {
@@ -5532,6 +5588,31 @@ body.app-theme-dark #page-settings .workspace-switch-status,
 body.app-theme-dark #page-settings .local-version-meta small,
 body.app-theme-dark #page-settings .local-version-empty {
   color: var(--muted);
+}
+
+body.app-theme-dark .sync-status-indicator {
+  background: var(--dark-elevated);
+  border-color: var(--border);
+}
+
+body.app-theme-dark .sync-status-indicator[data-status="idle"] {
+  color: #b9b0a8;
+}
+
+body.app-theme-dark .sync-status-indicator[data-status="saving"] {
+  color: color-mix(in oklab, var(--accent) 80%, #ffffff 20%);
+}
+
+body.app-theme-dark .sync-status-indicator[data-status="saved"] {
+  color: #7fd8a7;
+}
+
+body.app-theme-dark .sync-status-indicator[data-status="error"] {
+  color: #f29a9a;
+}
+
+body.app-theme-dark .sync-status-indicator[data-status="local"] {
+  color: #e0b177;
 }
 
 body.app-theme-dark #page-settings .settings-pref-list,

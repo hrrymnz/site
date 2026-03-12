@@ -167,7 +167,12 @@ function App() {
 
       <section className="content">
         <header className="topbar">
-          <h2 id="topbar-title">Início</h2>
+          <div className="topbar-heading">
+            <h2 id="topbar-title">Início</h2>
+            <small id="sync-status-indicator" className="sync-status-indicator" data-status="idle" aria-live="polite">
+              Pronto para sincronizar
+            </small>
+          </div>
           <div className="topbar-right">
             <div className="search">
               <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
@@ -832,6 +837,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 
