@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -470,7 +470,7 @@ function App() {
             <div className="painel-superficie settings-card settings-modern">
               <header className="settings-modern-header">
                 <h3>Configurações do Perfil</h3>
-                <p>Preferências, backup e histórico local. A edição do perfil fica na aba Perfil (Evermore).</p>
+                <p>Preferências, backup e histórico local.</p>
               </header>
 
               <section className="settings-modern-section">
@@ -479,7 +479,7 @@ function App() {
                   <div className="settings-pref-item">
                     <div className="settings-pref-copy">
                       <strong>Backup de dados</strong>
-                      <span>Exporte e importe seus dados sem perder informacoes.</span>
+                      <span>Exporte e importe seus dados sem perder informações.</span>
                     </div>
                     <div className="settings-pref-actions">
                       <button type="button" className="btn-export" id="btn-export">Exportar Backup (.json)</button>

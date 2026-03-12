@@ -4317,6 +4317,135 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   border-color: color-mix(in oklab, var(--accent) 26%, #ffffff 74%);
 }
 
+body.app-theme-dark .red-note-markdown-body {
+  background: var(--dark-reader);
+  color: var(--text);
+}
+
+body.app-theme-dark .red-note-preview-empty,
+body.app-theme-dark .red-note-list-progress-label,
+body.app-theme-dark .red-checklist-progress,
+body.app-theme-dark .red-checklist-progress-label,
+body.app-theme-dark .red-checklist-items.is-empty::before {
+  color: var(--muted);
+}
+
+body.app-theme-dark .red-note-topbar .red-note-delete-btn,
+body.app-theme-dark .red-note-delete-btn {
+  border-color: rgba(239, 125, 114, 0.42);
+  background: rgba(239, 125, 114, 0.1);
+  color: #f3b3ad;
+}
+
+body.app-theme-dark .red-note-topbar .red-note-delete-btn:hover,
+body.app-theme-dark .red-note-delete-btn:hover {
+  background: rgba(239, 125, 114, 0.18);
+  border-color: rgba(239, 125, 114, 0.62);
+  filter: none;
+}
+
+body.app-theme-dark .red-note-save-btn,
+body.app-theme-dark .red-note-topbar .red-note-save-btn {
+  box-shadow: 0 8px 18px rgba(192, 57, 43, 0.18);
+}
+
+body.app-theme-dark .red-checklist-body {
+  background: var(--dark-panel);
+  border-top: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
+}
+
+body.app-theme-dark #red-checklist-title {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
+}
+
+body.app-theme-dark .red-checklist-progress-track,
+body.app-theme-dark .red-note-list-progress-track {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+body.app-theme-dark .red-checklist-items.is-empty {
+  border-color: color-mix(in oklab, var(--accent) 24%, var(--border) 76%);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.app-theme-dark .red-checklist-item {
+  background: var(--dark-elevated);
+  border-color: color-mix(in oklab, var(--accent) 14%, var(--border) 86%);
+}
+
+body.app-theme-dark .red-checklist-item-text {
+  color: var(--text);
+}
+
+body.app-theme-dark .red-checklist-item-text::placeholder {
+  color: color-mix(in oklab, var(--muted) 86%, var(--text) 14%);
+}
+
+body.app-theme-dark .red-checklist-item-remove {
+  background: transparent;
+  color: var(--muted);
+}
+
+body.app-theme-dark .red-checklist-item-remove:hover {
+  background: rgba(239, 125, 114, 0.12);
+  color: #f3b3ad;
+}
+
+body.app-theme-dark .red-checklist-add-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: color-mix(in oklab, var(--accent) 24%, var(--border) 76%);
+  color: color-mix(in oklab, var(--accent) 72%, var(--text) 28%);
+}
+
+body.app-theme-dark .red-checklist-add-btn:hover {
+  background: color-mix(in oklab, var(--accent) 14%, var(--dark-panel) 86%);
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--border) 60%);
+}
+
+body.app-theme-dark #modal-delete-note .modal-content {
+  background: var(--dark-panel);
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
+}
+
+body.app-theme-dark #modal-delete-note .modal-header h3,
+body.app-theme-dark #modal-delete-note .modal-delete-note-message {
+  color: var(--text);
+}
+
+body.app-theme-dark #modal-delete-note .modal-close {
+  color: var(--muted);
+}
+
+body.app-theme-dark #modal-delete-note .modal-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+body.app-theme-dark #modal-delete-note .modal-btn-cancel {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 18%, var(--border) 82%);
+}
+
+body.app-theme-dark #modal-delete-note .modal-btn-cancel:hover {
+  background: color-mix(in oklab, var(--accent) 10%, var(--dark-elevated) 90%);
+}
+
+body.app-theme-dark #modal-delete-note .modal-btn-confirm-delete {
+  background: rgba(239, 125, 114, 0.12);
+  color: #f3b3ad;
+  border-color: rgba(239, 125, 114, 0.42);
+}
+
+body.app-theme-dark #modal-delete-note .modal-btn-confirm-delete:hover {
+  background: rgba(239, 125, 114, 0.2);
+  border-color: rgba(239, 125, 114, 0.62);
+  filter: none;
+}
+
 @media (max-width: 980px) {
   .red-notes-shell {
     grid-template-columns: 1fr;
