@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -18,6 +18,10 @@ function App() {
     requestPasswordReset,
     updatePassword
   } = useAuth();
+  const [appThemeMode, setAppThemeMode] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+    return localStorage.getItem('app_theme_mode') || localStorage.getItem('login_theme_mode') || 'light';
+  });
 
   const handleSignOut = async () => {
     document.body.setAttribute('data-era', 'debut');
@@ -91,6 +95,16 @@ function App() {
     };
   }, [user?.id, loading]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!user) {
+      document.body.classList.remove('app-theme-dark');
+      return;
+    }
+    localStorage.setItem('app_theme_mode', appThemeMode);
+    document.body.classList.toggle('app-theme-dark', appThemeMode === 'dark');
+  }, [appThemeMode, user]);
+
   if (loading) {
     return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;
   }
@@ -130,6 +144,22 @@ function App() {
           <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
         </nav>
         <div className="sidebar-bottom">
+          <div className="sidebar-theme-row">
+            <span className="sidebar-theme-label">Tema</span>
+            <button
+              type="button"
+              className="sidebar-theme-toggle"
+              onClick={() => setAppThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'))}
+              aria-label="Alternar tema do aplicativo"
+              aria-pressed={appThemeMode === 'dark'}
+            >
+              <span className="login-theme-switch" aria-hidden="true">
+                <span className="login-theme-switch-icon login-theme-switch-icon-moon"></span>
+                <span className="login-theme-switch-icon login-theme-switch-icon-sun"></span>
+                <span className="login-theme-switch-thumb"></span>
+              </span>
+            </button>
+          </div>
           <span className="sidebar-email">{user.email}</span>
           <button className="logout-btn" onClick={handleSignOut}><i data-lucide="log-out"></i>Sair</button>
         </div>
@@ -802,7 +832,6 @@ function App() {
 }
 
 export default App;
-
 
 
 

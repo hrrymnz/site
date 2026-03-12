@@ -56,6 +56,144 @@ body {
   font-family: "Inter", sans-serif;
 }
 
+body.app-theme-dark {
+  --card: #0e141d;
+  --cartao-suave: #16202b;
+  --text: #eef4ff;
+  --muted: #8b98b8;
+  --border: #243447;
+  --accent-light: rgba(114, 137, 218, 0.16);
+  background: var(--card);
+  color: var(--text);
+}
+
+body.app-theme-dark[data-era="reputation"] {
+  --accent: #c6ced9;
+  --accent-light: rgba(198, 206, 217, 0.18);
+  --border: #314154;
+}
+
+body.app-theme-dark .dashboard,
+body.app-theme-dark .content,
+body.app-theme-dark .sidebar,
+body.app-theme-dark .topbar,
+body.app-theme-dark .painel-superficie,
+body.app-theme-dark .credit-card.light,
+body.app-theme-dark .fearless-repo-card,
+body.app-theme-dark .red-notes-list-panel,
+body.app-theme-dark .red-note-editor,
+body.app-theme-dark .red-note-list-item,
+body.app-theme-dark .search-results,
+body.app-theme-dark .settings-modern,
+body.app-theme-dark .settings-section-card,
+body.app-theme-dark .local-version-item,
+body.app-theme-dark .profile-page.x-profile-shell {
+  background: var(--cartao-suave);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.app-theme-dark .search,
+body.app-theme-dark .icon,
+body.app-theme-dark .search-result-item:hover,
+body.app-theme-dark .github-chip,
+body.app-theme-dark .workspace-switcher,
+body.app-theme-dark .topbar-tag-filter,
+body.app-theme-dark .quick-filter-btn,
+body.app-theme-dark .settings-modern .form-group input,
+body.app-theme-dark .settings-modern textarea,
+body.app-theme-dark .modal-content,
+body.app-theme-dark #form-add-item input[type="text"],
+body.app-theme-dark #form-add-item input[type="url"],
+body.app-theme-dark #form-add-item select,
+body.app-theme-dark #form-add-item textarea,
+body.app-theme-dark #form-edit-repo input[type="text"],
+body.app-theme-dark #form-edit-repo select,
+body.app-theme-dark #form-edit-repo textarea {
+  background: #101923;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.app-theme-dark .menu a,
+body.app-theme-dark .sidebar-email,
+body.app-theme-dark .logout-btn,
+body.app-theme-dark .topbar h2,
+body.app-theme-dark .search-input,
+body.app-theme-dark .search-input::placeholder,
+body.app-theme-dark .search-result-info small,
+body.app-theme-dark .settings-modern-header p,
+body.app-theme-dark .settings-pref-copy span,
+body.app-theme-dark .github-cache-status,
+body.app-theme-dark .github-graph-header small,
+body.app-theme-dark .contribution-help,
+body.app-theme-dark .contribution-legend {
+  color: var(--muted);
+}
+
+body.app-theme-dark .menu a:hover,
+body.app-theme-dark .menu .active {
+  color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+body.app-theme-dark .menu a:hover .menu-icon svg,
+body.app-theme-dark .menu .active .menu-icon svg {
+  opacity: 1;
+}
+
+body.app-theme-dark .menu a:hover .sidebar-custom-icon,
+body.app-theme-dark .menu .active .sidebar-custom-icon {
+  opacity: 1;
+  filter: none;
+}
+
+body.app-theme-dark .tag-btn {
+  background: color-mix(in oklab, var(--accent) 12%, #101923 88%);
+  color: color-mix(in oklab, var(--accent) 62%, #eef4ff 38%);
+  border-color: color-mix(in oklab, var(--accent) 24%, var(--border) 76%);
+}
+
+body.app-theme-dark .tag-btn:hover,
+body.app-theme-dark .tag-btn.active {
+  background: color-mix(in oklab, var(--accent) 24%, #101923 76%);
+  color: #eef4ff;
+  border-color: color-mix(in oklab, var(--accent) 46%, var(--border) 54%);
+}
+
+body.app-theme-dark .icon:hover,
+body.app-theme-dark .search-result-item,
+body.app-theme-dark .github-chip:hover,
+body.app-theme-dark .quick-filter-btn:hover,
+body.app-theme-dark .workspace-switcher-wrap label {
+  color: var(--text);
+}
+
+body.app-theme-dark .logout-btn:hover {
+  color: #ff8f8f;
+  background: rgba(192, 57, 43, 0.14);
+}
+
+body.app-theme-dark .login-theme-switch {
+  background: linear-gradient(145deg, #526d85 0%, #4e4466 70%, #3c3554 100%);
+  border-color: rgba(201, 232, 253, 0.4);
+}
+
+body.app-theme-dark .login-theme-switch-icon-moon {
+  opacity: 1;
+}
+
+body.app-theme-dark .login-theme-switch-icon-sun {
+  opacity: 0.25;
+}
+
+body.app-theme-dark .login-theme-switch-thumb {
+  background: linear-gradient(165deg, #e8f1ff 0%, #b8d0f2 100%);
+  box-shadow: 0 3px 8px rgba(17, 22, 46, 0.35);
+  transform: translateX(0);
+}
+
 /* ===== ESTRUTURA ===== */
 
 .dashboard {
@@ -2942,6 +3080,32 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.sidebar-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.sidebar-theme-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.sidebar-theme-toggle {
+  width: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 0;
+}
+
+.sidebar-theme-toggle:hover {
+  filter: brightness(1.05);
 }
 
 .sidebar-email {
