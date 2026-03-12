@@ -5477,3 +5477,384 @@ body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
     width: 100%;
   }
 }
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
+@media (max-width: 980px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .menu a {
+    min-height: 44px;
+    padding: 10px;
+    font-size: 0.88rem;
+  }
+
+  .sidebar-bottom {
+    margin-top: 0;
+  }
+
+  .sidebar-email {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .topbar {
+    padding: 14px 16px;
+    align-items: flex-start;
+  }
+
+  .topbar-right {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .search {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .workspace-switcher-wrap {
+    flex: 1 1 220px;
+  }
+
+  .topbar-icons {
+    margin-left: auto;
+    gap: 10px;
+  }
+
+  .repos-grid,
+  .charts-grid,
+  .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .repos-grid,
+  .charts-grid {
+    padding: 16px;
+  }
+
+  .highlights-grid {
+    padding: 0 16px 16px;
+  }
+
+  #page-debut .highlights-grid .highlight-section > .painel-superficie {
+    min-height: 0;
+  }
+
+  .repo-overview-grid,
+  .era-items.fearless-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .era-toolbar {
+    padding: 12px 16px;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .era-tags {
+    flex: 1 1 100%;
+  }
+
+  .era-toolbar .btn-add-item,
+  .era-toolbar .btn-upload-md,
+  .repo-overview-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .era-items {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .github-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .github-chip-group {
+    flex-wrap: wrap;
+  }
+
+  .red-notes-head {
+    padding: 10px 12px 0;
+  }
+
+  .red-notes-head-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .red-notes-view-toggle {
+    flex: 1 1 auto;
+  }
+
+  .red-notes-search-wrap {
+    margin: 8px 12px 0;
+  }
+
+  #page-red .red-notes-list {
+    padding: 12px;
+  }
+
+  .folklore-md-toolbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 0;
+  }
+
+  .content {
+    padding: 0;
+  }
+
+  .sidebar {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .brand {
+    font-size: 1.32rem;
+  }
+
+  .menu {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .menu a {
+    gap: 8px;
+    font-size: 0.84rem;
+    padding: 9px 10px;
+  }
+
+  .topbar {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .topbar-right {
+    align-items: stretch;
+  }
+
+  .workspace-switcher-wrap,
+  .topbar-icons {
+    width: 100%;
+  }
+
+  .topbar-icons {
+    justify-content: flex-start;
+    gap: 8px;
+    margin-left: 0;
+  }
+
+  .icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .profile-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .repos-grid,
+  .charts-grid {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .highlights-grid {
+    padding: 0 12px 12px;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .era-toolbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .tag-btn {
+    padding: 6px 12px;
+    font-size: 0.74rem;
+  }
+
+  .era-items {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .era-empty {
+    padding: 36px 16px;
+  }
+
+  .era-empty-chips {
+    justify-content: center;
+  }
+
+  .recent li {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .recent .recent-link {
+    width: 100%;
+  }
+
+  .highlight-list .highlight-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .highlight-link-main {
+    width: 100%;
+  }
+
+  .highlight-era-inline,
+  .highlight-access-count,
+  .recent-era-inline {
+    margin-left: 0;
+  }
+
+  .modal-content,
+  #modal-edit-repo .modal-content {
+    width: calc(100vw - 16px);
+    max-width: none;
+    padding: 18px 16px 20px;
+    border-radius: 16px;
+  }
+
+  #modal-edit-photo .modal-content {
+    width: calc(100vw - 12px);
+    max-width: none;
+    max-height: calc(100vh - 12px);
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .edit-photo-preview-wrap {
+    height: 260px;
+  }
+
+  .edit-photo-preview-wrap[data-type="cover"] {
+    height: 160px;
+  }
+
+  #modal-edit-profile .profile-edit-modal-content {
+    max-width: none;
+    width: 100vw;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  #modal-edit-profile .modal-header {
+    padding: 10px 12px;
+  }
+
+  #modal-edit-profile .profile-edit-topbar,
+  #modal-edit-profile .profile-edit-topbar-left {
+    gap: 10px;
+  }
+
+  #modal-edit-profile .profile-edit-cover-wrap,
+  #modal-edit-profile .settings-header-preview {
+    height: 160px;
+  }
+
+  #modal-edit-profile .profile-edit-avatar-row {
+    margin: -42px 12px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  #modal-edit-profile .profile-edit-avatar-floating {
+    width: 96px;
+    height: 96px;
+  }
+
+  #modal-edit-profile .profile-edit-avatar-floating .avatar-img {
+    border-width: 4px;
+  }
+
+  #modal-edit-profile .avatar-edit {
+    right: 6px;
+    bottom: 6px;
+    width: 28px;
+    height: 28px;
+  }
+
+  #modal-edit-profile .avatar-remove {
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+  }
+
+  #modal-edit-profile .profile-edit-form-grid,
+  #modal-edit-profile .profile-edit-birthdate-shell {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  #modal-edit-profile .profile-edit-birth-trigger-row,
+  #modal-edit-profile .profile-edit-birth-expanded-head {
+    align-items: flex-start;
+  }
+
+  .folklore-md-topbar {
+    gap: 8px;
+  }
+
+  .folklore-md-toolbar-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .folklore-md-toolbar-actions > button {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
+  .red-notes-head-actions {
+    gap: 10px;
+  }
+
+  .red-notes-view-btn {
+    flex: 1 1 0;
+  }
+
+  #page-red .red-notes-list.red-notes-list--grid,
+  #page-red .red-notes-list.red-notes-list--grid-3x3 {
+    grid-template-columns: 1fr;
+  }
+
+  #page-evermore .profile-page.x-profile-shell {
+    width: 100%;
+    margin: 0;
+  }
+}
