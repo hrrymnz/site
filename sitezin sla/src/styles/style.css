@@ -5450,6 +5450,60 @@ body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
   background: #f8fafc;
 }
 
+body.app-theme-dark #page-settings .settings-modern {
+  background: var(--cartao-suave);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.app-theme-dark #page-settings .settings-modern-header h3,
+body.app-theme-dark #page-settings .settings-modern-section h4,
+body.app-theme-dark #page-settings .settings-pref-copy strong {
+  color: var(--text);
+}
+
+body.app-theme-dark #page-settings .settings-modern-header p,
+body.app-theme-dark #page-settings .settings-pref-copy span,
+body.app-theme-dark #page-settings .settings-desc,
+body.app-theme-dark #page-settings .import-status,
+body.app-theme-dark #page-settings .workspace-switch-status,
+body.app-theme-dark #page-settings .local-version-meta small,
+body.app-theme-dark #page-settings .local-version-empty {
+  color: var(--muted);
+}
+
+body.app-theme-dark #page-settings .settings-pref-list,
+body.app-theme-dark #page-settings .settings-pref-item,
+body.app-theme-dark #page-settings .settings-modern-actions {
+  border-color: var(--border);
+}
+
+body.app-theme-dark #page-settings .local-version-item {
+  background: var(--dark-panel);
+  border-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark #page-settings .btn-import,
+body.app-theme-dark #page-settings .settings-cancel-btn,
+body.app-theme-dark #page-settings .local-restore-btn {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 38%, var(--border) 62%);
+}
+
+body.app-theme-dark #page-settings .btn-import:hover,
+body.app-theme-dark #page-settings .settings-cancel-btn:hover,
+body.app-theme-dark #page-settings .local-restore-btn:hover {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-elevated) 82%);
+}
+
+body.app-theme-dark #page-settings .btn-export,
+body.app-theme-dark #page-settings #btn-refresh-versions {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 @media (max-width: 860px) {
   #modal-edit-profile .profile-edit-birth-select-grid {
     grid-template-columns: 1fr;
