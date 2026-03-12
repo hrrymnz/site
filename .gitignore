@@ -1,5 +1,13 @@
+# dependencies
+node_modules/
+sitezin sla/node_modules/
+
+# build files
+sitezin sla/dist/
+sitezin sla/.vite/
+
 # wrangler files
-.wrangler
+.wrangler/
 .dev.vars*
 !.dev.vars.example
 .env*
@@ -8,7 +16,13 @@
 # supabase local repo
 sitezin sla/supabase/
 
+# local env files inside app
+sitezin sla/.env
+sitezin sla/.env.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
 # outros
 ROADMAP.md
-node_modules
-.md
