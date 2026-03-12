@@ -22,6 +22,15 @@ function App() {
     if (typeof window === 'undefined') return 'light';
     return localStorage.getItem('app_theme_mode') || localStorage.getItem('login_theme_mode') || 'light';
   });
+  const sidebarUserHandleBase = (
+    user?.user_metadata?.preferred_username ||
+    user?.user_metadata?.username ||
+    user?.user_metadata?.name ||
+    user?.user_metadata?.full_name ||
+    (typeof user?.email === 'string' ? user.email.split('@')[0] : '') ||
+    'usuario'
+  );
+  const sidebarUserHandle = `@${String(sidebarUserHandleBase).replace(/^@+/, '')}`;
 
   const handleSignOut = async () => {
     document.body.setAttribute('data-era', 'debut');
@@ -129,7 +138,7 @@ function App() {
           <span className="brand-icon-slot" aria-hidden="true">
             <img src={brandVector} alt="" className="brand-icon-image" />
           </span>
-          <h1 className="brand">TaylorSwift.</h1>
+          <h1 className="brand">Polaroom.</h1>
         </div>
         <nav className="menu">
           <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Início</a>
@@ -160,7 +169,7 @@ function App() {
               </span>
             </button>
           </div>
-          <span className="sidebar-email">{user.email}</span>
+          <span className="sidebar-email" id="sidebar-user-name">{sidebarUserHandle}</span>
           <button className="logout-btn" onClick={handleSignOut}><i data-lucide="log-out"></i>Sair</button>
         </div>
       </aside>
@@ -541,8 +550,8 @@ function App() {
                   <p>Sincronização, backups, importações e atualizações do GitHub.</p>
                 </div>
                 <div className="notifications-header-actions">
-                  <button type="button" className="btn-import" id="notifications-mark-read-btn">Marcar tudo como lido</button>
-                  <button type="button" className="settings-cancel-btn" id="notifications-clear-btn">Limpar</button>
+                  <button type="button" className="notifications-action-btn notifications-action-btn-primary" id="notifications-mark-read-btn">Marcar tudo como lido</button>
+                  <button type="button" className="notifications-action-btn notifications-action-btn-secondary" id="notifications-clear-btn">Limpar</button>
                 </div>
               </header>
 
@@ -879,4 +888,3 @@ function App() {
 }
 
 export default App;
-

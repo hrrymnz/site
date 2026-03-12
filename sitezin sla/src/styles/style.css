@@ -154,6 +154,17 @@ body.app-theme-dark .contribution-legend {
   color: var(--muted);
 }
 
+body.app-theme-dark .menu-icon svg {
+  color: color-mix(in oklab, var(--text) 88%, #ffffff 12%);
+  opacity: 1;
+  stroke-width: 2.1;
+}
+
+body.app-theme-dark .sidebar-custom-icon {
+  opacity: 0.98;
+  filter: grayscale(0.08) brightness(0) invert(0.78);
+}
+
 body.app-theme-dark .menu a:hover,
 body.app-theme-dark .menu .active {
   color: var(--accent);
@@ -163,6 +174,7 @@ body.app-theme-dark .menu .active {
 
 body.app-theme-dark .menu a:hover .menu-icon svg,
 body.app-theme-dark .menu .active .menu-icon svg {
+  color: var(--accent);
   opacity: 1;
 }
 
@@ -453,7 +465,7 @@ body.app-theme-dark .login-theme-switch-thumb {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background-color: #d95b5b;
+  background-color: rgba(217, 91, 91, 0.78);
   color: #fff;
   font-size: 0.66rem;
   font-weight: 700;
@@ -463,6 +475,10 @@ body.app-theme-dark .login-theme-switch-thumb {
   justify-content: center;
   box-shadow: 0 0 0 2px var(--card);
   z-index: 2;
+}
+
+.notifications-badge[hidden] {
+  display: none !important;
 }
 /* O card de notificações é posicionado relativamente para servir de referência para o badge absoluto, e tem overflow visível para não cortar o badge */
 .notifications-card {
@@ -483,6 +499,43 @@ body.app-theme-dark .login-theme-switch-thumb {
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.notifications-action-btn {
+  width: auto;
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  line-height: 1.2;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.notifications-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.notifications-action-btn-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.notifications-action-btn-primary:hover {
+  filter: brightness(0.96);
+}
+
+.notifications-action-btn-secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.notifications-action-btn-secondary:hover {
+  background: var(--accent-light);
+  border-color: color-mix(in oklab, var(--accent) 32%, var(--border) 68%);
 }
 
 .notifications-section {
@@ -616,11 +669,51 @@ body.app-theme-dark .login-theme-switch-thumb {
 }
 
 body.app-theme-dark .notifications-badge {
+  background-color: rgba(217, 91, 91, 0.68);
   box-shadow: 0 0 0 2px var(--dark-panel);
 }
 
 body.app-theme-dark .notification-item {
   box-shadow: none;
+}
+
+body.app-theme-dark .notifications-filter-row .tag-btn {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-elevated) 82%);
+  color: color-mix(in oklab, var(--accent) 78%, #f3f7ff 22%);
+  border-color: color-mix(in oklab, var(--accent) 42%, var(--border) 58%);
+}
+
+body.app-theme-dark .notifications-filter-row .tag-btn:hover,
+body.app-theme-dark .notifications-filter-row .tag-btn.active {
+  background: color-mix(in oklab, var(--accent) 30%, var(--dark-elevated) 70%);
+  color: #ffffff;
+  border-color: color-mix(in oklab, var(--accent) 58%, var(--border) 42%);
+}
+
+body.app-theme-dark .notification-category {
+  background: color-mix(in oklab, var(--accent) 22%, var(--dark-elevated) 78%);
+  color: color-mix(in oklab, var(--accent) 76%, #f4f7ff 24%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 32%, transparent);
+}
+
+body.app-theme-dark .notifications-action-btn-primary {
+  background: color-mix(in oklab, var(--accent) 70%, var(--dark-panel) 30%);
+  border-color: color-mix(in oklab, var(--accent) 78%, var(--border) 22%);
+  color: #fff;
+}
+
+body.app-theme-dark .notifications-action-btn-primary:hover {
+  background: color-mix(in oklab, var(--accent) 78%, var(--dark-panel) 22%);
+}
+
+body.app-theme-dark .notifications-action-btn-secondary {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 38%, var(--border) 62%);
+}
+
+body.app-theme-dark .notifications-action-btn-secondary:hover {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-elevated) 82%);
 }
 
 @media (max-width: 860px) {

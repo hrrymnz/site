@@ -1301,6 +1301,12 @@ function initShellInteractions() {
     const profileUsername = document.getElementById('profile-username');
     if (profileUsername) profileUsername.textContent = '@' + (profileData.username || 'seu_usuario');
 
+    const sidebarUserName = document.getElementById('sidebar-user-name');
+    if (sidebarUserName) {
+      const handleBase = String(profileData.username || profileData.name || 'usuario').replace(/^@+/, '').trim() || 'usuario';
+      sidebarUserName.textContent = '@' + handleBase;
+    }
+
     // Atualizar bio
     const profileBio = document.getElementById('profile-bio');
     if (profileBio) {
@@ -1476,8 +1482,13 @@ function initShellInteractions() {
         ? allNotifications
         : allNotifications.filter((entry) => entry.category === currentFilter);
 
-      badge.hidden = unreadCount <= 0;
-      badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      if (unreadCount > 0) {
+        badge.hidden = false;
+        badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      } else {
+        badge.hidden = true;
+        badge.textContent = '';
+      }
       notificationsBtn.classList.toggle('has-unread', unreadCount > 0);
 
       if (!visibleNotifications.length) {
