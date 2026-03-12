@@ -167,12 +167,7 @@ function App() {
 
       <section className="content">
         <header className="topbar">
-          <div className="topbar-heading">
-            <h2 id="topbar-title">Início</h2>
-            <small id="sync-status-indicator" className="sync-status-indicator" data-status="idle" aria-live="polite">
-              Pronto para sincronizar
-            </small>
-          </div>
+          <h2 id="topbar-title">Início</h2>
           <div className="topbar-right">
             <div className="search">
               <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
@@ -469,13 +464,25 @@ function App() {
           <section className="settings-page">
             <div className="painel-superficie settings-card settings-modern">
               <header className="settings-modern-header">
-                <h3>Configurações do Perfil</h3>
+                <h3>Configurações gerais</h3>
                 <p>Preferências, backup e histórico local.</p>
               </header>
 
               <section className="settings-modern-section">
                 <h4>Dados</h4>
                 <div className="settings-pref-list">
+                  <div className="settings-pref-item settings-sync-item">
+                    <div className="settings-pref-copy">
+                      <strong>Sincronização</strong>
+                      <span>Status atual de sincronização desta conta com o servidor.</span>
+                    </div>
+                    <div className="settings-sync-meta">
+                      <small className="settings-sync-caption">Status</small>
+                      <span id="sync-status-indicator" className="sync-status-indicator settings-sync-indicator" data-status="idle" aria-live="polite">
+                        Pronto para sincronizar
+                      </span>
+                    </div>
+                  </div>
                   <div className="settings-pref-item">
                     <div className="settings-pref-copy">
                       <strong>Backup de dados</strong>
@@ -837,7 +844,6 @@ function App() {
 }
 
 export default App;
-
 
 
 

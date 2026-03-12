@@ -412,6 +412,25 @@ body.app-theme-dark .login-theme-switch-thumb {
   color: #c48a3f;
 }
 
+.settings-sync-meta {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.settings-sync-caption {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.settings-sync-indicator {
+  max-width: none;
+}
+
 .search {
   display: flex;
   align-items: center;
@@ -5805,6 +5824,12 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
   #page-settings .settings-pref-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .settings-sync-meta {
+    width: 100%;
+    justify-items: start;
+    min-width: 0;
   }
 
   #page-settings .settings-modern-actions {
