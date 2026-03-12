@@ -240,16 +240,16 @@ const App = {
 
   formatEraLabel(era) {
     const labels = {
-      debut: "Debut",
-      fearless: "Fearless",
-      "speak-now": "Speak Now",
+      debut: "Início",
+      fearless: "Repositórios",
+      "speak-now": "Música",
       red: "Red",
-      "1989": "1989",
-      reputation: "Reputation",
-      lover: "Lover",
-      folklore: "Folklore",
-      evermore: "Evermore",
-      settings: "Configuracoes"
+      "1989": "Ferramentas",
+      reputation: "Links",
+      lover: "Vídeos",
+      folklore: "Resumos ou Artigos",
+      evermore: "Perfil",
+      settings: "Configurações  "
     };
     const key = this.normalizeEra(era);
     return labels[key] || "Debut";

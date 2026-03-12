@@ -133,7 +133,7 @@ function App() {
         </div>
         <nav className="menu">
           <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Início</a>
-          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Repositorios</a>
+          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Repositórios</a>
           <a href="#" className="era-link" data-target="speak-now" data-era-color="speak-now"><span className="menu-icon"><i data-lucide="mic-2"></i></span>Música</a>
           <a href="#" className="era-link" data-target="red" data-era-color="red"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/scarf.png" alt="Red" className="sidebar-custom-icon" /></span>Notas</a>
           <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>Ferramentas</a>
@@ -203,7 +203,7 @@ function App() {
           <section className="repos-grid">
               <div className="repo-overview-section">
                 <div className="card-header">
-                  <h3>Meus repositorios</h3>
+                  <h3>Meus repositórios</h3>
                   <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
                 </div>
                 <div className="repo-overview-grid"></div>
@@ -451,7 +451,7 @@ function App() {
               <div className="x-profile-follow-row">
                 <span><strong id="stat-items">0</strong> Itens</span>
                 <span><strong id="stat-playlists">0</strong> Playlists</span>
-                <span><strong id="stat-repos">0</strong> Repositorios</span>
+                <span><strong id="stat-repos">0</strong> Repositórios</span>
                 <span><strong id="stat-tags">0</strong> Tags</span>
               </div>
             </div>
@@ -460,7 +460,7 @@ function App() {
               <button type="button" className="x-tab active">Itens</button>
               <button type="button" className="x-tab">Tags</button>
               <button type="button" className="x-tab">Playlists</button>
-              <button type="button" className="x-tab">Repositorios</button>
+              <button type="button" className="x-tab">Repositórios</button>
             </div>
           </section>
         </div>
@@ -730,11 +730,11 @@ function App() {
             <div className="form-group form-group-note">
               <label>Descrição: </label>
               <textarea id="edit-repo-description" rows="4"></textarea>
-              <small className="repo-modal-hint">Somente repositorios previamente criados podem ser fixados aqui.</small>
+              <small className="repo-modal-hint">Somente repositórios previamente criados podem ser fixados aqui.</small>
             </div>
 
             <div className="repo-edit-actions">
-              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositorio</button>
+              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositório</button>
               <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
             </div>
           </form>
@@ -817,7 +817,7 @@ function App() {
             <div className="form-group">
               <label>Era / Categoria</label>
               <select id="item-category">
-                <option value="fearless">Repositorios</option>
+                <option value="fearless">Repositórios</option>
                 <option value="speak-now">Música</option>
                 <option value="1989">Ferramentas</option>
                 <option value="reputation">Links</option>
