@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase.js';
+import { supabase } from '../lib/supabase.js';
 
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
@@ -1230,11 +1230,8 @@ const Storage = {
 
   async bootstrapPersistence() {
     const localBeforeHydrate = this.getSnapshot();
-    const localScore = this.snapshotScore(localBeforeHydrate);
     const localSignature = this.buildSnapshotSignature(localBeforeHydrate);
-    const localUpdatedAt = this.getLocalStateUpdatedAt();
     let loaded = false;
-    let shouldRecoverLocal = false;
 
     if (this.hasSupabase) {
       try {
@@ -1245,28 +1242,15 @@ const Storage = {
           const remoteSnapshot = record.state;
           const remoteUpdatedAt = String(record.updated_at || "");
           const remoteSignature = this.buildSnapshotSignature(remoteSnapshot);
-          const localMs = this.toTimestampMs(localUpdatedAt);
-          const remoteMs = this.toTimestampMs(remoteUpdatedAt);
-          const remoteScore = this.snapshotScore(remoteSnapshot);
 
-          if (remoteSignature === localSignature) {
-            this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
-            this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || localUpdatedAt || new Date().toISOString());
-            this.hasPendingSync = false;
-            this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
-          } else if (
-            (localMs && (!remoteMs || localMs > remoteMs)) ||
-            (!localMs && localScore > remoteScore)
-          ) {
-            this.lastRemoteUpdatedAt = remoteUpdatedAt;
-            shouldRecoverLocal = true;
-          } else {
+          if (remoteSignature !== localSignature) {
             this.applySnapshot(remoteSnapshot);
-            this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
-            this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || new Date().toISOString());
-            this.hasPendingSync = false;
-            this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
           }
+
+          this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+          this.setLocalStateUpdatedAt(this.lastRemoteUpdatedAt || new Date().toISOString());
+          this.hasPendingSync = false;
+          this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
         }
       } catch {
         this.setSyncStatus(this.hasSupabase ? "error" : "local");
@@ -1276,18 +1260,13 @@ const Storage = {
     this.ensureFearlessDefaults();
 
     const currentSnapshot = this.getSnapshot();
-    const shouldBootstrapRemote = !!this.getLocalStateUpdatedAt() || this.snapshotScore(currentSnapshot) > 0;
+    const shouldBootstrapRemote = !loaded && this.snapshotScore(currentSnapshot) > 0;
     this.lastVersionSignature = this.buildSnapshotSignature(currentSnapshot);
 
     if (!loaded && shouldBootstrapRemote) {
       this.scheduleSync();
       this.createServerVersion("bootstrap-init", currentSnapshot).catch(() => {
         // Ignora erro para manter bootstrap resiliente.
-      });
-    } else if (shouldRecoverLocal) {
-      this.scheduleSync();
-      this.createServerVersion("recover-local-priority", localBeforeHydrate).catch(() => {
-        // Evita quebrar bootstrap por falha de rede.
       });
     }
   },
