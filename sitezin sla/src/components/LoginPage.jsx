@@ -86,7 +86,7 @@ export default function LoginPage({
           </span>
         </button>
 
-        <h1 className="login-brand">TaylorSwift.</h1>
+        <h1 className="login-brand">Polaroom.</h1>
         <p className="login-subtitle">{title}</p>
 
         {authStatus === 'expired' && (
