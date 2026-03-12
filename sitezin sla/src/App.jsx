@@ -737,7 +737,7 @@ function App() {
             <h3>Excluir item</h3>
             <button type="button" className="modal-close" id="modal-delete-note-close"><i data-lucide="x"></i></button>
           </div>
-          <p className="modal-delete-note-message">Excluir este item? Esta acao nao pode ser desfeita.</p>
+          <p className="modal-delete-note-message">Excluir este item? Esta ação não pode ser desfeita.</p>
           <div className="modal-actions">
             <button type="button" className="modal-btn-cancel" id="modal-delete-note-cancel">Cancelar</button>
             <button type="button" className="modal-btn-confirm-delete" id="modal-delete-note-confirm">Excluir</button>
@@ -763,7 +763,7 @@ function App() {
               </select>
             </div>
             <div className="form-group">
-              <label>Titulo</label>
+              <label>Título</label>
               <input type="text" id="item-title" required placeholder="Nome do item" />
             </div>
             <div className="form-group field-url">

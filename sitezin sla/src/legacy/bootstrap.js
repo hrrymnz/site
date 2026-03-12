@@ -131,6 +131,9 @@
   const editProfileModalContent = editProfileModal
     ? editProfileModal.querySelector('.profile-edit-modal-content')
     : null;
+  const editProfileScroll = editProfileModal
+    ? editProfileModal.querySelector('.profile-edit-scroll')
+    : null;
   const discardProfileModal = document.getElementById('modal-discard-profile');
   const discardProfileCancel = document.getElementById('discard-profile-cancel');
   const discardProfileConfirm = document.getElementById('discard-profile-confirm');
@@ -158,6 +161,11 @@
   let photoEditIsDragging = false;
   let photoEditDragStart = { x: 0, y: 0 };
   let profileEditOriginalSnapshot = null;
+
+  function resetProfileEditScroll() {
+    if (editProfileScroll) editProfileScroll.scrollTop = 0;
+    if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+  }
 
   function applyAvatar(dataUrl) {
     if (!avatarImg || !removeBtn) return;
@@ -1058,20 +1066,23 @@
     primeBirthdateEditor();
     closeDiscardProfileModal();
     profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
-    if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+    resetProfileEditScroll();
     if (editProfileModal) editProfileModal.classList.add('visible');
     window.setTimeout(() => {
-      if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+      resetProfileEditScroll();
     }, 0);
   }
 
   function performCloseEditProfileModal() {
     closeDiscardProfileModal();
     cancelBirthdateEditor();
-    if (editProfileModalContent) editProfileModalContent.scrollTop = 0;
+    resetProfileEditScroll();
     if (editProfileModal) editProfileModal.classList.remove('visible');
     // Garante fechamento mesmo com conflitos de clique/reflow
-    window.setTimeout(forceCloseBirthdatePanel, 0);
+    window.setTimeout(() => {
+      forceCloseBirthdatePanel();
+      resetProfileEditScroll();
+    }, 0);
   }
 
   function closeEditProfileModal() {
