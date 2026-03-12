@@ -1051,8 +1051,8 @@ const Storage = {
   exportData() {
     // Exporta dados do app em um unico JSON de backup.
     const data = { ...this.getSnapshot(), exportedAt: new Date().toISOString() };
-    this.createLocalVersion("export-manual", data);
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1063,9 +1063,17 @@ const Storage = {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 0);
 
+    try {
+      this.createLocalVersion("export-manual", data);
+    } catch {
+      // O download do backup nao deve falhar se o armazenamento local estiver cheio.
+    }
+
     this.createServerVersion("export-manual", data).catch(() => {
       // Export local continua funcionando mesmo sem backend.
     });
+
+    return data;
   },
 
   // ===== 7) SETTINGS PROFILE =====

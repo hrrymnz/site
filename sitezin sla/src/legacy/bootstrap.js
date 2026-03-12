@@ -500,7 +500,19 @@ function initShellInteractions() {
       btnExport.dataset.boundClick = '1';
       btnExport.addEventListener('click', (e) => {
         e.preventDefault();
-        window.Storage.exportData();
+        const status = document.getElementById('import-status');
+        try {
+          window.Storage.exportData();
+          if (status) {
+            status.textContent = 'Backup exportado com sucesso.';
+            status.className = 'import-status success';
+          }
+        } catch {
+          if (status) {
+            status.textContent = 'Nao foi possivel exportar o backup.';
+            status.className = 'import-status error';
+          }
+        }
       });
     }
 
