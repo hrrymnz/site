@@ -1359,8 +1359,82 @@
     if (statTags) statTags.textContent = tagsCount;
   }
 
+  function refreshAllUiFromStorage() {
+    if (window.App && typeof window.App.renderAllEras === 'function') {
+      window.App.renderAllEras();
+    }
+    if (window.App && typeof window.App.renderDebutHighlights === 'function') {
+      window.App.renderDebutHighlights();
+    }
+    if (typeof window.renderizarRecentes === 'function') {
+      window.renderizarRecentes();
+    }
+    refreshAvatar();
+    refreshProfileHeader();
+    refreshLocalVersions();
+    updateProfilePage();
+  }
+
+  function bindRemoteStateRefresh() {
+    if (!window.Storage || typeof window.Storage.refreshFromServer !== 'function') return;
+    if (document.body && document.body.dataset.boundRemoteRefresh === '1') return;
+    if (document.body) document.body.dataset.boundRemoteRefresh = '1';
+
+    let refreshInFlight = false;
+    let refreshIntervalId = null;
+
+    const canHydrateRemoteNow = () => {
+      const isProfileModalOpen = !!editProfileModal && editProfileModal.classList.contains('visible');
+      const isDiscardModalOpen = !!discardProfileModal && discardProfileModal.classList.contains('visible');
+      return !isProfileModalOpen && !isDiscardModalOpen && !isEditPhotoModalOpen;
+    };
+
+    const attemptRemoteRefresh = async () => {
+      if (refreshInFlight || !canHydrateRemoteNow()) return;
+      refreshInFlight = true;
+      try {
+        const changed = await window.Storage.refreshFromServer();
+        if (changed) {
+          refreshAllUiFromStorage();
+        }
+      } catch {
+        // Falhas de sync remoto nao devem quebrar a shell.
+      } finally {
+        refreshInFlight = false;
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        attemptRemoteRefresh();
+      }
+    };
+
+    const onWindowFocus = () => {
+      attemptRemoteRefresh();
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onWindowFocus);
+
+    refreshIntervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        attemptRemoteRefresh();
+      }
+    }, 15000);
+
+    window.__shellRemoteRefreshCleanup = () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onWindowFocus);
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+      }
+    };
+  }
+
   // Atualizar perfil ao carregar
   updateProfilePage();
+  bindRemoteStateRefresh();
 
 
   function bindProfileNavigationControls() {

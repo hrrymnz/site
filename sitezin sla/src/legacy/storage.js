@@ -25,6 +25,9 @@ const Storage = {
   currentUserId: null,
   currentWorkspace: "default",
   workspacesEnabled: false,
+  hasPendingSync: false,
+  lastRemoteUpdatedAt: "",
+  remoteRefreshInFlight: false,
   syncTimer: null,
   versionTimer: null,
   lastVersionAt: 0,
@@ -38,6 +41,8 @@ const Storage = {
   setUser(userId, workspacesEnabled = false) {
     this.currentUserId = userId;
     this.workspacesEnabled = !!workspacesEnabled;
+    this.hasPendingSync = false;
+    this.lastRemoteUpdatedAt = "";
 
     if (this.workspacesEnabled) {
       const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
@@ -53,12 +58,16 @@ const Storage = {
   setWorkspace(workspaceId) {
     if (!this.workspacesEnabled) {
       this.currentWorkspace = "default";
+      this.hasPendingSync = false;
+      this.lastRemoteUpdatedAt = "";
       this.applyKeyPrefix();
       this.migrateLegacyKeysIfNeeded();
       return;
     }
 
     this.currentWorkspace = workspaceId || "default";
+    this.hasPendingSync = false;
+    this.lastRemoteUpdatedAt = "";
     if (this.currentUserId) {
       localStorage.setItem(`${this.currentUserId}_activeWorkspace`, this.currentWorkspace);
     }
@@ -677,6 +686,7 @@ const Storage = {
   },
 
   scheduleSync() {
+    this.hasPendingSync = true;
     clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.pushStateToServer().catch(() => {
@@ -715,6 +725,40 @@ const Storage = {
 
     this.lastVersionAt = Date.now();
     this.lastVersionSignature = this.buildSnapshotSignature(state);
+  },
+
+  async fetchServerStateRecord() {
+    if (!this.hasSupabase) return null;
+
+    const loadByScope = async (scope) => {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state, updated_at')
+        .eq('scope', scope)
+        .maybeSingle();
+
+      if (error || !data || !data.state) return null;
+      return data;
+    };
+
+    let record = await loadByScope(this.STATE_SCOPE);
+
+    // Compatibilidade com escopo legado (antes do workspace no scope).
+    if (!record && this.currentWorkspace === 'default' && this.currentUserId && this.STATE_SCOPE !== this.currentUserId) {
+      const legacyRecord = await loadByScope(this.currentUserId);
+      if (legacyRecord) {
+        record = legacyRecord;
+
+        await supabase
+          .from('app_state')
+          .upsert(
+            { scope: this.STATE_SCOPE, state: legacyRecord.state, updated_at: new Date().toISOString() },
+            { onConflict: 'scope' }
+          );
+      }
+    }
+
+    return record;
   },
 
   // @deprecated Mantido para evolucao futura de restore remoto por versao.
@@ -764,53 +808,66 @@ const Storage = {
   async pushStateToServer() {
     if (!this.hasSupabase) return;
     const snapshot = this.getSnapshot();
+    const updatedAt = new Date().toISOString();
 
     const { error } = await supabase
       .from('app_state')
-      .upsert({ scope: this.STATE_SCOPE, state: snapshot, updated_at: new Date().toISOString() }, { onConflict: 'scope' });
+      .upsert({ scope: this.STATE_SCOPE, state: snapshot, updated_at: updatedAt }, { onConflict: 'scope' });
 
     if (error) throw new Error("Falha ao salvar estado: " + error.message);
 
+    this.hasPendingSync = false;
+    this.lastRemoteUpdatedAt = updatedAt;
     this.maybeScheduleVersion(snapshot, "auto");
   },
 
   async hydrateFromServer() {
     if (!this.hasSupabase) return false;
     try {
-      const loadByScope = async (scope) => {
-        const { data, error } = await supabase
-          .from('app_state')
-          .select('state')
-          .eq('scope', scope)
-          .single();
-
-        if (error || !data || !data.state) return null;
-        return data.state;
-      };
-
-      let state = await loadByScope(this.STATE_SCOPE);
-
-      // Compatibilidade com escopo legado (antes do workspace no scope).
-      if (!state && this.currentWorkspace === 'default' && this.currentUserId) {
-        const legacyState = await loadByScope(this.currentUserId);
-        if (legacyState) {
-          state = legacyState;
-
-          // Migra escopo legado -> novo sem apagar o antigo.
-          await supabase
-            .from('app_state')
-            .upsert(
-              { scope: this.STATE_SCOPE, state: legacyState, updated_at: new Date().toISOString() },
-              { onConflict: 'scope' }
-            );
-        }
-      }
-
-      if (!state) return false;
-      this.applySnapshot(state);
+      const record = await this.fetchServerStateRecord();
+      if (!record || !record.state) return false;
+      this.applySnapshot(record.state);
+      this.lastRemoteUpdatedAt = String(record.updated_at || "");
+      this.hasPendingSync = false;
       return true;
     } catch {
       return false;
+    }
+  },
+
+  async refreshFromServer() {
+    if (!this.hasSupabase || this.hasPendingSync || this.remoteRefreshInFlight) return false;
+
+    this.remoteRefreshInFlight = true;
+    try {
+      const record = await this.fetchServerStateRecord();
+      if (!record || !record.state) return false;
+
+      const remoteUpdatedAt = String(record.updated_at || "");
+      const localSignature = this.buildSnapshotSignature(this.getSnapshot());
+      const remoteSignature = this.buildSnapshotSignature(record.state);
+
+      if (remoteSignature === localSignature) {
+        this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+        return false;
+      }
+
+      const knownRemoteMs = this.lastRemoteUpdatedAt ? new Date(this.lastRemoteUpdatedAt).getTime() : 0;
+      const nextRemoteMs = remoteUpdatedAt ? new Date(remoteUpdatedAt).getTime() : 0;
+
+      if (knownRemoteMs && nextRemoteMs && nextRemoteMs <= knownRemoteMs) {
+        return false;
+      }
+
+      this.applySnapshot(record.state);
+      this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
+      this.hasPendingSync = false;
+      this.lastVersionSignature = this.buildSnapshotSignature(this.getSnapshot());
+      return true;
+    } catch {
+      return false;
+    } finally {
+      this.remoteRefreshInFlight = false;
     }
   },
 
