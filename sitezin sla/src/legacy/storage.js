@@ -1057,8 +1057,11 @@ const Storage = {
     const a = document.createElement("a");
     a.href = url;
     a.download = "taylorswift-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.style.display = "none";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
 
     this.createServerVersion("export-manual", data).catch(() => {
       // Export local continua funcionando mesmo sem backend.

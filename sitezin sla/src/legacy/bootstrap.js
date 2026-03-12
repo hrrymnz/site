@@ -498,14 +498,20 @@ function initShellInteractions() {
     const btnExport = document.getElementById('btn-export');
     if (btnExport && btnExport.dataset.boundClick !== '1') {
       btnExport.dataset.boundClick = '1';
-      btnExport.addEventListener('click', () => window.Storage.exportData());
+      btnExport.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.Storage.exportData();
+      });
     }
 
     const btnImport = document.getElementById('btn-import');
     const importFile = document.getElementById('import-file');
     if (btnImport && importFile && btnImport.dataset.boundClick !== '1') {
       btnImport.dataset.boundClick = '1';
-      btnImport.addEventListener('click', () => importFile.click());
+      btnImport.addEventListener('click', (e) => {
+        e.preventDefault();
+        importFile.click();
+      });
     }
 
     if (importFile && importFile.dataset.boundChange !== '1') {
@@ -548,7 +554,10 @@ function initShellInteractions() {
     const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
     if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
       refreshVersionsBtn.dataset.boundClick = '1';
-      refreshVersionsBtn.addEventListener('click', () => refreshLocalVersions());
+      refreshVersionsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        refreshLocalVersions();
+      });
     }
 
     refreshAvatar();

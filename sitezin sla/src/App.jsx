@@ -446,9 +446,9 @@ function App() {
                       <span>Exporte e importe seus dados sem perder informacoes.</span>
                     </div>
                     <div className="settings-pref-actions">
-                      <button className="btn-export" id="btn-export">Exportar Backup (.json)</button>
+                      <button type="button" className="btn-export" id="btn-export">Exportar Backup (.json)</button>
                       <div className="import-wrapper">
-                        <button className="btn-import" id="btn-import">Importar Backup</button>
+                        <button type="button" className="btn-import" id="btn-import">Importar Backup</button>
                         <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
                       </div>
                     </div>
@@ -466,7 +466,7 @@ function App() {
                       <span>Ultimas 10 versoes para restauracao rapida.</span>
                     </div>
                     <div className="settings-pref-actions">
-                      <button className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
+                      <button type="button" className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
                     </div>
                   </div>
                 </div>
@@ -803,7 +803,6 @@ function App() {
 }
 
 export default App;
-
 
 
 
