@@ -1709,8 +1709,10 @@ const App = {
           const items = item.checklistItems || [];
           const done = items.filter((i) => i.completed).length;
           const total = items.length;
+          const progressPercent = total ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0;
+          const progressLabel = total ? (done + " de " + total + " concluidos") : "Nenhum item";
           const preview = isChecklist
-            ? (total ? done + " de " + total + " concluídos" : "Nenhum item")
+            ? progressLabel
             : (String(item.content || "").replace(/\s+/g, " ").trim().slice(0, 88) || "Sem conteúdo");
           const title = this.escapeHtml(String(item.title || (isChecklist ? "Checklist" : "Sem título")));
           const timestamp = new Date(item.updatedAt || item.createdAt || Date.now());
@@ -1719,16 +1721,23 @@ const App = {
           const pinIcon = item.pinned ? "pin-off" : "pin";
           const pinTitle = item.pinned ? "Desafixar" : "Fixar";
           return '<li class="red-note-list-item ' + (isActive ? "active " : "") + (item.pinned ? "pinned" : "") + '" data-id="' + this.escapeHtml(item.id) + '" data-type="' + this.escapeHtml(item.type) + '">' +
-            '<div class="red-note-card-top">' +
-              '<span class="red-note-list-icon"><i data-lucide="' + icon + '"></i></span>' +
-              '<div class="item-card-actions red-note-card-actions">' +
-                (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-                '<button type="button" class="item-btn-pin red-note-pin-btn" data-id="' + this.escapeHtml(item.id) + '" title="' + pinTitle + '"><i data-lucide="' + pinIcon + '"></i></button>' +
+            '<span class="red-note-list-icon"><i data-lucide="' + icon + '"></i></span>' +
+            '<div class="red-note-list-body">' +
+              '<div class="red-note-list-head">' +
+                '<strong class="red-note-list-title">' + title + '</strong>' +
+                '<div class="item-card-actions red-note-card-actions">' +
+                  (item.pinned ? '<span class="pin-indicator red-note-pin-indicator" title="Fixado"><i data-lucide="pin"></i></span>' : '') +
+                  '<button type="button" class="item-btn-pin red-note-pin-btn" data-id="' + this.escapeHtml(item.id) + '" title="' + pinTitle + '"><i data-lucide="' + pinIcon + '"></i></button>' +
+                '</div>' +
               '</div>' +
+              (isChecklist
+                ? '<div class="red-note-list-progress ' + (total > 0 && done === total ? "is-complete" : "") + '">' +
+                    '<span class="red-note-list-progress-track"><span class="red-note-list-progress-fill" style="width:' + progressPercent + '%"></span></span>' +
+                    '<span class="red-note-list-progress-label">' + this.escapeHtml(progressLabel) + '</span>' +
+                  '</div>'
+                : '<p class="red-note-list-preview">' + this.escapeHtml(preview) + '</p>') +
+              '<small class="red-note-list-date">' + this.escapeHtml(dateLabel) + '</small>' +
             '</div>' +
-            '<strong>' + title + '</strong>' +
-            '<p>' + this.escapeHtml(preview) + '</p>' +
-            '<small>' + this.escapeHtml(dateLabel) + '</small>' +
           '</li>';
         }).join("")
       : '<li class="red-note-list-empty">Nenhum item encontrado.</li>';
