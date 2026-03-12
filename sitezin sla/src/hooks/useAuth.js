@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const SUPABASE_UNAVAILABLE_MESSAGE = 'Autenticacao indisponivel no momento. Verifique a configuracao do Supabase.';
+
+const ensureSupabase = () => {
+  if (!supabase) {
+    throw new Error(SUPABASE_UNAVAILABLE_MESSAGE);
+  }
+};
 
 export function useAuth() {
   const [user, setUser] = useState(null);
@@ -90,23 +97,27 @@ export function useAuth() {
   }, []);
 
   const signUp = async (email, password) => {
+    ensureSupabase();
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     return data;
   };
 
   const signIn = async (email, password) => {
+    ensureSupabase();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
   };
 
   const signOut = async () => {
+    ensureSupabase();
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   const requestPasswordReset = async (email) => {
+    ensureSupabase();
     const redirectTo = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) throw error;
@@ -114,6 +125,7 @@ export function useAuth() {
   };
 
   const updatePassword = async (newPassword) => {
+    ensureSupabase();
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
     setIsRecoveryMode(false);

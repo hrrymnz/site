@@ -31,6 +31,7 @@ export default function LoginPage({
   const getFriendlyError = (message) => {
     if (message === 'Invalid login credentials') return 'E-mail ou senha incorretos';
     if (message?.toLowerCase().includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
+    if (message?.toLowerCase().includes('autenticacao indisponivel')) return 'Login indisponível agora. As chaves do Supabase não foram carregadas neste ambiente.';
     return message || 'Ocorreu um erro. Tente novamente.';
   };
 
@@ -92,6 +93,9 @@ export default function LoginPage({
         {authStatus === 'expired' && (
           <p className="login-error">Sua sessão expirou por inatividade. Faça login novamente.</p>
         )}
+        {authStatus === 'unavailable' && (
+          <p className="login-error">Login indisponível agora. As chaves do Supabase não foram carregadas neste ambiente.</p>
+        )}
 
         <form onSubmit={handleSubmit} className="login-form">
           {mode !== 'recovery' && (
@@ -126,7 +130,7 @@ export default function LoginPage({
           {error && <p className="login-error">{error}</p>}
           {success && <p className="login-success">{success}</p>}
 
-          <button type="submit" className="login-btn" disabled={loading}>
+          <button type="submit" className="login-btn" disabled={loading || authStatus === 'unavailable'}>
             {loading ? '...' : (
               mode === 'signup' ? 'Criar conta'
                 : mode === 'forgot' ? 'Enviar link'
@@ -179,5 +183,4 @@ export default function LoginPage({
     </div>
   );
 }
-
 
