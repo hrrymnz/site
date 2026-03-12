@@ -24,6 +24,7 @@ const Storage = {
   STATE_SCOPE: "default",
   currentUserId: null,
   currentWorkspace: "default",
+  workspacesEnabled: false,
   syncTimer: null,
   versionTimer: null,
   lastVersionAt: 0,
@@ -36,8 +37,9 @@ const Storage = {
 
   setUser(userId, workspacesEnabled = false) {
     this.currentUserId = userId;
+    this.workspacesEnabled = !!workspacesEnabled;
 
-    if (workspacesEnabled) {
+    if (this.workspacesEnabled) {
       const workspaceFromStorage = userId ? localStorage.getItem(`${userId}_activeWorkspace`) : null;
       this.currentWorkspace = workspaceFromStorage || "default";
     } else {
@@ -49,6 +51,13 @@ const Storage = {
   },
 
   setWorkspace(workspaceId) {
+    if (!this.workspacesEnabled) {
+      this.currentWorkspace = "default";
+      this.applyKeyPrefix();
+      this.migrateLegacyKeysIfNeeded();
+      return;
+    }
+
     this.currentWorkspace = workspaceId || "default";
     if (this.currentUserId) {
       localStorage.setItem(`${this.currentUserId}_activeWorkspace`, this.currentWorkspace);
@@ -61,8 +70,15 @@ const Storage = {
     const userPrefix = this.currentUserId ? this.currentUserId.slice(0, 8) : "anon";
     const workspacePrefix = this.currentWorkspace || "default";
     const prefix = `${userPrefix}_${workspacePrefix}_`;
+    const remoteScope = !this.currentUserId
+      ? "default"
+      : (!this.workspacesEnabled || workspacePrefix === "default")
+        ? this.currentUserId
+        : `${this.currentUserId}:${workspacePrefix}`;
 
-    this.STATE_SCOPE = `${this.currentUserId || "default"}:${workspacePrefix}`;
+    // O Supabase atual autoriza o scope base do usuario (auth.uid()).
+    // Quando workspaces estao desabilitados, persistimos remotamente sem sufixo.
+    this.STATE_SCOPE = remoteScope;
     this.KEY = prefix + "swiftItems";
     this.ORDER_KEY = prefix + "swiftItemsOrder";
     this.FEARLESS_SEED_KEY = prefix + "fearlessDefaultSeeded";
