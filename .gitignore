@@ -10,3 +10,5 @@ sitezin sla/supabase/
 
 # outros
 ROADMAP.md
+node_modules
+.md
