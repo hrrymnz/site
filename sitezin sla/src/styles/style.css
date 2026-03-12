@@ -57,14 +57,24 @@ body {
 }
 
 body.app-theme-dark {
-  --card: #0e141d;
-  --cartao-suave: #16202b;
-  --text: #eef4ff;
-  --muted: #8b98b8;
-  --border: #243447;
-  --accent-light: rgba(114, 137, 218, 0.16);
+  --card: #1f1b18;
+  --cartao-suave: #2a2521;
+  --text: #f4efe9;
+  --muted: #c3beb7;
+  --border: #6f665d;
+  --accent-light: rgba(195, 190, 183, 0.12);
+  --dark-elevated: #332d28;
+  --dark-panel: #2f2a26;
+  --dark-border-strong: #8b8173;
+  --dark-reader: #26211d;
   background: var(--card);
   color: var(--text);
+}
+
+body.app-theme-dark[data-era="evermore"] {
+  --accent: #d78b56;
+  --accent-light: rgba(215, 139, 86, 0.14);
+  --border: #56362a;
 }
 
 body.app-theme-dark[data-era="reputation"] {
@@ -76,9 +86,14 @@ body.app-theme-dark[data-era="reputation"] {
 body.app-theme-dark .dashboard,
 body.app-theme-dark .content,
 body.app-theme-dark .sidebar,
-body.app-theme-dark .topbar,
+body.app-theme-dark .topbar {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
 body.app-theme-dark .painel-superficie,
-body.app-theme-dark .credit-card.light,
+body.app-theme-dark .repo-overview-card.light,
 body.app-theme-dark .fearless-repo-card,
 body.app-theme-dark .red-notes-list-panel,
 body.app-theme-dark .red-note-editor,
@@ -87,7 +102,8 @@ body.app-theme-dark .search-results,
 body.app-theme-dark .settings-modern,
 body.app-theme-dark .settings-section-card,
 body.app-theme-dark .local-version-item,
-body.app-theme-dark .profile-page.x-profile-shell {
+body.app-theme-dark .profile-page.x-profile-shell,
+body.app-theme-dark .search {
   background: var(--cartao-suave);
   color: var(--text);
   border-color: var(--border);
@@ -110,7 +126,7 @@ body.app-theme-dark #form-add-item textarea,
 body.app-theme-dark #form-edit-repo input[type="text"],
 body.app-theme-dark #form-edit-repo select,
 body.app-theme-dark #form-edit-repo textarea {
-  background: #101923;
+  background: var(--dark-elevated);
   color: var(--text);
   border-color: var(--border);
 }
@@ -150,15 +166,15 @@ body.app-theme-dark .menu .active .sidebar-custom-icon {
 }
 
 body.app-theme-dark .tag-btn {
-  background: color-mix(in oklab, var(--accent) 12%, #101923 88%);
-  color: color-mix(in oklab, var(--accent) 62%, #eef4ff 38%);
+  background: color-mix(in oklab, var(--accent) 12%, var(--dark-elevated) 88%);
+  color: color-mix(in oklab, var(--accent) 62%, var(--text) 38%);
   border-color: color-mix(in oklab, var(--accent) 24%, var(--border) 76%);
 }
 
 body.app-theme-dark .tag-btn:hover,
 body.app-theme-dark .tag-btn.active {
-  background: color-mix(in oklab, var(--accent) 24%, #101923 76%);
-  color: #eef4ff;
+  background: color-mix(in oklab, var(--accent) 24%, var(--dark-elevated) 76%);
+  color: var(--text);
   border-color: color-mix(in oklab, var(--accent) 46%, var(--border) 54%);
 }
 
@@ -445,10 +461,17 @@ h3 {
 .charts-grid { grid-template-columns: 1fr 1fr; }
 
 
-.credit-cards h3,
-.painel-contribuicoes-github h3,
+.repo-overview-section h3,
 .painel-commits-github h3,
 .recent h3 { margin-bottom: 12px; }
+
+.painel-contribuicoes-github {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.painel-contribuicoes-github h3 { margin-bottom: 0; }
 
 /* ===== CARDS DE REPOSITORIO ===== */
 
@@ -487,42 +510,46 @@ h3 {
   cursor: default;
   text-decoration: none;
 }
+/* Card de repositorio*/
 
-.cards-row {
+
+.repo-overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.credit-card {
+/* Card de repositorio, tamanho, borda */
+.repo-overview-card {
   border-radius: 10px;
   padding: 14px;
-  min-height: 126px;
+  min-height: 144px;
   display: grid;
   align-content: space-between;
 }
+/* Card de repositorio, texto, cor */
+.repo-overview-card small { color: #dbe0ff; }
+.repo-overview-card strong { font-size: 1.5rem; }
+.repo-overview-card p { letter-spacing: 1px; font-weight: 700; font-size: 0.82rem; }
 
-.credit-card small { color: #dbe0ff; }
-.credit-card strong { font-size: 1.5rem; }
-.credit-card p { letter-spacing: 1px; font-weight: 700; font-size: 0.82rem; }
-
-.credit-card.primary {
+/* Card de repositorio, variações de cor por tipo */
+.repo-overview-card.primary {
   background: var(--accent);
   color: white;
 }
-
-.credit-card.light {
+/* Card de repositorio claro, variações de cor por tipo, versão clara */
+.repo-overview-card.light {
   border: 1px solid #e4e8ff;
   background: white;
 }
-
-.credit-card.light small { color: #a4abc8; }
+/* Card de repositorio claro, variações de cor por tipo, versão clara, texto secundário */
+.repo-overview-card.light small { color: #a4abc8; }
 
 .repo-card { cursor: pointer; transition: 0.2s; }
-
+/* Card de repositorio, variação hover */
 .repo-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(51, 73, 255, 0.15);
+  box-shadow: 0 8px 20px rgba(195, 190, 183, 0.19);
   background: #649055;
 }
 
@@ -552,7 +579,7 @@ h3 {
   opacity: 1;
 }
 
-.credit-card.light .repo-edit-btn:hover {
+.repo-overview-card.light .repo-edit-btn:hover {
   background: rgba(34, 45, 87, 0.08);
 }
 
@@ -571,7 +598,7 @@ h3 {
 }
 
 
-.btn-todos-repos {
+.repo-overview-link {
   margin-top: 12px;
   width: 100%;
   background: var(--accent);
@@ -588,7 +615,7 @@ h3 {
   font-size: 0.9rem;
 }
 
-.btn-todos-repos:hover {
+.repo-overview-link:hover {
   background: #649055;
   transform: translateY(-2px);
 }
@@ -1171,6 +1198,177 @@ button {
   border-color: #5ba4cf;
   color: #2f8dbf;
   background: rgba(91, 164, 207, 0.16);
+}
+
+body.app-theme-dark .era-empty {
+  color: var(--muted);
+}
+
+body.app-theme-dark .era-empty p:first-child {
+  color: var(--text);
+}
+
+body.app-theme-dark .era-empty small {
+  color: color-mix(in oklab, var(--muted) 92%, var(--text) 8%);
+}
+
+body.app-theme-dark .era-empty-icon {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-elevated) 82%);
+  color: color-mix(in oklab, var(--accent) 78%, var(--text) 22%);
+  box-shadow: 0 10px 22px rgba(8, 15, 28, 0.34);
+}
+
+body.app-theme-dark .era-empty-chip {
+  background: var(--dark-panel);
+  color: var(--text);
+  border-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark .era-empty-chip:hover {
+  background: color-mix(in oklab, var(--accent) 22%, var(--dark-panel) 78%);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--dark-border-strong) 60%);
+}
+
+body.app-theme-dark .era-empty-cta {
+  box-shadow: 0 10px 26px rgba(8, 15, 28, 0.24);
+}
+
+body.app-theme-dark .folklore-md-card {
+  background: var(--dark-panel);
+  border-color: var(--dark-border-strong);
+  box-shadow: 0 12px 26px rgba(8, 15, 28, 0.18);
+}
+
+body.app-theme-dark .folklore-md-card .item-title,
+body.app-theme-dark .folklore-md-card .item-content-preview,
+body.app-theme-dark .folklore-md-card .item-meta span {
+  color: var(--text);
+}
+
+body.app-theme-dark .folklore-md-card .item-content-preview,
+body.app-theme-dark .folklore-md-card .item-meta span,
+body.app-theme-dark .folklore-md-card .item-tag {
+  color: var(--muted);
+}
+
+body.app-theme-dark .folklore-md-card .item-tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: transparent;
+}
+
+body.app-theme-dark .folklore-open-md-btn,
+body.app-theme-dark .folklore-md-back-btn,
+body.app-theme-dark .folklore-md-title-input,
+body.app-theme-dark .folklore-md-mode-btn,
+body.app-theme-dark .folklore-md-upload-btn {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark .folklore-open-md-btn:hover,
+body.app-theme-dark .folklore-md-back-btn:hover,
+body.app-theme-dark .folklore-md-mode-btn:hover,
+body.app-theme-dark .folklore-md-upload-btn:hover,
+body.app-theme-dark .folklore-md-mode-btn.active {
+  background: color-mix(in oklab, var(--accent) 18%, var(--dark-panel) 82%);
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent) 38%, var(--dark-border-strong) 62%);
+}
+
+body.app-theme-dark .folklore-md-shell,
+body.app-theme-dark .folklore-md-layout {
+  background: var(--dark-panel);
+  border-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark .folklore-markdown-body {
+  background: var(--dark-reader);
+  color: var(--text);
+}
+
+body.app-theme-dark .folklore-markdown-body h1,
+body.app-theme-dark .folklore-markdown-body h2,
+body.app-theme-dark .folklore-markdown-body h3,
+body.app-theme-dark .folklore-markdown-body h4 {
+  color: var(--text);
+}
+
+body.app-theme-dark .folklore-markdown-body h1,
+body.app-theme-dark .folklore-markdown-body h2,
+body.app-theme-dark .folklore-markdown-body th,
+body.app-theme-dark .folklore-markdown-body td {
+  border-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark .folklore-markdown-body code {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+body.app-theme-dark .folklore-markdown-body a {
+  color: #7fc8ff;
+}
+
+body.app-theme-dark .recent .recent-row.era-debut,
+body.app-theme-dark .highlight-list .highlight-row.era-debut {
+  --recent-era-color: #9bcf72;
+  --recent-row-bg: rgba(155, 207, 114, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-fearless,
+body.app-theme-dark .highlight-list .highlight-row.era-fearless {
+  --recent-era-color: #e2c26e;
+  --recent-row-bg: rgba(226, 194, 110, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-speak-now,
+body.app-theme-dark .highlight-list .highlight-row.era-speak-now {
+  --recent-era-color: #b796ff;
+  --recent-row-bg: rgba(183, 150, 255, 0.13);
+}
+
+body.app-theme-dark .recent .recent-row.era-red,
+body.app-theme-dark .highlight-list .highlight-row.era-red {
+  --recent-era-color: #ef7d72;
+  --recent-row-bg: rgba(239, 125, 114, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-1989,
+body.app-theme-dark .highlight-list .highlight-row.era-1989 {
+  --recent-era-color: #7dcaf0;
+  --recent-row-bg: rgba(125, 202, 240, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-reputation,
+body.app-theme-dark .highlight-list .highlight-row.era-reputation {
+  --recent-era-color: #c6ced9;
+  --recent-row-bg: rgba(198, 206, 217, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-lover,
+body.app-theme-dark .highlight-list .highlight-row.era-lover {
+  --recent-era-color: #f1a9c8;
+  --recent-row-bg: rgba(241, 169, 200, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-folklore,
+body.app-theme-dark .highlight-list .highlight-row.era-folklore {
+  --recent-era-color: #c5bbb0;
+  --recent-row-bg: rgba(197, 187, 176, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-evermore,
+body.app-theme-dark .highlight-list .highlight-row.era-evermore {
+  --recent-era-color: #d78b56;
+  --recent-row-bg: rgba(215, 139, 86, 0.12);
+}
+
+body.app-theme-dark .recent .recent-row.era-settings,
+body.app-theme-dark .highlight-list .highlight-row.era-settings {
+  --recent-era-color: #8aa8ff;
+  --recent-row-bg: rgba(138, 168, 255, 0.12);
 }
 
 /* ===== CARDS DE ITEM ===== */
@@ -2496,7 +2694,7 @@ button {
   .topbar-right { width: 100%; flex-direction: column-reverse; }
   .search { width: 100%; flex: 1 1 auto; }
   .topbar-icons { width: 100%; justify-content: space-between; }
-  .cards-row { grid-template-columns: 1fr; }
+  .repo-overview-grid { grid-template-columns: 1fr; }
   .menu { grid-template-columns: 1fr 1fr; }
   .settings-form-layout { flex-direction: column; align-items: center; }
   .form-grid { grid-template-columns: 1fr; }
@@ -4447,6 +4645,93 @@ button {
 #page-evermore .x-tab.active {
   color: #2f2117;
   border-bottom-color: #cc621b;
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .profile-page.x-profile-shell {
+  background: var(--cartao-suave);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: 0 18px 42px rgba(6, 4, 4, 0.28), inset 0 0 0 1px rgba(215, 139, 86, 0.08);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-topbar {
+  background: var(--dark-elevated);
+  border-bottom-color: var(--border);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-top-title strong,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-header-info h2,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-follow-row strong,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
+  color: var(--text);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-top-title small,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-header-info .profile-username,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-meta-item,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-follow-row,
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab {
+  color: var(--muted);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .profile-cover {
+  background: linear-gradient(135deg, var(--dark-elevated) 0%, var(--dark-panel) 62%, color-mix(in oklab, var(--dark-panel) 76%, var(--accent) 24%) 100%);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .profile-cover::after {
+  background: linear-gradient(180deg, rgba(10, 14, 28, 0.04) 0%, rgba(44, 28, 18, 0.22) 100%);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-avatar-floating {
+  border-color: var(--cartao-suave);
+  background: var(--dark-elevated);
+  box-shadow: 0 10px 22px rgba(4, 3, 3, 0.34);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-header-info .profile-bio,
+body.app-theme-dark[data-era="evermore"] #page-evermore .profile-bio {
+  color: var(--text);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .profile-bio.is-placeholder {
+  color: var(--muted);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-edit-profile {
+  border-color: var(--accent);
+  color: var(--text);
+  background: transparent;
+  box-shadow: 0 8px 20px rgba(8, 5, 4, 0.18), inset 0 0 0 1px rgba(215, 139, 86, 0.06);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-edit-profile:hover {
+  background: var(--accent-light);
+  border-color: #f3b17f;
+  color: var(--text);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-tabs {
+  border-top-color: var(--border);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-back {
+  border-color: rgba(215, 139, 86, 0.42);
+  color: var(--accent);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-profile-back:hover {
+  background: var(--accent-light);
+  border-color: rgba(215, 139, 86, 0.72);
+  color: #f3b17f;
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab:hover {
+  background: rgba(215, 139, 86, 0.08);
+}
+
+body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
+  border-bottom-color: var(--accent);
+  box-shadow: inset 0 -1px 0 rgba(215, 139, 86, 0.18);
 }
 
 /* Profile edit modal */

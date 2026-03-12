@@ -196,14 +196,14 @@ function App() {
 
         <div className="era-page active" id="page-debut">
           <section className="repos-grid">
-            <div className="credit-cards">
-              <div className="card-header">
-                <h3>Meus repositorios</h3>
-                <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
+              <div className="repo-overview-section">
+                <div className="card-header">
+                  <h3>Meus repositorios</h3>
+                  <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
+                </div>
+                <div className="repo-overview-grid"></div>
+                <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="repo-overview-link">Github -&gt;</a>
               </div>
-              <div className="cards-row"></div>
-              <a href="https://github.com/hrrymnz" target="_blank" rel="noopener noreferrer" className="btn-todos-repos">Github -&gt;</a>
-            </div>
             <div className="recent">
               <h3>Paginas Recentes</h3>
               <div className="painel-superficie">
@@ -238,7 +238,7 @@ function App() {
           </section>
 
           <section className="charts-grid">
-            <div className="painel-contribuições-github">
+            <div className="painel-contribuicoes-github">
               <h3>Contribuições GitHub</h3>
               <div className="painel-superficie">
                 <div className="github-graph-header">
@@ -832,8 +832,6 @@ function App() {
 }
 
 export default App;
-
-
 
 
 

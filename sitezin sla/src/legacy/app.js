@@ -1264,6 +1264,28 @@ const App = {
       }
 
       const emptyStateByEra = {
+        fearless: {
+          icon: "folder-git-2",
+          title: "Seus repositorios favoritos ficam aqui",
+          subtitle: "Projetos fixos, referencias de codigo e coisas que voce quer abrir rapido",
+          cta: "+ Adicionar repositorio",
+          suggestions: [
+            { label: "GitHub", type: "repo", title: "GitHub Repo", url: "https://github.com/", tags: ["codigo"], modalTitle: "Adicionar repositório", lockType: true },
+            { label: "GitLab", type: "repo", title: "GitLab Repo", url: "https://gitlab.com/", tags: ["codigo"], modalTitle: "Adicionar repositório", lockType: true },
+            { label: "Bitbucket", type: "repo", title: "Bitbucket Repo", url: "https://bitbucket.org/", tags: ["codigo"], modalTitle: "Adicionar repositório", lockType: true }
+          ]
+        },
+        "speak-now": {
+          icon: "music-4",
+          title: "Suas musicas e playlists entram aqui",
+          subtitle: "Spotify, Apple Music, YouTube Music e links que merecem replay",
+          cta: "+ Adicionar playlist",
+          suggestions: [
+            { label: "Spotify", type: "playlist", title: "Spotify", url: "https://open.spotify.com/", tags: ["playlist"], modalTitle: "Adicionar Spotify", lockType: true },
+            { label: "Apple Music", type: "playlist", title: "Apple Music", url: "https://music.apple.com/", tags: ["playlist"], modalTitle: "Adicionar Apple Music", lockType: true },
+            { label: "YouTube Music", type: "playlist", title: "YouTube Music", url: "https://music.youtube.com/", tags: ["playlist"], modalTitle: "Adicionar YouTube Music", lockType: true }
+          ]
+        },
         "1989": {
           icon: "briefcase",
           title: "Suas ferramentas ficam aqui",
@@ -1296,6 +1318,17 @@ const App = {
             { label: "Medium", title: "Medium", url: "https://medium.com/", tags: ["leitura"], modalTitle: "Salvar Medium", lockType: true },
             { label: "MDN", title: "MDN", url: "https://developer.mozilla.org/", tags: ["docs"], modalTitle: "Salvar MDN", lockType: true }
           ]
+        },
+        reputation: {
+          icon: "link-2",
+          title: "Seus links essenciais ficam aqui",
+          subtitle: "Portfolios, redes, docs e atalhos que voce abre o tempo todo",
+          cta: "+ Adicionar link",
+          suggestions: [
+            { label: "GitHub", type: "link", title: "GitHub", url: "https://github.com/", tags: ["perfil"], modalTitle: "Adicionar GitHub", lockType: true },
+            { label: "LinkedIn", type: "link", title: "LinkedIn", url: "https://www.linkedin.com/", tags: ["social"], modalTitle: "Adicionar LinkedIn", lockType: true },
+            { label: "Portfólio", type: "link", title: "Portfólio", url: "https://", tags: ["portfolio"], modalTitle: "Adicionar Portfólio", lockType: true }
+          ]
         }
       };
 
@@ -1308,7 +1341,7 @@ const App = {
       const eraKey = this.normalizeEra(era);
       const chipsMarkup = Array.isArray(emptyCfg.suggestions) && emptyCfg.suggestions.length
         ? '<div class="era-empty-chips">' + emptyCfg.suggestions.map((chip) =>
-            '<button type="button" class="era-empty-chip" data-title="' + this.escapeHtml(chip.title || chip.label || "") + '" data-url="' + this.escapeHtml(chip.url || "") + '" data-tags="' + this.escapeHtml((chip.tags || []).join(",")) + '" data-modal-title="' + this.escapeHtml(chip.modalTitle || "") + '" data-lock-type="' + (chip.lockType ? "1" : "0") + '">' + this.escapeHtml(chip.label || "") + '</button>'
+            '<button type="button" class="era-empty-chip" data-type="' + this.escapeHtml(chip.type || "link") + '" data-title="' + this.escapeHtml(chip.title || chip.label || "") + '" data-url="' + this.escapeHtml(chip.url || "") + '" data-tags="' + this.escapeHtml((chip.tags || []).join(",")) + '" data-modal-title="' + this.escapeHtml(chip.modalTitle || "") + '" data-lock-type="' + (chip.lockType ? "1" : "0") + '">' + this.escapeHtml(chip.label || "") + '</button>'
           ).join("") + '</div>'
         : "";
 
@@ -1341,7 +1374,7 @@ const App = {
             .map((v) => v.trim())
             .filter(Boolean);
           this.openPrefilledModal(era, {
-            type: "link",
+            type: String(chip.dataset.type || "link").trim().toLowerCase() || "link",
             title: String(chip.dataset.title || "").trim(),
             url: String(chip.dataset.url || "").trim(),
             tags,

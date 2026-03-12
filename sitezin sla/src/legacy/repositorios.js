@@ -309,7 +309,7 @@ function configurarModalEdicaoRepos() {
 }
 
 function renderizarRepos() {
-  const container = document.querySelector(".cards-row");
+  const container = document.querySelector(".repo-overview-grid");
   if (!container) return;
 
   reposPinned = carregarReposFixados();
@@ -319,7 +319,7 @@ function renderizarRepos() {
   container.innerHTML = reposPinned.map((slot, i) => {
     const selected = byId.get(slot.sourceId);
     const isEmpty = !selected;
-    const classe = isEmpty ? 'credit-card light repo-card repo-card-empty' : ('credit-card ' + slot.estilo + ' repo-card');
+    const classe = isEmpty ? 'repo-overview-card light repo-card repo-card-empty' : ('repo-overview-card ' + slot.estilo + ' repo-card');
     const dataRepo = isEmpty ? '' : escapeHtml(selected.slug);
     const tituloBase = selected ? selected.title : "Selecione um repositório";
     const descricaoBase = selected ? (selected.description || "Sem descrição") : "Adicione um repositório na Fearless e configure este slot.";
