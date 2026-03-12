@@ -3384,7 +3384,7 @@ button {
 }
 
 .red-notes-list.red-notes-list--grid-3x3 .red-note-list-item {
-  min-height: 236px;
+  min-height: 320px;
   padding: 16px;
   align-content: start;
 }
@@ -3392,12 +3392,14 @@ button {
 .red-notes-list.red-notes-list--grid-3x3 .red-note-list-body {
   gap: 10px;
   height: 100%;
+  grid-template-rows: auto 1fr auto;
 }
 
 .red-notes-list.red-notes-list--grid-3x3 .red-note-list-preview {
-  font-size: 0.8rem;
-  line-height: 1.5;
-  -webkit-line-clamp: 6;
+  font-size: 0.86rem;
+  line-height: 1.72;
+  -webkit-line-clamp: 14;
+  align-self: stretch;
 }
 
 .red-notes-list.red-notes-list--grid-3x3 .red-note-list-progress {

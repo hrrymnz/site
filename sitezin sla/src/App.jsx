@@ -118,15 +118,15 @@ function App() {
           <h1 className="brand">TaylorSwift.</h1>
         </div>
         <nav className="menu">
-          <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Debut</a>
-          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Fearless</a>
-          <a href="#" className="era-link" data-target="speak-now" data-era-color="speak-now"><span className="menu-icon"><i data-lucide="mic-2"></i></span>Speak Now</a>
-          <a href="#" className="era-link" data-target="red" data-era-color="red"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/scarf.png" alt="Red" className="sidebar-custom-icon" /></span>Red</a>
-          <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>1989</a>
-          <a href="#" className="era-link" data-target="reputation" data-era-color="reputation"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/snake.png" alt="Reputation" className="sidebar-custom-icon" /></span>Reputation</a>
-          <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Lover</a>
-          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Folklore</a>
-          <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Evermore</a>
+          <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Início</a>
+          <a href="#" className="era-link" data-target="fearless" data-era-color="fearless"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/hand.png" alt="Fearless" className="sidebar-custom-icon" /></span>Repositorios</a>
+          <a href="#" className="era-link" data-target="speak-now" data-era-color="speak-now"><span className="menu-icon"><i data-lucide="mic-2"></i></span>Música</a>
+          <a href="#" className="era-link" data-target="red" data-era-color="red"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/scarf.png" alt="Red" className="sidebar-custom-icon" /></span>Notas</a>
+          <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>Ferramentas</a>
+          <a href="#" className="era-link" data-target="reputation" data-era-color="reputation"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/snake.png" alt="Reputation" className="sidebar-custom-icon" /></span>Links</a>
+          <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Vídeos</a>
+          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Resumos ou Artigos</a>
+          <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Perfil</a>
           <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
         </nav>
         <div className="sidebar-bottom">
@@ -137,7 +137,7 @@ function App() {
 
       <section className="content">
         <header className="topbar">
-          <h2 id="topbar-title">Debut</h2>
+          <h2 id="topbar-title">Início</h2>
           <div className="topbar-right">
             <div className="search">
               <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
@@ -681,21 +681,21 @@ function App() {
             </div>
 
             <div className="form-group">
-              <label>Repositorio do Fearless</label>
+              <label>Repositorio: </label>
               <select id="edit-repo-source" required>
-                <option value="">Selecione um repositorio de Fearless</option>
+                <option value="">Selecione um repositorio</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Nome exibido</label>
+              <label>Nome exibido: </label>
               <input type="text" id="edit-repo-name" />
             </div>
 
             <div className="form-group form-group-note">
-              <label>Descrição</label>
+              <label>Descrição: </label>
               <textarea id="edit-repo-description" rows="4"></textarea>
-              <small className="repo-modal-hint">Somente repositorios criados na era Fearless podem ser fixados aqui.</small>
+              <small className="repo-modal-hint">Somente repositorios previamente criados podem ser fixados aqui.</small>
             </div>
 
             <div className="repo-edit-actions">
@@ -782,12 +782,12 @@ function App() {
             <div className="form-group">
               <label>Era / Categoria</label>
               <select id="item-category">
-                <option value="fearless">Fearless</option>
-                <option value="speak-now">Speak Now</option>
-                <option value="1989">1989</option>
-                <option value="reputation">Reputation</option>
-                <option value="lover">Lover</option>
-                <option value="folklore">Folklore</option>
+                <option value="fearless">Repositorios</option>
+                <option value="speak-now">Música</option>
+                <option value="1989">Ferramentas</option>
+                <option value="reputation">Links</option>
+                <option value="lover">Vídeos</option>
+                <option value="folklore">Resumos</option>
               </select>
             </div>
             <div className="form-group form-group-inline">

@@ -172,6 +172,56 @@ const App = {
     return compact.slice(0, Math.max(0, Number(maxLength) || 88));
   },
 
+  isRedItemEmpty(item, overrides = {}) {
+    if (!item) return true;
+    const type = String(item.type || "").toLowerCase();
+    const title = String(overrides.title != null ? overrides.title : (item.title || "")).trim();
+    const normalizedTitle = title.toLowerCase();
+
+    if (type === "note") {
+      const content = String(overrides.content != null ? overrides.content : (item.content || "")).trim();
+      const hasCustomTitle = !!title && !["nova nota", "sem título", "sem titulo"].includes(normalizedTitle);
+      return !hasCustomTitle && !content;
+    }
+
+    if (type === "checklist") {
+      const checklistItems = Array.isArray(overrides.checklistItems)
+        ? overrides.checklistItems
+        : (Array.isArray(item.checklistItems) ? item.checklistItems : []);
+      const hasChecklistContent = checklistItems.some((entry) => {
+        const text = String(entry && entry.text ? entry.text : "").trim();
+        return !!text;
+      });
+      const hasCustomTitle = !!title && !["nova checklist", "checklist"].includes(normalizedTitle);
+      return !hasCustomTitle && !hasChecklistContent;
+    }
+
+    return false;
+  },
+
+  cleanupRedEmptyItems(exceptId = "") {
+    const removable = Storage.getByCategory("red").filter((item) => {
+      const type = String(item.type || "").toLowerCase();
+      if (item.id === exceptId) return false;
+      if (type !== "note" && type !== "checklist") return false;
+      return this.isRedItemEmpty(item);
+    });
+
+    if (!removable.length) return false;
+
+    removable.forEach((item) => Storage.deleteItem(item.id));
+
+    if (removable.some((item) => item.id === this.redSelectedNoteId)) {
+      this.redSelectedNoteId = "";
+      this.redNoteDraft = null;
+      clearTimeout(this.redNoteSaveTimer);
+    }
+
+    this.renderDebutHighlights();
+    if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+    return true;
+  },
+
   decorateMarkdownLinks(root) {
     if (!root) return;
     root.querySelectorAll("a").forEach((link) => {
@@ -849,8 +899,106 @@ const App = {
     if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
   },
 
+  isFolkloreMarkdownEmpty(item, overrides = {}) {
+    if (!item || String(item.type || "").toLowerCase() !== "markdown") return false;
+    const title = String(overrides.title != null ? overrides.title : (item.title || "")).trim();
+    const content = String(overrides.content != null ? overrides.content : (item.content || "")).trim();
+    const normalizedTitle = title.toLowerCase();
+    const hasCustomTitle = !!title && !["anotacao markdown", "anotacao", "documento markdown", "sem titulo"].includes(normalizedTitle);
+    return !hasCustomTitle && !content;
+  },
+
+  cleanupFolkloreEmptyMarkdown(exceptId = "") {
+    const removable = Storage.getByCategory("folklore").filter((item) => {
+      if (item.id === exceptId) return false;
+      return String(item.type || "").toLowerCase() === "markdown" && this.isFolkloreMarkdownEmpty(item);
+    });
+
+    if (!removable.length) return false;
+
+    removable.forEach((item) => Storage.deleteItem(item.id));
+
+    if (removable.some((item) => item.id === this.folkloreSelectedMarkdownId)) {
+      this.folkloreSelectedMarkdownId = "";
+      this.folkloreMarkdownDraft = null;
+      clearTimeout(this.folkloreMarkdownSaveTimer);
+    }
+
+    this.renderDebutHighlights();
+    if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+    return true;
+  },
+
+  getFolkloreMarkdownEditorState(itemId) {
+    const selected = Storage.getAll().find((item) => item.id === itemId && item.type === "markdown");
+    if (!selected) return null;
+
+    const container = document.getElementById("items-folklore");
+    const titleInput = this.folkloreSelectedMarkdownId === itemId && container
+      ? container.querySelector(".folklore-md-title-input")
+      : null;
+    const editor = this.folkloreSelectedMarkdownId === itemId && container
+      ? container.querySelector(".folklore-md-editor")
+      : null;
+
+    return {
+      selected,
+      rawTitle: titleInput ? String(titleInput.value || "").trim() : String(selected.title || "").trim(),
+      content: editor ? String(editor.value || "") : String(selected.content || "")
+    };
+  },
+
+  commitFolkloreMarkdownDocument(itemId, options = {}) {
+    if (!itemId) return false;
+    const state = this.getFolkloreMarkdownEditorState(itemId);
+    if (!state) return false;
+
+    const closeAfter = !!options.closeAfter;
+    const { selected, rawTitle, content } = state;
+
+    this.folkloreMarkdownDraft = null;
+    clearTimeout(this.folkloreMarkdownSaveTimer);
+
+    if (this.isFolkloreMarkdownEmpty(selected, { title: rawTitle, content })) {
+      Storage.deleteItem(itemId);
+      if (this.folkloreSelectedMarkdownId === itemId) {
+        this.folkloreSelectedMarkdownId = "";
+      }
+      this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+      this.renderEra("folklore");
+      return false;
+    }
+
+    const nextTitle = rawTitle || "Sem titulo";
+    const currentTitle = String(selected.title || "");
+    const currentContent = String(selected.content || "");
+    const hasChanges = nextTitle !== currentTitle || content !== currentContent;
+
+    if (hasChanges) {
+      Storage.updateItem(itemId, {
+        title: nextTitle,
+        content,
+        updatedAt: new Date().toISOString()
+      });
+      this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+    }
+
+    if (closeAfter && this.folkloreSelectedMarkdownId === itemId) {
+      this.folkloreSelectedMarkdownId = "";
+    }
+
+    this.renderEra("folklore");
+    return true;
+  },
+
   closeFolkloreMarkdownDocument() {
-    this.folkloreSelectedMarkdownId = "";
+    const itemId = this.folkloreSelectedMarkdownId;
+    if (itemId) {
+      this.commitFolkloreMarkdownDocument(itemId, { closeAfter: true });
+      return;
+    }
     this.folkloreMarkdownDraft = null;
     clearTimeout(this.folkloreMarkdownSaveTimer);
     this.renderEra("folklore");
@@ -997,16 +1145,7 @@ const App = {
 
     if (saveBtn) {
       saveBtn.addEventListener("click", () => {
-        this.folkloreMarkdownDraft = null;
-        clearTimeout(this.folkloreMarkdownSaveTimer);
-        Storage.updateItem(item.id, {
-          title: String(titleInput.value || "").trim() || "Sem titulo",
-          content: String(editor.value || ""),
-          updatedAt: new Date().toISOString()
-        });
-        this.renderDebutHighlights();
-        if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
-        this.renderEra("folklore");
+        this.commitFolkloreMarkdownDocument(item.id);
       });
     }
 
@@ -1044,6 +1183,11 @@ const App = {
       const redItems = Storage.getByCategory("red").filter((item) => item.type === "note" || item.type === "checklist");
       this.renderRedNotes(redItems);
       items = items.filter((item) => item.type !== "note" && item.type !== "checklist");
+    }
+
+    if (era === "folklore") {
+      this.cleanupFolkloreEmptyMarkdown(this.folkloreSelectedMarkdownId);
+      items = this.applyQuickFilters(Storage.getByCategory(era));
     }
 
     if (era === "folklore" && this.folkloreSelectedMarkdownId) {
@@ -1595,9 +1739,22 @@ const App = {
     const contentInput = document.getElementById("red-note-content");
     if (!titleInput || !contentInput) return;
 
+    const nextTitle = String(titleInput.value || "").trim();
+    const nextContent = String(contentInput.value || "");
+
+    if (this.isRedItemEmpty(selected, { title: nextTitle, content: nextContent })) {
+      Storage.deleteItem(noteId);
+      this.redSelectedNoteId = "";
+      this.renderRedNotes();
+      this.renderEra("red");
+      this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+      return;
+    }
+
     Storage.updateItem(noteId, {
-      title: String(titleInput.value || "").trim() || "Sem título",
-      content: String(contentInput.value || ""),
+      title: nextTitle || "Sem título",
+      content: nextContent,
       updatedAt: new Date().toISOString()
     });
     this.renderRedNotes();
@@ -1626,8 +1783,19 @@ const App = {
       });
     });
 
+    const nextTitle = String(titleInput.value || "").trim();
+    if (this.isRedItemEmpty(selected, { title: nextTitle, checklistItems: items })) {
+      Storage.deleteItem(noteId);
+      this.redSelectedNoteId = "";
+      this.renderRedNotes();
+      this.renderEra("red");
+      this.renderDebutHighlights();
+      if (typeof renderizarRecentes === "function") setTimeout(() => renderizarRecentes(), 100);
+      return;
+    }
+
     Storage.updateItem(noteId, {
-      title: String(titleInput.value || "").trim() || "Checklist",
+      title: nextTitle || "Checklist",
       checklistItems: items,
       updatedAt: new Date().toISOString()
     });
@@ -1681,6 +1849,10 @@ const App = {
 
     if (!list || !emptyState || !form || !titleInput || !contentInput || !meta) return;
 
+    if (!Array.isArray(notesArg)) {
+      this.cleanupRedEmptyItems(this.redSelectedNoteId);
+    }
+
     const source = Array.isArray(notesArg)
       ? notesArg
       : Storage.getByCategory("red").filter((item) => item.type === "note" || item.type === "checklist");
@@ -1720,7 +1892,7 @@ const App = {
           const progressLabel = total ? (done + " de " + total + " concluidos") : "Nenhum item";
           const preview = isChecklist
             ? progressLabel
-            : this.getRedListPreview(item, isLargeGrid ? 180 : 88);
+            : this.getRedListPreview(item, isLargeGrid ? 580: 88);
           const title = this.escapeHtml(String(item.title || (isChecklist ? "Checklist" : "Sem título")));
           const timestamp = new Date(item.updatedAt || item.createdAt || Date.now());
           const dateLabel = Number.isNaN(timestamp.getTime()) ? "" : timestamp.toLocaleDateString("pt-BR");
