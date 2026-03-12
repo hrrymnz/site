@@ -801,10 +801,23 @@ const Storage = {
 
     let record = await loadByScope(this.STATE_SCOPE);
 
-    // Compatibilidade com escopo legado (antes do workspace no scope).
-    if (!record && this.currentWorkspace === 'default' && this.currentUserId && this.STATE_SCOPE !== this.currentUserId) {
-      const legacyRecord = await loadByScope(this.currentUserId);
-      if (legacyRecord) {
+    // Compatibilidade com escopos legados usados antes da normalizacao atual.
+    if (!record && this.currentUserId) {
+      const legacyScopes = [];
+
+      if (this.currentWorkspace === 'default') {
+        legacyScopes.push(`${this.currentUserId}:default`);
+      }
+
+      if (this.STATE_SCOPE !== this.currentUserId) {
+        legacyScopes.push(this.currentUserId);
+      }
+
+      for (const legacyScope of legacyScopes) {
+        if (!legacyScope || legacyScope === this.STATE_SCOPE) continue;
+        const legacyRecord = await loadByScope(legacyScope);
+        if (!legacyRecord) continue;
+
         record = legacyRecord;
 
         await supabase
@@ -813,6 +826,7 @@ const Storage = {
             { scope: this.STATE_SCOPE, state: legacyRecord.state, updated_at: new Date().toISOString() },
             { onConflict: 'scope' }
           );
+        break;
       }
     }
 
@@ -993,9 +1007,10 @@ const Storage = {
     this.ensureFearlessDefaults();
 
     const currentSnapshot = this.getSnapshot();
+    const shouldBootstrapRemote = !!this.getLocalStateUpdatedAt() || this.snapshotScore(currentSnapshot) > 0;
     this.lastVersionSignature = this.buildSnapshotSignature(currentSnapshot);
 
-    if (!loaded) {
+    if (!loaded && shouldBootstrapRemote) {
       this.scheduleSync();
       this.createServerVersion("bootstrap-init", currentSnapshot).catch(() => {
         // Ignora erro para manter bootstrap resiliente.
