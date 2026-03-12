@@ -1,5 +1,17 @@
-﻿function initShellInteractions() {
+function initShellInteractions() {
   function bindNavigationBlocks() {
+    const activateStandalonePage = (target, options = {}) => {
+      const topTitle = document.getElementById('topbar-title');
+      const nextPage = document.getElementById('page-' + target);
+
+      document.querySelectorAll('.era-link').forEach((l) => l.classList.remove('active'));
+      document.querySelectorAll('.era-page').forEach((p) => p.classList.remove('active'));
+
+      document.body.setAttribute('data-era', String(options.eraColor || 'settings'));
+      if (nextPage) nextPage.classList.add('active');
+      if (topTitle && options.title) topTitle.textContent = String(options.title);
+      window.location.hash = target;
+    };
     document.querySelectorAll('.era-link').forEach((link) => {
       if (link.dataset.boundClick === '1') return;
       link.dataset.boundClick = '1';
@@ -24,6 +36,7 @@
 
         const topTitle = document.getElementById('topbar-title');
         if (topTitle) topTitle.textContent = link.textContent.trim();
+        window.location.hash = target;
       });
     });
 
@@ -39,6 +52,13 @@
 
     const hash = window.location.hash.replace('#', '');
     if (hash) {
+      if (hash === 'notifications') {
+        activateStandalonePage('notifications', {
+          eraColor: 'settings',
+          title: 'Notificações'
+        });
+        return;
+      }
       const link = document.querySelector('.era-link[data-target="' + CSS.escape(hash) + '"]');
       if (link) link.click();
     }
@@ -50,6 +70,18 @@
         e.preventDefault();
         const settingsLink = document.querySelector('.era-link[data-target="settings"]');
         if (settingsLink) settingsLink.click();
+      });
+    }
+
+    const notificationsBtn = document.querySelector('.topbar-notifications-btn');
+    if (notificationsBtn && notificationsBtn.dataset.boundClick !== '1') {
+      notificationsBtn.dataset.boundClick = '1';
+      notificationsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        activateStandalonePage('notifications', {
+          eraColor: 'settings',
+          title: 'Notificações'
+        });
       });
     }
 
@@ -1382,6 +1414,153 @@
     }
   }
 
+  function bindNotificationsCenter() {
+    const notificationsBtn = document.querySelector('.topbar-notifications-btn');
+    const badge = document.getElementById('notifications-unread-badge');
+    const list = document.getElementById('notifications-list');
+    const filterRow = document.getElementById('notifications-filter-row');
+    const markReadBtn = document.getElementById('notifications-mark-read-btn');
+    const clearBtn = document.getElementById('notifications-clear-btn');
+    if (!notificationsBtn || !badge || !list || !filterRow || !window.Storage) return;
+    if (list.dataset.boundNotifications === '1') return;
+
+    list.dataset.boundNotifications = '1';
+    let currentFilter = 'all';
+
+    const levelIcons = {
+      success: 'badge-check',
+      error: 'triangle-alert',
+      warning: 'circle-alert',
+      info: 'bell'
+    };
+
+    const categoryLabels = {
+      sync: 'Sincronizacao',
+      backup: 'Backup',
+      import: 'Importacao',
+      github: 'GitHub',
+      system: 'Sistema'
+    };
+
+    const formatNotificationTime = (value) => {
+      const timestamp = new Date(String(value || ''));
+      if (Number.isNaN(timestamp.getTime())) return '';
+
+      const diffMs = Date.now() - timestamp.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+      if (diffMinutes < 1) return 'agora';
+      if (diffMinutes < 60) return diffMinutes + ' min';
+
+      const diffHours = Math.floor(diffMinutes / 60);
+      if (diffHours < 24) return diffHours + ' h';
+
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) return diffDays + ' d';
+
+      return timestamp.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const renderNotifications = () => {
+      const allNotifications = typeof window.Storage.getNotifications === 'function'
+        ? window.Storage.getNotifications()
+        : [];
+      const unreadCount = typeof window.Storage.getUnreadNotificationsCount === 'function'
+        ? window.Storage.getUnreadNotificationsCount()
+        : 0;
+      const visibleNotifications = currentFilter === 'all'
+        ? allNotifications
+        : allNotifications.filter((entry) => entry.category === currentFilter);
+
+      badge.hidden = unreadCount <= 0;
+      badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      notificationsBtn.classList.toggle('has-unread', unreadCount > 0);
+
+      if (!visibleNotifications.length) {
+        list.innerHTML = '<li class="notifications-empty">Nenhuma notificacao nessa categoria.</li>';
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+        return;
+      }
+
+      list.innerHTML = visibleNotifications.map((entry) => {
+        const icon = levelIcons[entry.level] || 'bell';
+        const timeLabel = formatNotificationTime(entry.createdAt);
+        const categoryLabel = categoryLabels[entry.category] || 'Sistema';
+        const readLabel = entry.read ? 'Lida' : 'Nova';
+        const escapeHtml = window.App && typeof window.App.escapeHtml === 'function'
+          ? window.App.escapeHtml.bind(window.App)
+          : (value) => String(value || '');
+
+        return '<li class="notification-item ' + (entry.read ? 'is-read' : 'is-unread') + '" data-level="' + entry.level + '" data-category="' + entry.category + '">' +
+          '<div class="notification-icon"><i data-lucide="' + icon + '"></i></div>' +
+          '<div class="notification-copy">' +
+            '<div class="notification-title-row">' +
+              '<strong>' + escapeHtml(String(entry.title || '')) + '</strong>' +
+              (timeLabel ? '<span class="notification-time">' + escapeHtml(timeLabel) + '</span>' : '') +
+            '</div>' +
+            (entry.message ? '<p>' + escapeHtml(String(entry.message)) + '</p>' : '') +
+            '<div class="notification-meta">' +
+              '<span class="notification-category">' + escapeHtml(categoryLabel) + '</span>' +
+              '<span class="notification-state">' + readLabel + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</li>';
+      }).join('');
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    };
+
+    filterRow.querySelectorAll('[data-filter]').forEach((btn) => {
+      if (btn.dataset.boundClick === '1') return;
+      btn.dataset.boundClick = '1';
+      btn.addEventListener('click', () => {
+        currentFilter = String(btn.dataset.filter || 'all');
+        filterRow.querySelectorAll('[data-filter]').forEach((item) => {
+          item.classList.toggle('active', item === btn);
+        });
+        renderNotifications();
+      });
+    });
+
+    if (markReadBtn && markReadBtn.dataset.boundClick !== '1') {
+      markReadBtn.dataset.boundClick = '1';
+      markReadBtn.addEventListener('click', () => {
+        if (typeof window.Storage.markAllNotificationsRead === 'function') {
+          window.Storage.markAllNotificationsRead();
+        }
+      });
+    }
+
+    if (clearBtn && clearBtn.dataset.boundClick !== '1') {
+      clearBtn.dataset.boundClick = '1';
+      clearBtn.addEventListener('click', () => {
+        if (typeof window.Storage.clearNotifications === 'function') {
+          window.Storage.clearNotifications();
+        }
+      });
+    }
+
+    window.addEventListener('storage-notifications-updated', () => {
+      renderNotifications();
+    });
+
+    window.addEventListener('storage', (event) => {
+      if (window.Storage && event.key === window.Storage.NOTIFICATIONS_KEY) {
+        renderNotifications();
+      }
+    });
+
+    renderNotifications();
+  }
+
   function refreshAllUiFromStorage() {
     if (window.App && typeof window.App.renderAllEras === 'function') {
       window.App.renderAllEras();
@@ -1458,6 +1637,7 @@
   // Atualizar perfil ao carregar
   updateProfilePage();
   bindSyncStatusIndicator();
+  bindNotificationsCenter();
   bindRemoteStateRefresh();
 
 

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js';
+﻿import { supabase } from '../lib/supabase.js';
 
 // ===== STORAGE MODULE =====
 // Mapa rapido deste arquivo:
@@ -19,6 +19,7 @@ const Storage = {
   PROFILE_SETTINGS_KEY: "swiftProfileSettings",
   UI_PREFS_KEY: "swiftUiPrefs",
   LOCAL_VERSIONS_KEY: "swiftLocalVersions",
+  NOTIFICATIONS_KEY: "swiftNotifications",
   AVATAR_KEY: "swiftAvatar",
   HEADER_KEY: "swiftProfileHeader",
   STATE_META_KEY: "swiftStateMeta",
@@ -33,6 +34,8 @@ const Storage = {
   syncStatusMessage: "Pronto para sincronizar",
   syncTimer: null,
   versionTimer: null,
+  lastNotifiedSyncStatus: "",
+  lastNotifiedSyncAt: 0,
   lastVersionAt: 0,
   lastVersionSignature: "",
   AUTO_VERSION_INTERVAL_MS: 5 * 60 * 1000,
@@ -55,6 +58,16 @@ const Storage = {
     }));
   },
 
+  emitNotificationsUpdated() {
+    if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+    window.dispatchEvent(new CustomEvent("storage-notifications-updated", {
+      detail: {
+        notifications: this.getNotifications(),
+        unreadCount: this.getUnreadNotificationsCount()
+      }
+    }));
+  },
+
   setSyncStatus(status = "idle", message = "") {
     const fallbackMessages = {
       idle: "Pronto para sincronizar",
@@ -64,6 +77,7 @@ const Storage = {
       local: "Somente local"
     };
 
+    this.maybeNotifySyncStatus(status, String(message || fallbackMessages[status] || fallbackMessages.idle));
     this.syncStatus = status;
     this.syncStatusMessage = String(message || fallbackMessages[status] || fallbackMessages.idle);
     this.emitSyncStatus();
@@ -133,6 +147,8 @@ const Storage = {
     this.HEADER_KEY = prefix + "swiftProfileHeader";
     this.UI_PREFS_KEY = prefix + "swiftUiPrefs";
     this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
+    this.NOTIFICATIONS_KEY = prefix + "swiftNotifications";
+    this.SYNC_NOTIFICATIONS_META_KEY = prefix + "swiftSyncNotificationsMeta";
     this.STATE_META_KEY = prefix + "swiftStateMeta";
   },
 
@@ -223,6 +239,150 @@ const Storage = {
     return nextUpdatedAt;
   },
 
+  normalizeNotification(raw) {
+    const base = raw && typeof raw === "object" ? raw : {};
+    const level = ["success", "error", "warning", "info"].includes(String(base.level || "").trim())
+      ? String(base.level).trim()
+      : "info";
+    const category = ["sync", "backup", "import", "github", "system"].includes(String(base.category || "").trim())
+      ? String(base.category).trim()
+      : "system";
+
+    return {
+      id: String(base.id || this.generateId()).trim(),
+      title: String(base.title || "").trim() || "Atualização",
+      message: String(base.message || "").trim() || "",
+      category,
+      level,
+      read: !!base.read,
+      createdAt: String(base.createdAt || new Date().toISOString()).trim(),
+      meta: this.normalizePlainObject(base.meta)
+    };
+  },
+
+  getNotifications() {
+    const saved = this.safeParse(this.NOTIFICATIONS_KEY, []);
+    if (!Array.isArray(saved)) return [];
+
+    return saved
+      .map((entry) => this.normalizeNotification(entry))
+      .sort((a, b) => this.toTimestampMs(b.createdAt) - this.toTimestampMs(a.createdAt))
+      .slice(0, 50);
+  },
+
+  getUnreadNotificationsCount() {
+    return this.getNotifications().filter((entry) => !entry.read).length;
+  },
+
+  saveNotifications(notifications = []) {
+    const normalized = Array.isArray(notifications)
+      ? notifications.map((entry) => this.normalizeNotification(entry)).slice(0, 50)
+      : [];
+    localStorage.setItem(this.NOTIFICATIONS_KEY, JSON.stringify(normalized));
+    this.emitNotificationsUpdated();
+    return normalized;
+  },
+
+  addNotification(notification = {}) {
+    const nextNotification = this.normalizeNotification(notification);
+    const current = this.getNotifications();
+    const nextTime = this.toTimestampMs(nextNotification.createdAt);
+    const hasDuplicate = current.some((entry) => (
+      entry.category === nextNotification.category &&
+      entry.level === nextNotification.level &&
+      entry.title === nextNotification.title &&
+      entry.message === nextNotification.message &&
+      Math.abs(nextTime - this.toTimestampMs(entry.createdAt)) < 10000
+    ));
+    if (hasDuplicate) return current;
+
+    return this.saveNotifications([nextNotification, ...current]);
+  },
+
+  markAllNotificationsRead() {
+    const current = this.getNotifications();
+    const hasUnread = current.some((entry) => !entry.read);
+    if (!hasUnread) return current;
+    return this.saveNotifications(current.map((entry) => ({ ...entry, read: true })));
+  },
+
+  clearNotifications() {
+    localStorage.setItem(this.NOTIFICATIONS_KEY, JSON.stringify([]));
+    this.emitNotificationsUpdated();
+    return [];
+  },
+
+  getSyncNotificationMeta() {
+    return this.normalizePlainObject(this.safeParse(this.SYNC_NOTIFICATIONS_META_KEY, {}));
+  },
+
+  saveSyncNotificationMeta(meta = {}) {
+    const normalized = this.normalizePlainObject(meta);
+    localStorage.setItem(this.SYNC_NOTIFICATIONS_META_KEY, JSON.stringify(normalized));
+    return normalized;
+  },
+
+  maybeNotifySyncStatus(status, message) {
+    if (!["saved", "error", "local"].includes(status)) return;
+
+    const notificationKey = `${status}:${message}`;
+    const now = Date.now();
+
+    if (status === "saved" && message === "Atualizado do servidor") {
+      this.addNotification({
+        category: "sync",
+        level: "info",
+        title: "Dados atualizados",
+        message: "Alterações feitas em outro dispositivo chegaram nesta sessão.",
+        createdAt: new Date(now).toISOString()
+      });
+      return;
+    }
+
+    if (status === "error") {
+      this.addNotification({
+        category: "sync",
+        level: "error",
+        title: "Erro de sincronização",
+        message: "Não foi possível sincronizar com o servidor agora.",
+        createdAt: new Date(now).toISOString()
+      });
+      return;
+    }
+
+    const throttleMs = 5 * 60 * 60 * 1000;
+    const syncNotificationMeta = this.getSyncNotificationMeta();
+    const lastNotifiedAt = Number(syncNotificationMeta[notificationKey] || 0);
+
+    if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
+      return;
+    }
+
+    this.lastNotifiedSyncStatus = notificationKey;
+    this.lastNotifiedSyncAt = now;
+    syncNotificationMeta[notificationKey] = now;
+    this.saveSyncNotificationMeta(syncNotificationMeta);
+
+    if (status === "saved") {
+      this.addNotification({
+        category: "sync",
+        level: "success",
+        title: "Salvo no servidor",
+        message: "Suas alterações foram sincronizadas com sucesso.",
+        createdAt: new Date(now).toISOString()
+      });
+      return;
+    }
+
+    this.addNotification({
+      category: "sync",
+      level: "warning",
+      title: "Somente local",
+      message: "As alterações estão disponíveis apenas neste dispositivo por enquanto.",
+      createdAt: new Date(now).toISOString()
+    });
+  },
+
   generateId() {
     if (typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function") {
       try {
@@ -232,6 +392,61 @@ const Storage = {
       }
     }
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  },
+
+  isExplicitUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return false;
+    if (/^(https?:\/\/|www\.)/i.test(raw)) return true;
+    return /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/|\?|#)/i.test(raw);
+  },
+
+  getUrlHostLabel(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    try {
+      const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      const parsed = new URL(normalized);
+      return String(parsed.hostname || "").replace(/^www\./i, "").trim();
+    } catch {
+      return "";
+    }
+  },
+
+  normalizeTitle(rawTitle, fallbackUrl = "") {
+    const title = String(rawTitle != null ? rawTitle : "").trim();
+    if (!title) return "";
+    if (!this.isExplicitUrl(title)) return title;
+    return this.getUrlHostLabel(fallbackUrl) || this.getUrlHostLabel(title) || "";
+  },
+
+  isUrlLikeTag(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return false;
+    if (/^(https?:\/\/|www\.)/i.test(raw)) return true;
+    try {
+      const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      const parsed = new URL(normalized);
+      return !!(parsed.hostname && /\./.test(parsed.hostname));
+    } catch {
+      return false;
+    }
+  },
+
+  normalizeTags(rawTags) {
+    if (!Array.isArray(rawTags)) return [];
+
+    const seen = new Set();
+    return rawTags
+      .filter((tag) => typeof tag === "string")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag && !this.isUrlLikeTag(tag))
+      .filter((tag) => {
+        const key = tag.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   },
 
   normalizeItem(raw) {
@@ -247,19 +462,11 @@ const Storage = {
     const type = (base.type != null ? String(base.type) : "link").trim() || "link";
     normalized.type = type;
 
-    normalized.title = (base.title != null ? String(base.title) : "").trim();
     normalized.url = (base.url != null ? String(base.url) : "").trim();
+    normalized.title = this.normalizeTitle(base.title, normalized.url);
     normalized.content = base.content != null ? String(base.content) : "";
     normalized.category = (base.category != null ? String(base.category) : "debut").trim() || "debut";
-
-    if (Array.isArray(base.tags)) {
-      normalized.tags = base.tags
-        .filter((t) => typeof t === "string")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    } else {
-      normalized.tags = [];
-    }
+    normalized.tags = this.normalizeTags(base.tags);
 
     if (type === "checklist") {
       const checklist = Array.isArray(base.checklistItems) ? base.checklistItems : [];
@@ -1116,6 +1323,12 @@ const Storage = {
     this.applySnapshot(selected.state);
     this.scheduleSync();
     this.createLocalVersion(`restore-local-${versionId}`, this.getSnapshot());
+    this.addNotification({
+      category: "backup",
+      level: "success",
+      title: "Versão restaurada",
+      message: "Uma versão local foi restaurada e será sincronizada com o servidor."
+    });
     return selected;
   },
   // ===== 1) CRUD BASICO =====
@@ -1127,7 +1340,7 @@ const Storage = {
       title: data.title || "",
       url: data.url || "",
       content: data.content || "",
-      tags: data.tags || [],
+      tags: this.normalizeTags(data.tags || []),
       category: data.category || "debut",
       pinned: data.pinned || false,
       accessCount: 0,
@@ -1157,7 +1370,11 @@ const Storage = {
     const items = this.getAll();
     const idx = items.findIndex(i => i.id === id);
     if (idx === -1) return null;
-    items[idx] = { ...items[idx], ...updates };
+    const nextUpdates = { ...updates };
+    if (Object.prototype.hasOwnProperty.call(nextUpdates, "tags")) {
+      nextUpdates.tags = this.normalizeTags(nextUpdates.tags);
+    }
+    items[idx] = this.normalizeItem({ ...items[idx], ...nextUpdates });
     this.save(items);
     return items[idx];
   },
@@ -1205,7 +1422,9 @@ const Storage = {
 
   getTagsByCategory(category) {
     const tags = new Set();
-    this.getByCategory(category).forEach(i => (i.tags || []).forEach(t => tags.add(t)));
+    this.getByCategory(category).forEach((item) => {
+      this.normalizeTags(item.tags || []).forEach((tag) => tags.add(tag));
+    });
     return [...tags].sort();
   },
 
@@ -1266,6 +1485,13 @@ const Storage = {
 
     this.createServerVersion("export-manual", data).catch(() => {
       // Export local continua funcionando mesmo sem backend.
+    });
+
+    this.addNotification({
+      category: "backup",
+      level: "success",
+      title: "Backup exportado",
+      message: "Seu arquivo de backup .json foi gerado com sucesso."
     });
 
     return data;
@@ -1345,8 +1571,23 @@ const Storage = {
             // Import nao falha caso o versionamento remoto falhe.
           });
 
+          this.addNotification({
+            category: "import",
+            level: "success",
+            title: "Backup importado",
+            message: importedItems
+              ? `${mergeResult.addedItemsCount} itens novos foram adicionados ao app.`
+              : "Os dados do backup foram importados com sucesso."
+          });
+
           resolve(importedItems ? mergeResult.addedItemsCount : 0);
         } catch (err) {
+          this.addNotification({
+            category: "import",
+            level: "error",
+            title: "Falha ao importar backup",
+            message: "Não foi possível importar o arquivo selecionado."
+          });
           reject(err);
         }
       };
@@ -1358,6 +1599,9 @@ const Storage = {
 
 window.Storage = Storage;
 export default Storage;
+
+
+
 
 
 

@@ -1391,7 +1391,9 @@ const App = {
     const draggableAttr = era === "folklore" ? "false" : "true";
     container.innerHTML = items.map(item => {
       const safeUrl = this.sanitizeUrl(item.url);
-      if (era === "fearless") {
+      const isFearlessRepoItem = String(item.type || "").toLowerCase() === "repo"
+        || /^https?:\/\/github\.com\//i.test(String(item.url || ""));
+      if (era === "fearless" && isFearlessRepoItem) {
         return this.renderFearlessRepoCard(item, safeUrl);
       }
       if (era === "folklore" && item.type === "markdown") {

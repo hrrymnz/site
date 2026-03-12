@@ -431,6 +431,229 @@ body.app-theme-dark .login-theme-switch-thumb {
   max-width: none;
 }
 
+.topbar-notifications-wrap {
+  position: relative;
+  display: inline-flex;
+  overflow: visible;
+}
+
+.topbar-notifications-btn {
+  position: relative;
+}
+/* Quando houver notificações não lidas, adiciona um box-shadow para destacar o botão, usando a cor de accent misturada com transparente para criar um halo sutil. O box-shadow é aplicado fora do elemento (spread) para não interferir no layout interno do botão. */
+.topbar-notifications-btn.has-unread {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+/* O badge (numero) de notificações é posicionado absolutamente dentro do botão, mas com overflow visível para não ser cortado */
+.notifications-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background-color: #d95b5b;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--card);
+  z-index: 2;
+}
+/* O card de notificações é posicionado relativamente para servir de referência para o badge absoluto, e tem overflow visível para não cortar o badge */
+.notifications-card {
+  display: grid;
+  gap: 22px;
+}
+/* O header da seção de notificações é um flex para alinhar o título à esquerda e as ações (filtros, botões) à direita, com gap entre eles. Em telas menores, ele se torna um flex vertical para empilhar o título e as ações. */
+.notifications-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+/* O container de ações no header de notificações é um flex para alinhar os botões de filtro e ações à direita, com gap entre eles. Ele permite wrap para que em telas menores os botões possam quebrar linha e não ficarem apertados. */
+.notifications-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notifications-section {
+  margin-bottom: 0;
+}
+
+.notifications-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.notifications-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.notifications-empty {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--cartao-suave);
+}
+
+.notification-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 10px 24px rgba(15, 18, 28, 0.04);
+}
+
+.notification-item.is-read {
+  opacity: 0.84;
+}
+
+.notification-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.notification-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.notification-item[data-level="success"] .notification-icon {
+  background: rgba(46, 168, 111, 0.14);
+  color: #2ea86f;
+}
+
+.notification-item[data-level="error"] .notification-icon {
+  background: rgba(217, 91, 91, 0.14);
+  color: #d95b5b;
+}
+
+.notification-item[data-level="warning"] .notification-icon {
+  background: rgba(196, 138, 63, 0.16);
+  color: #c48a3f;
+}
+
+.notification-copy {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.notification-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notification-title-row strong {
+  font-size: 0.96rem;
+  color: var(--text);
+}
+
+.notification-title-row .notification-time {
+  flex-shrink: 0;
+}
+
+.notification-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notification-category,
+.notification-state,
+.notification-time {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.notification-category {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.notification-state {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+body.app-theme-dark .notifications-badge {
+  box-shadow: 0 0 0 2px var(--dark-panel);
+}
+
+body.app-theme-dark .notification-item {
+  box-shadow: none;
+}
+
+@media (max-width: 860px) {
+  .notifications-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notifications-header-actions {
+    justify-content: stretch;
+  }
+
+  .notifications-header-actions > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .notification-item {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notification-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .search {
   display: flex;
   align-items: center;
@@ -1497,6 +1720,8 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   gap: 8px;
   cursor: grab;
   transition: 0.2s;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .item-card:hover {
@@ -1560,6 +1785,9 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   font-weight: 600;
   color: var(--text);
   line-height: 1.3;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .item-url {
@@ -1567,6 +1795,9 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   color: var(--accent);
   text-decoration: none;
   display: inline-block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .item-url:hover {
@@ -1577,12 +1808,16 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .item-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  min-width: 0;
 }
 
 .item-tag {
@@ -1594,6 +1829,9 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   border-radius: 50px;
   cursor: pointer;
   transition: 0.15s;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .item-tag:hover {
@@ -1925,12 +2163,16 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   display: grid;
   align-content: space-between;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .fearless-repo-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
 }
 
 .fearless-repo-label {
@@ -1944,6 +2186,9 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   font-size: 2rem;
   line-height: 1.08;
   letter-spacing: -0.4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .fearless-repo-desc {
@@ -1951,11 +2196,17 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   line-height: 1.4;
   font-weight: 600;
   color: var(--text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .fearless-repo-link {
   font-size: 0.82rem;
   font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .fearless-repo-card.pinned {

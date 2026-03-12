@@ -58,6 +58,17 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+function sanitizeUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+  } catch {
+    return "";
+  }
+}
+
 function extrairRepoSlug(urlOuNome) {
   const raw = String(urlOuNome || "").trim();
   if (!raw) return "";
@@ -78,17 +89,13 @@ function obterReposFearless() {
   if (typeof Storage === "undefined" || typeof Storage.getByCategory !== "function") return [];
 
   return Storage.getByCategory("fearless")
-    .filter((item) => {
-      const type = String(item.type || "").toLowerCase();
-      const isRepoType = type === "repo";
-      const isGithubUrl = /^https?:\/\/github\.com\//i.test(String(item.url || ""));
-      return isRepoType || isGithubUrl;
-    })
     .map((item) => ({
       id: item.id,
-      title: item.title || "Repositório",
+      title: item.title || "Item da Fearless",
       description: obterDescricaoRepo(item),
       url: item.url || "",
+      safeUrl: sanitizeUrl(item.url || ""),
+      type: String(item.type || "link").toLowerCase(),
       slug: extrairRepoSlug(item.url || item.title || "")
     }));
 }
@@ -181,6 +188,26 @@ function abrirRepositório(slug, nomeExibicao = "") {
   window.open(url, "_blank");
 }
 
+function abrirItemFearlessFixado(itemId, fallbackUrl = "") {
+  const item = typeof Storage !== "undefined" && typeof Storage.getAll === "function"
+    ? Storage.getAll().find((entry) => entry.id === itemId)
+    : null;
+  const safeUrl = sanitizeUrl(item?.url || fallbackUrl);
+
+  if (item && typeof Storage !== "undefined" && typeof Storage.trackAccess === "function") {
+    Storage.trackAccess(item.id);
+  }
+
+  if (safeUrl) {
+    setTimeout(() => renderizarRecentes(), 100);
+    window.open(safeUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  const fearlessLink = document.querySelector('.era-link[data-target="fearless"]');
+  if (fearlessLink) fearlessLink.click();
+}
+
 function atualizarPreviewRepoSelecionado() {
   const sourceSelect = document.getElementById("edit-repo-source");
   const nameInput = document.getElementById("edit-repo-name");
@@ -192,7 +219,7 @@ function atualizarPreviewRepoSelecionado() {
 
   if (!selected) {
     nameInput.value = "";
-    descInput.value = "Adicione repositórios na era Fearless e selecione um acima.";
+    descInput.value = "Adicione itens na era Fearless e selecione um acima.";
     return;
   }
 
@@ -219,11 +246,11 @@ function editarRepositórioFixado(index) {
   slotInput.value = "REPO FIXO " + (index + 1);
 
   if (!reposFearless.length) {
-    sourceSelect.innerHTML = '<option value="">Sem repositórios na Fearless</option>';
+    sourceSelect.innerHTML = '<option value="">Sem itens na Fearless</option>';
     sourceSelect.disabled = true;
   } else {
     sourceSelect.disabled = false;
-    sourceSelect.innerHTML = ['<option value="">Selecione um repositório da Fearless</option>']
+    sourceSelect.innerHTML = ['<option value="">Selecione um item da Fearless</option>']
       .concat(reposFearless.map((repo) =>
         '<option value="' + escapeHtml(repo.id) + '">' + escapeHtml(repo.title) + '</option>'
       ))
@@ -320,17 +347,18 @@ function renderizarRepos() {
     const selected = byId.get(slot.sourceId);
     const isEmpty = !selected;
     const classe = isEmpty ? 'repo-overview-card light repo-card repo-card-empty' : ('repo-overview-card ' + slot.estilo + ' repo-card');
-    const dataRepo = isEmpty ? '' : escapeHtml(selected.slug);
-    const tituloBase = selected ? selected.title : "Selecione um repositório";
-    const descricaoBase = selected ? (selected.description || "Sem descrição") : "Adicione um repositório na Fearless e configure este slot.";
+    const dataItemId = isEmpty ? '' : escapeHtml(selected.id);
+    const dataItemUrl = isEmpty ? '' : escapeHtml(selected.safeUrl || "");
+    const tituloBase = selected ? selected.title : "Selecione um item";
+    const descricaoBase = selected ? (selected.description || "Sem descrição") : "Adicione um item na Fearless e configure este slot.";
     const titulo = escapeHtml(slot.nome || tituloBase);
     const descricao = escapeHtml(slot.descricao || descricaoBase);
 
     return `
-      <article class="${classe}" data-repo="${dataRepo}" data-index="${i}">
+      <article class="${classe}" data-item-id="${dataItemId}" data-item-url="${dataItemUrl}" data-index="${i}">
         <div class="repo-card-head">
-          <small>REPO FIXO ${i + 1}</small>
-          <button type="button" class="repo-edit-btn" data-edit-index="${i}" title="Editar repositório">
+          <small>ITEM FIXO ${i + 1}</small>
+          <button type="button" class="repo-edit-btn" data-edit-index="${i}" title="Editar item">
             <i data-lucide="pencil"></i>
           </button>
         </div>
@@ -357,9 +385,10 @@ function renderizarRepos() {
 
     const card = e.target.closest(".repo-card");
     if (!card) return;
-    const repoSlug = String(card.dataset.repo || "").trim();
-    if (!repoSlug) return;
-    abrirRepositório(repoSlug, card.querySelector("strong")?.textContent || "");
+    const itemId = String(card.dataset.itemId || "").trim();
+    const itemUrl = String(card.dataset.itemUrl || "").trim();
+    if (!itemId && !itemUrl) return;
+    abrirItemFearlessFixado(itemId, itemUrl);
   });
 }
 
@@ -564,6 +593,11 @@ function definirStatusCache(mensagem) {
   if (status) status.textContent = mensagem;
 }
 
+function notificarGithub(payload = {}) {
+  if (typeof Storage === "undefined" || typeof Storage.addNotification !== "function") return;
+  Storage.addNotification(payload);
+}
+
 function formatarTempoRelativo(msPassados) {
   const minutos = Math.max(1, Math.round(msPassados / 60000));
   if (minutos < 60) return minutos + " min";
@@ -766,11 +800,31 @@ async function renderizarPainelGithub(forceRefresh = false) {
     } else {
       definirStatusCache("Dados atualizados da API.");
     }
+
+    if (forceRefresh) {
+      notificarGithub({
+        category: "github",
+        level: "success",
+        title: "GitHub atualizado",
+        message: "Os dados do painel GitHub foram atualizados.",
+        createdAt: new Date().toISOString()
+      });
+    }
   } catch {
     // Fallback seguro: UI continua funcional mesmo sem resposta da API.
     renderizarCommitsRecentes([]);
     renderizarGraficoContribuicoes({ contributions: [] });
     definirStatusCache("Não foi possível carregar o GitHub agora.");
+
+    if (forceRefresh) {
+      notificarGithub({
+        category: "github",
+        level: "error",
+        title: "GitHub indisponivel",
+        message: "Nao foi possivel atualizar os dados do GitHub agora.",
+        createdAt: new Date().toISOString()
+      });
+    }
   }
 }
 

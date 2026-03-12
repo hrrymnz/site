@@ -188,7 +188,12 @@ function App() {
             )}
             <div className="topbar-icons">
               <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
-              <a href="#" className="icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificacoes" /></a>
+              <div className="topbar-notifications-wrap">
+                <a href="#" className="icon topbar-notifications-btn" aria-label="Notificações">
+                  <img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificações" />
+                </a>
+                <span className="notifications-badge" id="notifications-unread-badge" hidden>0</span>
+              </div>
               <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
           </div>
@@ -198,7 +203,7 @@ function App() {
           <section className="repos-grid">
               <div className="repo-overview-section">
                 <div className="card-header">
-                  <h3>Meus repositórios</h3>
+                  <h3>Itens Principais</h3>
                   <a href="#" className="ver-mais-link" id="ver-mais-repos">Ver mais</a>
                 </div>
                 <div className="repo-overview-grid"></div>
@@ -526,6 +531,36 @@ function App() {
             </div>
           </section>
         </div>
+
+        <div className="era-page" id="page-notifications">
+          <section className="settings-page notifications-page">
+            <div className="painel-superficie settings-card settings-modern notifications-card">
+              <header className="settings-modern-header notifications-header">
+                <div>
+                  <h3>Notificações</h3>
+                  <p>Sincronização, backups, importações e atualizações do GitHub.</p>
+                </div>
+                <div className="notifications-header-actions">
+                  <button type="button" className="btn-import" id="notifications-mark-read-btn">Marcar tudo como lido</button>
+                  <button type="button" className="settings-cancel-btn" id="notifications-clear-btn">Limpar</button>
+                </div>
+              </header>
+
+              <section className="settings-modern-section notifications-section">
+                <div className="notifications-filter-row" id="notifications-filter-row">
+                  <button type="button" className="tag-btn active" data-filter="all">Todas</button>
+                  <button type="button" className="tag-btn" data-filter="sync">Sincronização</button>
+                  <button type="button" className="tag-btn" data-filter="backup">Backup</button>
+                  <button type="button" className="tag-btn" data-filter="import">Importação</button>
+                  <button type="button" className="tag-btn" data-filter="github">GitHub</button>
+                </div>
+                <ul className="notifications-list" id="notifications-list">
+                  <li className="notifications-empty">Sem notificações por enquanto.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+        </div>
       </section>
 
       <div className="modal-overlay" id="modal-edit-profile">
@@ -703,18 +738,18 @@ function App() {
           </div>
         </div>
       </div>
-      <div className="modal-overlay" id="modal-edit-repo">
-        <div className="modal-content">
-          <div className="modal-header">
-            <div className="repo-edit-title">
-              <div className="repo-edit-header-icon" aria-hidden="true">
-                <i data-lucide="folder-sync"></i>
-              </div>
-              <h3>Editar Repositorio Fixo</h3>
-            </div>
-            <button className="modal-close" id="modal-edit-repo-close"><i data-lucide="x"></i></button>
-          </div>
-          <form id="form-edit-repo" className="repo-edit-form">
+	      <div className="modal-overlay" id="modal-edit-repo">
+	        <div className="modal-content">
+	          <div className="modal-header">
+	            <div className="repo-edit-title">
+	              <div className="repo-edit-header-icon" aria-hidden="true">
+	                <i data-lucide="folder-sync"></i>
+	              </div>
+	              <h3>Editar Item Fixo da Fearless</h3>
+	            </div>
+	            <button className="modal-close" id="modal-edit-repo-close"><i data-lucide="x"></i></button>
+	          </div>
+	          <form id="form-edit-repo" className="repo-edit-form">
             <input type="hidden" id="edit-repo-index" />
 
             <div className="form-group">
@@ -722,30 +757,30 @@ function App() {
               <input type="text" id="edit-repo-slot" placeholder="Selecione o Slot (1 ou 2)" disabled />
             </div>
 
-            <div className="form-group">
-              <label>Repositorio: </label>
-              <select id="edit-repo-source" required>
-                <option value="">Selecione um repositorio</option>
-              </select>
-            </div>
+	            <div className="form-group">
+	              <label>Item da Fearless: </label>
+	              <select id="edit-repo-source" required>
+	                <option value="">Selecione um item</option>
+	              </select>
+	            </div>
 
             <div className="form-group">
               <label>Nome exibido: </label>
               <input type="text" id="edit-repo-name" />
             </div>
 
-            <div className="form-group form-group-note">
-              <label>Descrição: </label>
-              <textarea id="edit-repo-description" rows="4"></textarea>
-              <small className="repo-modal-hint">Somente repositórios previamente criados podem ser fixados aqui.</small>
-            </div>
+	            <div className="form-group form-group-note">
+	              <label>Descrição: </label>
+	              <textarea id="edit-repo-description" rows="4"></textarea>
+	              <small className="repo-modal-hint">Qualquer item previamente criado na era Fearless pode ser fixado aqui.</small>
+	            </div>
 
-            <div className="repo-edit-actions">
-              <button type="submit" className="btn-save-item repo-edit-save">Salvar Repositório</button>
-              <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
-            </div>
-          </form>
-        </div>
+	            <div className="repo-edit-actions">
+	              <button type="submit" className="btn-save-item repo-edit-save">Salvar Item</button>
+	              <button type="button" className="repo-edit-cancel" id="edit-repo-cancel">Cancelar</button>
+	            </div>
+	          </form>
+	        </div>
       </div>
 
       <div className="modal-overlay" id="modal-create-red">
@@ -844,7 +879,4 @@ function App() {
 }
 
 export default App;
-
-
-
 
