@@ -735,6 +735,50 @@ const App = {
     return escaped.replace(new RegExp("(" + safe + ")", "gi"), "<mark>$1</mark>");
   },
 
+  getAddItemTypeOptions(category) {
+    const normalizedCategory = this.normalizeEra(category);
+    if (normalizedCategory === "folklore") {
+      return [
+        { value: "note", label: "Nota" },
+        { value: "markdown", label: "Markdown" }
+      ];
+    }
+
+    return [
+      { value: "link", label: "Link" },
+      { value: "repo", label: "Repositorio" },
+      { value: "playlist", label: "Playlist" },
+      { value: "note", label: "Nota" }
+    ];
+  },
+
+  syncAddItemTypeSelect(form, category, preferredType = "") {
+    const typeField = form ? form.querySelector("#item-type") : null;
+    if (!typeField) return "link";
+
+    const options = this.getAddItemTypeOptions(category);
+    const normalizedCategory = this.normalizeEra(category);
+    const preferred = String(preferredType || "").trim().toLowerCase();
+    const fallbackType = normalizedCategory === "folklore" ? "markdown" : "link";
+    const nextType = options.some((option) => option.value === preferred) ? preferred : fallbackType;
+
+    typeField.innerHTML = options
+      .map((option) => '<option value="' + this.escapeHtml(option.value) + '">' + this.escapeHtml(option.label) + '</option>')
+      .join("");
+    typeField.value = nextType;
+    return nextType;
+  },
+
+  updateAddItemTypeVisibility(form, typeValue) {
+    if (!form) return;
+    const nextType = String(typeValue || "").trim().toLowerCase();
+    const textMode = nextType === "note" || nextType === "markdown";
+    const urlGroup = form.querySelector(".field-url");
+    const contentGroup = form.querySelector(".field-content");
+    if (urlGroup) urlGroup.style.display = textMode ? "none" : "block";
+    if (contentGroup) contentGroup.style.display = textMode ? "block" : "none";
+  },
+
   // ===== MODAL =====
   // Fluxo de criacao de item: abrir modal, alternar campos e salvar no Storage.
   setupModal() {
@@ -750,22 +794,36 @@ const App = {
       if (e.target === modal) modal.classList.remove("visible");
     });
 
-    form.querySelector("#item-type").addEventListener("change", (e) => {
-      const textMode = e.target.value === "note" || e.target.value === "markdown";
-      form.querySelector(".field-url").style.display = textMode ? "none" : "block";
-      form.querySelector(".field-content").style.display = textMode ? "block" : "none";
-    });
+    const typeField = form.querySelector("#item-type");
+    const categoryField = form.querySelector("#item-category");
+    const syncTypeForCategory = (preferredType = "") => {
+      const nextType = this.syncAddItemTypeSelect(form, categoryField ? categoryField.value : "", preferredType);
+      this.updateAddItemTypeVisibility(form, nextType);
+      return nextType;
+    };
+
+    if (typeField) {
+      typeField.addEventListener("change", (e) => {
+        this.updateAddItemTypeVisibility(form, e.target.value);
+      });
+    }
+
+    if (categoryField) {
+      categoryField.addEventListener("change", () => {
+        syncTypeForCategory(typeField ? typeField.value : "");
+      });
+    }
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const type = form.querySelector("#item-type").value;
+      const category = form.querySelector("#item-category").value;
+      const type = this.syncAddItemTypeSelect(form, category, form.querySelector("#item-type").value);
       const title = form.querySelector("#item-title").value.trim();
       const url = form.querySelector("#item-url").value.trim();
       const content = form.querySelector("#item-content").value.trim();
       const tagsRaw = form.querySelector("#item-tags").value.trim();
       const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
       const pinned = form.querySelector("#item-pinned").checked;
-      const category = form.querySelector("#item-category").value;
 
       if (!title) return;
 
@@ -807,13 +865,13 @@ const App = {
     const tagsField = form.querySelector("#item-tags");
     const defaultType = targetEra === "folklore" ? "markdown" : "link";
     const nextType = String(preset.type || defaultType).toLowerCase();
-    const isTextMode = nextType === "note" || nextType === "markdown";
     const lockType = !!preset.lockType;
     const modalTitle = String(preset.modalTitle || (preset.title ? ("Adicionar " + preset.title) : "Novo Item"));
 
     if (modalTitleEl) modalTitleEl.textContent = modalTitle;
     if (typeField) {
-      typeField.value = nextType;
+      const resolvedType = this.syncAddItemTypeSelect(form, targetEra, nextType);
+      typeField.value = resolvedType;
       typeField.disabled = lockType;
     }
     if (typeFieldGroup) {
@@ -824,8 +882,7 @@ const App = {
     if (contentField) contentField.value = preset.content || "";
     if (tagsField) tagsField.value = Array.isArray(preset.tags) ? preset.tags.join(", ") : "";
 
-    form.querySelector(".field-url").style.display = isTextMode ? "none" : "block";
-    form.querySelector(".field-content").style.display = isTextMode ? "block" : "none";
+    this.updateAddItemTypeVisibility(form, typeField ? typeField.value : nextType);
     modal.classList.add("visible");
   },
 
