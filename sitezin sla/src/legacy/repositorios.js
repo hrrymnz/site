@@ -556,14 +556,14 @@ function normalizarEra(era) {
 function formatarEra(era) {
   const key = normalizarEra(era);
   const labels = {
-    debut: "Debut",
-    fearless: "Fearless",
-    "speak-now": "Speak Now",
-    red: "Red",
-    "1989": "1989",
-    reputation: "Reputation",
-    lover: "Lover",
-    folklore: "Folklore",
+    debut: "Início",
+    fearless: "Repositórios",
+    "speak-now": "Música",
+    red: "Notas",
+    "1989": "Ferramentas",
+    reputation: "Links",
+    lover: "Vídeos",
+    folklore: "Resumos e Anotações",
     settings: "Configurações"
   };
   return labels[key] || "Debut";

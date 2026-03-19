@@ -260,8 +260,8 @@ const App = {
     const key = this.normalizeEra(era);
     return '<button type="button" class="era-badge-btn recent-era-inline highlight-era-inline era-' + this.escapeHtml(key) + '" data-era="' + this.escapeHtml(key) + '">' +
       '<span class="recent-era-dot"></span>' +
-      '<span class="recent-era-text">' + this.escapeHtml(this.formatEraLabel(key)) + '</span>' +
-    '</button>';
+      '<span class="recent-era-text">' + this.escapeHtml(this.formatEraLabel(key) + '</span>' +
+    '</button>';)
   },
 
   normalizeRepoSlug(value) {
