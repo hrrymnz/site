@@ -1542,36 +1542,68 @@ const Storage = {
     return this.safeParse(this.PROFILE_SETTINGS_KEY, {});
   },
 
-  saveProfileSettings(profileData) {
+  saveProfileSettings(profileData, options = {}) {
+    const shouldSync = options.sync !== false;
+    const shouldCreateVersion = options.createVersion !== false;
     const current = this.getProfileSettings();
     const merged = { ...current, ...profileData };
     localStorage.setItem(this.PROFILE_SETTINGS_KEY, JSON.stringify(merged));
-    this.scheduleSync();
-    this.createLocalVersion("profile-update");
+    if (shouldSync) this.scheduleSync();
+    if (shouldCreateVersion) this.createLocalVersion("profile-update");
     return merged;
   },
 
-  async saveProfileAndAllData(profileData) {
+  async saveProfileAndAllData(profileData, media = {}) {
     // Salva perfil localmente e sincroniza um snapshot completo do app.
-    this.saveProfileSettings(profileData);
+    this.saveProfileSettings(profileData, { sync: false, createVersion: false });
+
+    if (Object.prototype.hasOwnProperty.call(media, "avatar")) {
+      const nextAvatar = String(media.avatar || "").trim();
+      if (nextAvatar) this.saveAvatar(nextAvatar, { sync: false });
+      else this.removeAvatar({ sync: false });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(media, "profileHeader")) {
+      const nextHeader = String(media.profileHeader || "").trim();
+      if (nextHeader) this.saveProfileHeader(nextHeader, { sync: false });
+      else this.removeProfileHeader({ sync: false });
+    }
+
+    this.setLocalStateUpdatedAt();
+    this.hasPendingSync = true;
+    this.setSyncStatus(this.hasSupabase ? "saving" : "local");
+    this.createLocalVersion("profile-update");
     const snapshot = this.getSnapshot();
-    await this.pushStateToServer();
-    await this.createServerVersion("settings-profile-save", snapshot);
-    return snapshot;
+    let remoteError = null;
+
+    try {
+      await this.pushStateToServer();
+      await this.createServerVersion("settings-profile-save", snapshot);
+    } catch (error) {
+      remoteError = error;
+      this.hasPendingSync = true;
+      this.setSyncStatus(this.hasSupabase ? "error" : "local");
+    }
+
+    return {
+      snapshot,
+      remoteSaved: !remoteError,
+      remoteError
+    };
   },
 
   getAvatar() {
     return localStorage.getItem(this.AVATAR_KEY) || "";
   },
 
-  saveAvatar(dataUrl) {
+  saveAvatar(dataUrl, options = {}) {
     localStorage.setItem(this.AVATAR_KEY, dataUrl);
-    this.scheduleSync();
+    if (options.sync !== false) this.scheduleSync();
   },
 
-  removeAvatar() {
+  removeAvatar(options = {}) {
     localStorage.removeItem(this.AVATAR_KEY);
-    this.scheduleSync();
+    if (options.sync !== false) this.scheduleSync();
   },
 
 
@@ -1579,14 +1611,14 @@ const Storage = {
     return localStorage.getItem(this.HEADER_KEY) || "";
   },
 
-  saveProfileHeader(dataUrl) {
+  saveProfileHeader(dataUrl, options = {}) {
     localStorage.setItem(this.HEADER_KEY, dataUrl);
-    this.scheduleSync();
+    if (options.sync !== false) this.scheduleSync();
   },
 
-  removeProfileHeader() {
+  removeProfileHeader(options = {}) {
     localStorage.removeItem(this.HEADER_KEY);
-    this.scheduleSync();
+    if (options.sync !== false) this.scheduleSync();
   },
   importData(file) {
     return new Promise((resolve, reject) => {

@@ -257,6 +257,7 @@ function initShellInteractions() {
   }
 
   function getCurrentProfileEditSnapshot() {
+    const mediaState = getCurrentProfileMediaState();
     const snapshot = {
       name: profileFields.name ? String(profileFields.name.value || '') : '',
       username: profileFields.username ? String(profileFields.username.value || '') : '',
@@ -266,12 +267,8 @@ function initShellInteractions() {
       birthDate: profileFields.birthDate ? String(profileFields.birthDate.value || '') : '',
       birthVisibilityDate: birthVisibilityDateSelect ? String(birthVisibilityDateSelect.value || 'only-you') : 'only-you',
       birthVisibilityYear: birthVisibilityYearSelect ? String(birthVisibilityYearSelect.value || 'only-you') : 'only-you',
-      avatar: window.Storage && typeof window.Storage.getAvatar === 'function'
-        ? String(window.Storage.getAvatar() || '')
-        : '',
-      header: window.Storage && typeof window.Storage.getProfileHeader === 'function'
-        ? String(window.Storage.getProfileHeader() || '')
-        : ''
+      avatar: mediaState.avatar,
+      header: mediaState.header
     };
     return snapshot;
   }
@@ -282,38 +279,49 @@ function initShellInteractions() {
     return value.includes('user 3 1.svg') || value.includes('user%203%201.svg');
   }
 
-  function persistProfileMediaFromModal() {
-    if (!window.Storage) return;
-
+  function getCurrentProfileMediaState() {
     const currentAvatarSrc = avatarImg ? String(avatarImg.src || '') : '';
-    if (isDefaultAvatarSrc(currentAvatarSrc)) {
-      if (typeof window.Storage.removeAvatar === 'function') {
-        window.Storage.removeAvatar();
-      }
-      resetAvatar();
-    } else {
-      if (typeof window.Storage.saveAvatar === 'function') {
-        window.Storage.saveAvatar(currentAvatarSrc);
-      }
-      applyAvatar(currentAvatarSrc);
-    }
-
     const currentHeaderSrc = settingsHeaderPreviewImage ? String(settingsHeaderPreviewImage.src || '') : '';
     const hasHeaderImage = !!settingsHeaderPreview
       && settingsHeaderPreview.classList.contains('has-image')
       && !!currentHeaderSrc;
 
-    if (hasHeaderImage) {
-      if (typeof window.Storage.saveProfileHeader === 'function') {
-        window.Storage.saveProfileHeader(currentHeaderSrc);
+    return {
+      avatar: isDefaultAvatarSrc(currentAvatarSrc) ? '' : currentAvatarSrc,
+      header: hasHeaderImage ? currentHeaderSrc : ''
+    };
+  }
+
+  function persistProfileMediaFromModal(options = {}) {
+    if (!window.Storage) return getCurrentProfileMediaState();
+    const mediaState = getCurrentProfileMediaState();
+    const shouldSync = options.sync !== false;
+
+    if (!mediaState.avatar) {
+      if (typeof window.Storage.removeAvatar === 'function') {
+        window.Storage.removeAvatar({ sync: shouldSync });
       }
-      applyProfileHeader(currentHeaderSrc);
+      resetAvatar();
+    } else {
+      if (typeof window.Storage.saveAvatar === 'function') {
+        window.Storage.saveAvatar(mediaState.avatar, { sync: shouldSync });
+      }
+      applyAvatar(mediaState.avatar);
+    }
+
+    if (mediaState.header) {
+      if (typeof window.Storage.saveProfileHeader === 'function') {
+        window.Storage.saveProfileHeader(mediaState.header, { sync: shouldSync });
+      }
+      applyProfileHeader(mediaState.header);
     } else {
       if (typeof window.Storage.removeProfileHeader === 'function') {
-        window.Storage.removeProfileHeader();
+        window.Storage.removeProfileHeader({ sync: shouldSync });
       }
       resetProfileHeader();
     }
+
+    return mediaState;
   }
 
   function hasProfileEditUnsavedChanges() {
@@ -330,22 +338,16 @@ function initShellInteractions() {
       el.value = profileEditOriginalSnapshot[key] || '';
     });
 
-    if (window.Storage) {
-      if (profileEditOriginalSnapshot.avatar) {
-        if (typeof window.Storage.saveAvatar === 'function') window.Storage.saveAvatar(profileEditOriginalSnapshot.avatar);
-        applyAvatar(profileEditOriginalSnapshot.avatar);
-      } else {
-        if (typeof window.Storage.removeAvatar === 'function') window.Storage.removeAvatar();
-        resetAvatar();
-      }
+    if (profileEditOriginalSnapshot.avatar) {
+      applyAvatar(profileEditOriginalSnapshot.avatar);
+    } else {
+      resetAvatar();
+    }
 
-      if (profileEditOriginalSnapshot.header) {
-        if (typeof window.Storage.saveProfileHeader === 'function') window.Storage.saveProfileHeader(profileEditOriginalSnapshot.header);
-        applyProfileHeader(profileEditOriginalSnapshot.header);
-      } else {
-        if (typeof window.Storage.removeProfileHeader === 'function') window.Storage.removeProfileHeader();
-        resetProfileHeader();
-      }
+    if (profileEditOriginalSnapshot.header) {
+      applyProfileHeader(profileEditOriginalSnapshot.header);
+    } else {
+      resetProfileHeader();
     }
 
     refreshProfileModalUi();
@@ -496,18 +498,12 @@ function initShellInteractions() {
   async function handleApplyPhoto(zoomLevel) {
     try {
       const output = editingPhotoType === 'cover'
-        ? { width: 1500, height: 500 }
-        : { width: 800, height: 800 };
+        ? { width: 1200, height: 400 }
+        : { width: 512, height: 512 };
       const editedDataUrl = await renderEditedPhotoDataUrl(photoToEdit, output.width, output.height);
       if (editingPhotoType === 'cover') {
-        if (window.Storage && typeof window.Storage.saveProfileHeader === 'function') {
-          window.Storage.saveProfileHeader(editedDataUrl);
-        }
         applyProfileHeader(editedDataUrl);
       } else {
-        if (window.Storage && typeof window.Storage.saveAvatar === 'function') {
-          window.Storage.saveAvatar(editedDataUrl);
-        }
         applyAvatar(editedDataUrl);
       }
       console.log('Zoom aplicado:', zoomLevel);
@@ -734,9 +730,7 @@ function initShellInteractions() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataUrl = ev.target.result;
-        window.Storage.saveAvatar(dataUrl);
-        applyAvatar(dataUrl);
-        handleEditPhoto('profile');
+        handleEditPhoto('profile', dataUrl);
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -747,7 +741,6 @@ function initShellInteractions() {
     removeBtn.dataset.boundClick = '1';
     removeBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      window.Storage.removeAvatar();
       resetAvatar();
     });
   }
@@ -822,9 +815,6 @@ function initShellInteractions() {
     headerRemoveBtn.dataset.boundClick = '1';
     headerRemoveBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      if (window.Storage && typeof window.Storage.removeProfileHeader === 'function') {
-        window.Storage.removeProfileHeader();
-      }
       resetProfileHeader();
     });
   }
@@ -840,9 +830,6 @@ function initShellInteractions() {
         return;
       }
       if (action === 'remove-cover') {
-        if (window.Storage && typeof window.Storage.removeProfileHeader === 'function') {
-          window.Storage.removeProfileHeader();
-        }
         resetProfileHeader();
       }
     });
@@ -1269,16 +1256,35 @@ function initShellInteractions() {
       });
 
       try {
-        if (typeof window.Storage.saveProfileSettings === 'function') {
+        const mediaState = getCurrentProfileMediaState();
+        let remoteSaved = true;
+
+        if (typeof window.Storage.saveProfileAndAllData === 'function') {
+          const result = await window.Storage.saveProfileAndAllData(payload, {
+            avatar: mediaState.avatar,
+            profileHeader: mediaState.header
+          });
+          remoteSaved = !result || result.remoteSaved !== false;
+        } else if (typeof window.Storage.saveProfileSettings === 'function') {
           window.Storage.saveProfileSettings(payload);
+          persistProfileMediaFromModal();
         }
-        persistProfileMediaFromModal();
         refreshLocalVersions();
         updateProfilePage();
         profileEditOriginalSnapshot = getCurrentProfileEditSnapshot();
         if (saveStatus) {
-          saveStatus.textContent = 'Perfil e dados gerais salvos com sucesso!';
-          saveStatus.className = 'import-status success';
+          saveStatus.textContent = remoteSaved
+            ? 'Perfil e dados gerais salvos com sucesso!'
+            : 'Perfil salvo localmente. A sincronizacao com o servidor falhou.';
+          saveStatus.className = remoteSaved ? 'import-status success' : 'import-status error';
+        }
+        if (!remoteSaved && window.Storage && typeof window.Storage.addNotification === 'function') {
+          window.Storage.addNotification({
+            category: 'sync',
+            level: 'error',
+            title: 'Perfil salvo localmente',
+            message: 'Nao foi possivel sincronizar a edicao de perfil com o servidor.'
+          });
         }
         performCloseEditProfileModal();
       } catch {
@@ -1287,17 +1293,6 @@ function initShellInteractions() {
           saveStatus.className = 'import-status error';
         }
         return;
-      }
-
-      try {
-        if (typeof window.Storage.pushStateToServer === 'function') {
-          await window.Storage.pushStateToServer();
-        }
-        if (typeof window.Storage.createServerVersion === 'function') {
-          await window.Storage.createServerVersion('settings-profile-save');
-        }
-      } catch {
-        // Sync remota nao bloqueia o salvamento local nem o fechamento do modal.
       }
     });
   }
