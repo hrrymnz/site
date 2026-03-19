@@ -149,7 +149,7 @@ function App() {
           <a href="#" className="era-link" data-target="1989" data-era-color="1989"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/statue-of-liberty.png" alt="1989" className="sidebar-custom-icon" /></span>Ferramentas</a>
           <a href="#" className="era-link" data-target="reputation" data-era-color="reputation"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/snake.png" alt="Reputation" className="sidebar-custom-icon" /></span>Links</a>
           <a href="#" className="era-link" data-target="lover" data-era-color="lover"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/archer.png" alt="Lover" className="sidebar-custom-icon" /></span>Vídeos</a>
-          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Resumos ou Artigos</a>
+          <a href="#" className="era-link" data-target="folklore" data-era-color="folklore"><span className="menu-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/ball.png" alt="Folklore" className="sidebar-custom-icon" /></span>Resumos e Anotações</a>
           <a href="#" className="era-link" data-target="evermore" data-era-color="evermore"><span className="menu-icon"><i data-lucide="user-circle"></i></span>Perfil</a>
           <a href="#" className="era-link" data-target="settings" data-era-color="settings"><span className="menu-icon"><i data-lucide="settings"></i></span>Configurações</a>
         </nav>

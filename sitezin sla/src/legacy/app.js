@@ -247,7 +247,7 @@ const App = {
       "1989": "Ferramentas",
       reputation: "Links",
       lover: "Vídeos",
-      folklore: "Resumos ou Artigos",
+      folklore: "Resumos e Anotações",
       evermore: "Perfil",
       settings: "Configurações  "
     };
@@ -615,16 +615,16 @@ const App = {
   // Controle da busca global no topo e renderizacao dos resultados.
   // Busca em: paginas da SPA + itens do Storage.
   pages: [
-    { id: "__page-debut", title: "Debut", era: "debut", keywords: ["inicio", "home", "principal", "dashboard"] },
-    { id: "__page-fearless", title: "Fearless", era: "fearless", keywords: ["repositórios", "repos"] },
-    { id: "__page-speak-now", title: "Speak Now", era: "speak-now", keywords: [] },
-    { id: "__page-red", title: "Red", era: "red", keywords: [] },
-    { id: "__page-1989", title: "1989", era: "1989", keywords: [] },
-    { id: "__page-reputation", title: "Reputation", era: "reputation", keywords: [] },
-    { id: "__page-lover", title: "Lover", era: "lover", keywords: [] },
-    { id: "__page-folklore", title: "Folklore", era: "folklore", keywords: [] },
-    { id: "__page-evermore", title: "Evermore", era: "evermore", keywords: ["perfil", "profile", "usuario", "conta"] },
-    { id: "__page-settings", title: "Configuracoes", era: "settings", keywords: ["configuracoes", "preferencias", "perfil", "profile", "backup", "exportar", "importar", "seguranca", "settings"] }
+    { id: "__page-debut", title: "Início", era: "debut", keywords: ["inicio", "home", "principal", "dashboard"] },
+    { id: "__page-fearless", title: "Repositórios", era: "fearless", keywords: ["repositorios", "repos"] },
+    { id: "__page-speak-now", title: "Música", era: "speak-now", keywords: ["musica", "música", "music"] },
+    { id: "__page-red", title: "Notas", era: "red", keywords: [] },
+    { id: "__page-1989", title: "Ferramentas", era: "1989", keywords: [] },
+    { id: "__page-reputation", title: "Links", era: "reputation", keywords: [] },
+    { id: "__page-lover", title: "Vídeos", era: "lover", keywords: ["videos"] },
+    { id: "__page-folklore", title: "Resumos e Anotações", era: "folklore", keywords: ["resumos", "anotacoes" ] },
+    { id: "__page-evermore", title: "Perfil", era: "evermore", keywords: ["perfil", "profile", "usuario", "conta"] },
+    { id: "__page-settings", title: "Configurações", era: "settings", keywords: ["configuracoes", "preferencias", "perfil", "profile", "backup", "exportar", "importar", "seguranca", "settings"] }
   ],
 
   searchPages(query) {
