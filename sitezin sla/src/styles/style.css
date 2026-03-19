@@ -268,6 +268,7 @@ body.app-theme-dark .login-theme-switch-thumb {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .brand-icon-slot {
@@ -291,6 +292,15 @@ body.app-theme-dark .login-theme-switch-thumb {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.5px;
+}
+
+.brand-wordmark {
+  display: block;
+  width: auto;
+  height: 30px;
+  max-width: min(100%, 144px);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .menu { display: grid; gap: 5px; }
@@ -6593,6 +6603,11 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
 
   .brand {
     font-size: 1.32rem;
+  }
+
+  .brand-wordmark {
+    height: 26px;
+    max-width: min(100%, 128px);
   }
 
   .menu {

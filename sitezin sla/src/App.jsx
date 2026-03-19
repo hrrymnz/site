@@ -3,6 +3,7 @@ import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
 import brandVector from './assets/brand-vector.svg';
+import polaroomWordmark from './assets/polaroom-wordmark.svg';
 
 const ENABLE_WORKSPACES = import.meta.env.VITE_ENABLE_WORKSPACES === 'true';
 
@@ -139,7 +140,7 @@ function App() {
           <span className="brand-icon-slot" aria-hidden="true">
             <img src={brandVector} alt="" className="brand-icon-image" />
           </span>
-          <h1 className="brand">Polaroom.</h1>
+          <img src={polaroomWordmark} alt="Polaroom" className="brand-wordmark" />
         </div>
         <nav className="menu">
           <a href="#" className="era-link active" data-target="debut" data-era-color="debut"><span className="menu-icon"><i data-lucide="home"></i></span>Início</a>
