@@ -243,16 +243,16 @@ const App = {
       debut: "Início",
       fearless: "Repositórios",
       "speak-now": "Música",
-      red: "Red",
+      red: "Notas",
       "1989": "Ferramentas",
       reputation: "Links",
       lover: "Vídeos",
       folklore: "Resumos e Anotações",
       evermore: "Perfil",
-      settings: "Configurações  "
+      settings: "Configurações"
     };
     const key = this.normalizeEra(era);
-    return labels[key] || "Debut";
+    return labels[key] || "Início";
   },
 
   renderEraBadge(era) {
@@ -260,8 +260,8 @@ const App = {
     const key = this.normalizeEra(era);
     return '<button type="button" class="era-badge-btn recent-era-inline highlight-era-inline era-' + this.escapeHtml(key) + '" data-era="' + this.escapeHtml(key) + '">' +
       '<span class="recent-era-dot"></span>' +
-      '<span class="recent-era-text">' + this.escapeHtml(this.formatEraLabel(key) + '</span>' +
-    '</button>';)
+      '<span class="recent-era-text">' + this.escapeHtml(this.formatEraLabel(key)) + '</span>' +
+    '</button>';
   },
 
   normalizeRepoSlug(value) {
@@ -736,6 +736,7 @@ const App = {
   },
 
   getAddItemTypeOptions(category) {
+    // Folklore compartilha o modal global, mas expõe dois formatos de texto.
     const normalizedCategory = this.normalizeEra(category);
     if (normalizedCategory === "folklore") {
       return [
@@ -863,6 +864,7 @@ const App = {
     const urlField = form.querySelector("#item-url");
     const contentField = form.querySelector("#item-content");
     const tagsField = form.querySelector("#item-tags");
+    // Cada era entra no modal com um tipo padrao coerente com seu fluxo principal.
     const defaultType = targetEra === "folklore" ? "markdown" : "link";
     const nextType = String(preset.type || defaultType).toLowerCase();
     const lockType = !!preset.lockType;
@@ -949,6 +951,7 @@ const App = {
     const item = Storage.getByCategory("folklore").find((entry) => entry.id === itemId && entry.type === "markdown");
     if (!item) return;
     this.folkloreSelectedMarkdownId = itemId;
+    // Abrir um markdown tambem registra acesso para alimentar Debut e listas recentes.
     this.folkloreMarkdownViewMode = "preview";
     Storage.trackAccess(itemId);
     this.renderEra("folklore");
@@ -1016,6 +1019,7 @@ const App = {
     this.folkloreMarkdownDraft = null;
     clearTimeout(this.folkloreMarkdownSaveTimer);
 
+    // Markdown vazio volta a ser descartavel para evitar rascunhos sem conteudo.
     if (this.isFolkloreMarkdownEmpty(selected, { title: rawTitle, content })) {
       Storage.deleteItem(itemId);
       if (this.folkloreSelectedMarkdownId === itemId) {
@@ -1247,6 +1251,7 @@ const App = {
       items = this.applyQuickFilters(Storage.getByCategory(era));
     }
 
+    // Quando um markdown esta aberto, o container vira um reader/editor dedicado.
     if (era === "folklore" && this.folkloreSelectedMarkdownId) {
       const selectedMarkdown = Storage.getByCategory("folklore")
         .find((item) => item.id === this.folkloreSelectedMarkdownId && item.type === "markdown");

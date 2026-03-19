@@ -1,5 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
 
+// Uma unica tela cobre login, cadastro e recuperacao para reduzir troca de
+// contexto durante a entrada na app.
+
 export default function LoginPage({
   signIn,
   signUp,
@@ -40,8 +43,8 @@ export default function LoginPage({
     setError('');
     setSuccess('');
     setLoading(true);
-
     try {
+      // O mesmo form muda de comportamento conforme o modo ativo.
       if (mode === 'signup') {
         await signUp(email, password);
         setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
@@ -98,6 +101,7 @@ export default function LoginPage({
         )}
 
         <form onSubmit={handleSubmit} className="login-form">
+          {/* O e-mail so some na redefinicao, quando o token ja veio pelo link. */}
           {mode !== 'recovery' && (
             <div className="login-field">
               <label htmlFor="email">E-mail</label>
@@ -183,4 +187,6 @@ export default function LoginPage({
     </div>
   );
 }
+
+
 

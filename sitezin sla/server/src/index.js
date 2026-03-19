@@ -5,6 +5,8 @@ import { Pool } from 'pg';
 
 dotenv.config();
 
+// Servidor de apoio do projeto: healthcheck, API legacy de items e endpoints
+// autenticados para snapshots/versoes do estado da app.
 const app = express();
 const port = process.env.PORT || 3001;
 const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '')
@@ -209,6 +211,7 @@ app.delete('/api/items/:id', rejectUnscopedItemsApi, async (req, res) => {
 });
 
 // ===== APP STATE Routes =====
+// Essas rotas so aceitam o scope do proprio usuario autenticado.
 
 // GET estado completo persistido (backup vivo do frontend)
 app.get('/api/state/:scope', requireSupabaseAuth, requireOwnScope, async (req, res) => {

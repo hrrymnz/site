@@ -1,4 +1,6 @@
 function initShellInteractions() {
+  // Mede sidebar e topbar reais para manter os offsets do layout fixo alinhados
+  // com a interface atual, inclusive apos resize e troca de pagina.
   const syncShellLayoutMetrics = () => {
     const root = document.documentElement;
     if (!root) return;
@@ -35,6 +37,7 @@ function initShellInteractions() {
   }
 
   function bindNavigationBlocks() {
+    // Roteamento leve por hash/clique: ativa paginas sem recarregar a shell.
     const activateStandalonePage = (target, options = {}) => {
       const topTitle = document.getElementById('topbar-title');
       const nextPage = document.getElementById('page-' + target);
@@ -539,6 +542,7 @@ function initShellInteractions() {
 
   async function handleApplyPhoto(zoomLevel) {
     try {
+      // Perfil e capa compartilham o editor, mas exportam tamanhos diferentes.
       const output = editingPhotoType === 'cover'
         ? { width: 1200, height: 400 }
         : { width: 512, height: 512 };
@@ -562,6 +566,7 @@ function initShellInteractions() {
     }
   }
   function bindBackupAndVersionControls() {
+    // Settings concentra backup/importacao e o historico combinado local + servidor.
     async function refreshLocalVersions() {
       const versionsList = document.getElementById('local-versions-list');
       const versionsStatus = document.getElementById('versions-status');
@@ -735,6 +740,8 @@ function initShellInteractions() {
   const { refreshLocalVersions } = bindBackupAndVersionControls();
 
   function bindAvatarHeaderPhotoControls() {
+  // A edicao de avatar/capa fica temporaria no modal; a persistencia real
+  // acontece apenas no save do perfil.
   if (editBtn && editBtn.dataset.boundClick !== '1') {
     editBtn.dataset.boundClick = '1';
     editBtn.addEventListener('click', (e) => {
@@ -1146,6 +1153,8 @@ function initShellInteractions() {
   let openEditProfileModal = null;
 
   function bindProfileEditModalControls() {
+  // O modal de perfil trabalha sobre um snapshot temporario para permitir
+  // cancelar ou descartar sem gravar alteracoes parciais.
   loadProfileForm();
   forceCloseBirthdatePanel();
 
@@ -1349,7 +1358,7 @@ function initShellInteractions() {
     if (!window.Storage) return;
     refreshProfileHeader();
 
-    // Obter dados do perfil
+    // Reidrata todos os campos do perfil a partir do storage centralizado.
     const profileData = window.Storage.getProfileSettings();
     const avatar = window.Storage.getAvatar() || 'imagens, icons/Sidebar/user 3 1.svg';
     

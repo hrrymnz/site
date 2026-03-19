@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 
+// Hook central de autenticacao: encapsula sessao, timeout por inatividade e
+// fluxos de login/cadastro/recuperacao para o restante da app.
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const SUPABASE_UNAVAILABLE_MESSAGE = 'Autenticacao indisponivel no momento. Verifique a configuracao do Supabase.';
 
@@ -26,6 +28,7 @@ export function useAuth() {
 
     let idleTimer = null;
 
+    // Traduz a sessao bruta do Supabase para um estado unico e previsivel da UI.
     const syncFromSession = (nextSession, status = null) => {
       setUser(nextSession?.user ?? null);
       hasUserRef.current = !!nextSession?.user;

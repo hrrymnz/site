@@ -4,6 +4,8 @@ import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
 import brandVector from './assets/brand-vector.svg';
 
+// A shell React cuida de auth, tema e montagem inicial. A maior parte da
+// interface interna continua em modulos legados carregados apos o login.
 const ENABLE_WORKSPACES = import.meta.env.VITE_ENABLE_WORKSPACES === 'true';
 
 function App() {
@@ -46,6 +48,7 @@ function App() {
 
     let cancelled = false;
 
+    // So inicializa a app legada depois de termos usuario e hidratar o estado.
     const boot = async () => {
       const [{ default: Storage }, { initLegacyApp }, { initRepositorios }, { default: initShellInteractions }] = await Promise.all([
         import('./legacy/storage.js'),
@@ -134,6 +137,7 @@ function App() {
 
   return (
     <main className="dashboard">
+      {/* Sidebar fixa com navegacao principal e controles globais do usuario. */}
       <aside className="sidebar">
         <div className="brand-row">
           <span className="brand-icon-slot" aria-hidden="true">
@@ -179,6 +183,7 @@ function App() {
       </aside>
 
       <section className="content">
+        {/* Topbar compartilhada entre as eras e paginas standalone. */}
         <header className="topbar">
           <h2 id="topbar-title">Início</h2>
           <div className="topbar-right">
@@ -213,6 +218,7 @@ function App() {
         </header>
 
         <div className="era-page active" id="page-debut">
+          {/* Debut funciona como home e agrega atalhos, destaques e sinais do GitHub. */}
           <section className="repos-grid">
               <div className="repo-overview-section">
                 <div className="card-header">

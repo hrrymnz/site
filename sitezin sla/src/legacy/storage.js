@@ -948,6 +948,7 @@ const Storage = {
   },
 
   scheduleSync() {
+    // Toda mudanca local renova o "updatedAt" antes de entrar na fila de sync remota.
     this.setLocalStateUpdatedAt();
     this.hasPendingSync = true;
     this.setSyncStatus(this.hasSupabase ? "saving" : "local");
@@ -993,6 +994,8 @@ const Storage = {
   },
 
   getServerScopeCandidates() {
+    // O app atual usa auth.uid() como scope principal, mas ainda tenta ler
+    // escopos legados para recuperar estados salvos antes da migracao.
     const scopes = [this.STATE_SCOPE];
 
     if (!this.currentUserId) {
@@ -1101,7 +1104,8 @@ const Storage = {
       return record;
     }
 
-    // Auto-recupera a linha principal quando o historico remoto ainda esta integro.
+    // Se a linha principal estiver vazia, tentamos reviver o estado a partir da
+    // ultima versao remota consistente para evitar bootstrap em branco.
     try {
       await supabase
         .from('app_state')
@@ -1361,6 +1365,7 @@ const Storage = {
   },
 
   createLocalVersion(label = "auto-local", snapshot = null) {
+    // Mantem um historico curto, suficiente para restauracao rapida sem inflar o storage.
     const state = snapshot || this.getSnapshot();
     const signature = this.buildSnapshotSignature(state);
     const versions = this.listLocalVersions();
@@ -1611,6 +1616,8 @@ const Storage = {
       this.setSyncStatus(this.hasSupabase ? "error" : "local");
     }
 
+    // A versao historica ajuda restore, mas nao deve invalidar um save principal
+    // que ja tenha conseguido subir o app_state.
     if (!remoteError) {
       try {
         await this.createServerVersion("settings-profile-save", snapshot);
@@ -1660,6 +1667,7 @@ const Storage = {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
+          // Faz um checkpoint remoto/local antes do merge para facilitar rollback.
           const beforeImport = this.getSnapshot();
           this.createServerVersion("pre-import", beforeImport).catch(() => {
             // Sem bloqueio em caso de falha.

@@ -554,6 +554,11 @@ function normalizarEra(era) {
 }
 
 function formatarEra(era) {
+  // Reaproveita o mapa de labels da shell quando a app principal ja estiver pronta.
+  if (window.App && typeof window.App.formatEraLabel === "function") {
+    return window.App.formatEraLabel(era);
+  }
+
   const key = normalizarEra(era);
   const labels = {
     debut: "Início",
@@ -566,7 +571,7 @@ function formatarEra(era) {
     folklore: "Resumos e Anotações",
     settings: "Configurações"
   };
-  return labels[key] || "Debut";
+  return labels[key] || "Início";
 }
 
 function formatarData(isoString) {
@@ -734,6 +739,7 @@ function preencherGraficoContribuicoes(dias, total) {
 
   const primeiraData = dias.length ? parseDataLocal(dias[0].date) : null;
   // A grade visual da UI comeca na segunda-feira.
+  // O heatmap e desenhado com semana iniciando na segunda-feira.
   const deslocamentoInicial = primeiraData ? ((primeiraData.getDay() + 6) % 7) : 0;
   const totalCelulas = deslocamentoInicial + dias.length;
 
@@ -912,6 +918,4 @@ window.renderizarRecentes = renderizarRecentes;
 window.initRepositorios = initRepositorios;
 
 export { initRepositorios, renderizarRecentes };
-
-
 
