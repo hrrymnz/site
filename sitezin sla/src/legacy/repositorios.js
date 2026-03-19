@@ -733,7 +733,8 @@ function preencherGraficoContribuicoes(dias, total) {
   totalEl.textContent = String(total);
 
   const primeiraData = dias.length ? parseDataLocal(dias[0].date) : null;
-  const deslocamentoInicial = primeiraData ? primeiraData.getDay() : 0;
+  // A grade visual da UI comeca na segunda-feira.
+  const deslocamentoInicial = primeiraData ? ((primeiraData.getDay() + 6) % 7) : 0;
   const totalCelulas = deslocamentoInicial + dias.length;
 
   // Define quantidade de semanas exibidas; minimo 5 para não colapsar visualmente.

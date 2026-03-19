@@ -1,4 +1,39 @@
 function initShellInteractions() {
+  const syncShellLayoutMetrics = () => {
+    const root = document.documentElement;
+    if (!root) return;
+
+    if (window.innerWidth <= 980) {
+      root.style.removeProperty('--app-sidebar-width');
+      root.style.removeProperty('--app-topbar-offset');
+      return;
+    }
+
+    const sidebar = document.querySelector('.sidebar');
+    const topbar = document.querySelector('.topbar');
+    const sidebarWidth = sidebar ? Math.ceil(sidebar.getBoundingClientRect().width) : 230;
+    const topbarHeight = topbar ? Math.ceil(topbar.getBoundingClientRect().height) : 76;
+
+    root.style.setProperty('--app-sidebar-width', `${sidebarWidth}px`);
+    root.style.setProperty('--app-topbar-offset', `${topbarHeight + 16}px`);
+  };
+
+  const queueShellLayoutMetrics = () => {
+    window.requestAnimationFrame(() => {
+      syncShellLayoutMetrics();
+    });
+  };
+
+  window.__syncShellLayoutMetrics = syncShellLayoutMetrics;
+  if (!window.__shellLayoutMetricsBound) {
+    window.__shellLayoutMetricsBound = true;
+    window.addEventListener('resize', () => {
+      if (typeof window.__syncShellLayoutMetrics === 'function') {
+        window.__syncShellLayoutMetrics();
+      }
+    });
+  }
+
   function bindNavigationBlocks() {
     const activateStandalonePage = (target, options = {}) => {
       const topTitle = document.getElementById('topbar-title');
@@ -11,6 +46,7 @@ function initShellInteractions() {
       if (nextPage) nextPage.classList.add('active');
       if (topTitle && options.title) topTitle.textContent = String(options.title);
       window.location.hash = target;
+      queueShellLayoutMetrics();
     };
     document.querySelectorAll('.era-link').forEach((link) => {
       if (link.dataset.boundClick === '1') return;
@@ -37,6 +73,7 @@ function initShellInteractions() {
         const topTitle = document.getElementById('topbar-title');
         if (topTitle) topTitle.textContent = link.textContent.trim();
         window.location.hash = target;
+        queueShellLayoutMetrics();
       });
     });
 
@@ -134,6 +171,7 @@ function initShellInteractions() {
 
   bindNavigationBlocks();
   bindWorkspaceSwitcher();
+  syncShellLayoutMetrics();
   const DEFAULT_AVATAR = 'imagens, icons/Sidebar/user 3 1.svg';
   const avatarImg = document.getElementById('avatar-img');
   const topbarIcon = document.querySelector('.profile-icon');
@@ -384,7 +422,11 @@ function initShellInteractions() {
     if (!editPhotoPreviewWrap) return fallback;
     const width = editPhotoPreviewWrap.clientWidth || fallback.width;
     const height = editPhotoPreviewWrap.clientHeight || fallback.height;
-    return { width, height };
+    if (editingPhotoType === 'cover') {
+      return { width, height };
+    }
+    const square = Math.min(width, height) || fallback.width;
+    return { width: square, height: square };
   }
 
   function renderEditedPhotoDataUrl(sourceUrl, outputWidth, outputHeight) {
@@ -427,7 +469,7 @@ function initShellInteractions() {
           drawHeight * scaleY
         );
 
-        resolve(canvas.toDataURL('image/png'));
+        resolve(canvas.toDataURL('image/webp', editingPhotoType === 'cover' ? 0.88 : 0.9));
       };
       img.onerror = () => reject(new Error('Falha ao carregar imagem para edicao'));
       img.src = sourceUrl;

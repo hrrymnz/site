@@ -992,6 +992,24 @@ const Storage = {
     this.lastVersionSignature = this.buildSnapshotSignature(state);
   },
 
+  getServerScopeCandidates() {
+    const scopes = [this.STATE_SCOPE];
+
+    if (!this.currentUserId) {
+      return scopes.filter(Boolean);
+    }
+
+    if (this.currentWorkspace === 'default') {
+      scopes.push(`${this.currentUserId}:default`);
+    }
+
+    if (this.STATE_SCOPE !== this.currentUserId) {
+      scopes.push(this.currentUserId);
+    }
+
+    return Array.from(new Set(scopes.filter(Boolean)));
+  },
+
   async fetchServerStateRecord() {
     if (!this.hasSupabase) return null;
 
@@ -1006,35 +1024,24 @@ const Storage = {
       return data;
     };
 
-    let record = await loadByScope(this.STATE_SCOPE);
+    const scopes = this.getServerScopeCandidates();
+    let record = null;
 
-    // Compatibilidade com escopos legados usados antes da normalizacao atual.
-    if (!record && this.currentUserId) {
-      const legacyScopes = [];
+    for (const scope of scopes) {
+      const scopedRecord = await loadByScope(scope);
+      if (!scopedRecord) continue;
 
-      if (this.currentWorkspace === 'default') {
-        legacyScopes.push(`${this.currentUserId}:default`);
-      }
+      record = scopedRecord;
 
-      if (this.STATE_SCOPE !== this.currentUserId) {
-        legacyScopes.push(this.currentUserId);
-      }
-
-      for (const legacyScope of legacyScopes) {
-        if (!legacyScope || legacyScope === this.STATE_SCOPE) continue;
-        const legacyRecord = await loadByScope(legacyScope);
-        if (!legacyRecord) continue;
-
-        record = legacyRecord;
-
+      if (scope !== this.STATE_SCOPE) {
         await supabase
           .from('app_state')
           .upsert(
-            { scope: this.STATE_SCOPE, state: legacyRecord.state, updated_at: new Date().toISOString() },
+            { scope: this.STATE_SCOPE, state: scopedRecord.state, updated_at: new Date().toISOString() },
             { onConflict: 'scope' }
           );
-        break;
       }
+      break;
     }
 
     return record;
@@ -1043,23 +1050,42 @@ const Storage = {
   async fetchLatestServerVersionRecord(limit = 10) {
     if (!this.hasSupabase) return null;
 
-    const { data, error } = await supabase
-      .from('app_state_versions')
-      .select('state, created_at, label')
-      .eq('scope', this.STATE_SCOPE)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const loadLatestMeaningfulByScope = async (scope) => {
+      const { data, error } = await supabase
+        .from('app_state_versions')
+        .select('state, created_at, label')
+        .eq('scope', scope)
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-    if (error || !Array.isArray(data)) return null;
+      if (error || !Array.isArray(data)) return null;
 
-    const meaningful = data.find((entry) => entry?.state && this.snapshotScore(entry.state) > 0);
-    if (!meaningful) return null;
+      const meaningful = data.find((entry) => entry?.state && this.snapshotScore(entry.state) > 0);
+      if (!meaningful) return null;
 
-    return {
-      state: meaningful.state,
-      updated_at: String(meaningful.created_at || ""),
-      label: String(meaningful.label || "")
+      return {
+        state: meaningful.state,
+        updated_at: String(meaningful.created_at || ""),
+        label: String(meaningful.label || ""),
+        scope
+      };
     };
+
+    let bestRecord = null;
+
+    for (const scope of this.getServerScopeCandidates()) {
+      const candidate = await loadLatestMeaningfulByScope(scope);
+      if (!candidate) continue;
+
+      const candidateTime = candidate.updated_at ? new Date(candidate.updated_at).getTime() : 0;
+      const bestTime = bestRecord?.updated_at ? new Date(bestRecord.updated_at).getTime() : 0;
+
+      if (!bestRecord || candidateTime >= bestTime) {
+        bestRecord = candidate;
+      }
+    }
+
+    return bestRecord;
   },
 
   async fetchBestServerStateRecord() {
@@ -1575,20 +1601,29 @@ const Storage = {
     this.createLocalVersion("profile-update");
     const snapshot = this.getSnapshot();
     let remoteError = null;
+    let versionError = null;
 
     try {
       await this.pushStateToServer();
-      await this.createServerVersion("settings-profile-save", snapshot);
     } catch (error) {
       remoteError = error;
       this.hasPendingSync = true;
       this.setSyncStatus(this.hasSupabase ? "error" : "local");
     }
 
+    if (!remoteError) {
+      try {
+        await this.createServerVersion("settings-profile-save", snapshot);
+      } catch (error) {
+        versionError = error;
+      }
+    }
+
     return {
       snapshot,
       remoteSaved: !remoteError,
-      remoteError
+      remoteError,
+      versionError
     };
   },
 
