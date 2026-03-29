@@ -507,6 +507,22 @@ function App() {
                       </span>
                     </div>
                   </div>
+                  <div className="settings-pref-item settings-github-pref">
+                    <div className="settings-pref-copy">
+                      <strong>Perfil do GitHub</strong>
+                      <span>Use qualquer link do GitHub no painel de contribuições e commits da página inicial.</span>
+                    </div>
+                    <div className="settings-pref-actions settings-github-actions">
+                      <input
+                        type="url"
+                        id="settings-github-profile-url"
+                        className="settings-inline-input"
+                        placeholder="https://github.com/seuusuario"
+                        maxLength="200"
+                      />
+                      <button type="button" className="btn-import" id="settings-github-save-btn">Salvar GitHub</button>
+                    </div>
+                  </div>
                   <div className="settings-pref-item">
                     <div className="settings-pref-copy">
                       <strong>Backup de dados</strong>
@@ -521,6 +537,7 @@ function App() {
                     </div>
                   </div>
                 </div>
+                <p className="import-status" id="settings-github-status"></p>
                 <p className="import-status" id="import-status"></p>
               </section>
 

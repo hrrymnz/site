@@ -6311,6 +6311,30 @@ body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
   justify-content: flex-end;
 }
 
+#page-settings .settings-github-pref {
+  align-items: flex-start;
+}
+
+#page-settings .settings-github-actions {
+  flex: 1 1 360px;
+  justify-content: flex-end;
+}
+
+#page-settings .settings-inline-input {
+  width: min(100%, 340px);
+  min-width: 260px;
+  border: 1px solid #d1d9ea;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2937;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+#page-settings .settings-inline-input::placeholder {
+  color: #94a3b8;
+}
+
 #page-settings .settings-modern-actions {
   margin-top: 22px;
   display: flex;
@@ -6388,6 +6412,16 @@ body.app-theme-dark #page-settings .settings-modern-actions {
   border-color: var(--border);
 }
 
+body.app-theme-dark #page-settings .settings-inline-input {
+  background: var(--dark-elevated);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.app-theme-dark #page-settings .settings-inline-input::placeholder {
+  color: var(--muted);
+}
+
 body.app-theme-dark #page-settings .local-version-item {
   background: var(--dark-panel);
   border-color: var(--dark-border-strong);
@@ -6447,6 +6481,16 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
   #page-settings .settings-pref-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  #page-settings .settings-github-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  #page-settings .settings-inline-input {
+    width: 100%;
+    min-width: 0;
   }
 
   .settings-sync-meta {

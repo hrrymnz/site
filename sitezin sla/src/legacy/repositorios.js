@@ -9,10 +9,7 @@
 // 7) Controles da UI (período/limite/refresh)
 
 // ===== 1) CONFIGURACAO =====
-const GITHUB_USER = "hrrymnz";
-const GITHUB_URL = `https://github.com/${GITHUB_USER}`;
-const GITHUB_EVENTS_API = `https://api.github.com/users/${GITHUB_USER}/events`;
-const GITHUB_CONTRIB_API = `https://github-contributions-api.jogruber.de/v4/${GITHUB_USER}`;
+const DEFAULT_GITHUB_USER = "hrrymnz";
 const GITHUB_CACHE_TTL_MS = 15 * 60 * 1000;
 
 const githubState = {
@@ -33,6 +30,41 @@ function getGithubPrefsKey() {
 function getGithubCacheKey() {
   if (typeof Storage !== "undefined" && Storage.GITHUB_CACHE_KEY) return Storage.GITHUB_CACHE_KEY;
   return "githubDashboardCache";
+}
+
+function extrairGithubUsername(valor) {
+  const raw = String(valor || "").trim();
+  if (!raw) return "";
+
+  const candidate = raw.replace(/^@+/, "").trim();
+  if (/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(candidate)) {
+    return candidate;
+  }
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (host !== "github.com") return "";
+    const [firstSegment] = parsed.pathname.split("/").filter(Boolean);
+    return /^[a-z\d](?:[a-z\d-]{0,38})$/i.test(firstSegment || "") ? firstSegment : "";
+  } catch {
+    return "";
+  }
+}
+
+function obterGithubIdentity() {
+  const configuredUrl = (typeof Storage !== "undefined" && typeof Storage.getProfileSettings === "function")
+    ? String(Storage.getProfileSettings().githubProfileUrl || "").trim()
+    : "";
+  const username = extrairGithubUsername(configuredUrl) || DEFAULT_GITHUB_USER;
+
+  return {
+    username,
+    profileUrl: `https://github.com/${username}`,
+    eventsApi: `https://api.github.com/users/${username}/events`,
+    contribApi: `https://github-contributions-api.jogruber.de/v4/${username}`
+  };
 }
 
 function normalizarInicioDoDia(data) {
@@ -194,7 +226,8 @@ function abrirRepositório(slug, nomeExibicao = "") {
   const repoSlug = String(slug || "").trim();
   if (!repoSlug) return;
 
-  const url = `${GITHUB_URL}/${repoSlug}`;
+  const { profileUrl } = obterGithubIdentity();
+  const url = `${profileUrl}/${repoSlug}`;
   const titulo = String(nomeExibicao || repoSlug).trim();
 
   reposRecentes = reposRecentes
@@ -607,6 +640,11 @@ function salvarCacheGithub(cache) {
   sincronizarEstadoPersistido();
 }
 
+function limparCacheGithub(username = "") {
+  const nextCache = username ? { username } : {};
+  salvarCacheGithub(nextCache);
+}
+
 function cacheValido(registro) {
   if (!registro || !registro.savedAt) return false;
   return Date.now() - Number(registro.savedAt) < GITHUB_CACHE_TTL_MS;
@@ -632,14 +670,18 @@ function formatarTempoRelativo(msPassados) {
 // ===== 5) FETCH E PROCESSAMENTO =====
 async function obterEventosGithub(forceRefresh = false) {
   const cache = lerCacheGithub();
-  if (!forceRefresh && cacheValido(cache.events)) {
+  const github = obterGithubIdentity();
+  const sameUser = String(cache.username || "").toLowerCase() === github.username.toLowerCase();
+
+  if (!forceRefresh && sameUser && cacheValido(cache.events)) {
     return { data: cache.events.data || [], origem: "cache", idadeMs: Date.now() - Number(cache.events.savedAt) };
   }
 
-  const response = await fetch(GITHUB_EVENTS_API);
+  const response = await fetch(github.eventsApi);
   if (!response.ok) throw new Error("Falha ao carregar eventos");
   const data = await response.json();
 
+  cache.username = github.username;
   cache.events = {
     savedAt: Date.now(),
     data
@@ -651,14 +693,18 @@ async function obterEventosGithub(forceRefresh = false) {
 
 async function obterContribuicoesGithub(forceRefresh = false) {
   const cache = lerCacheGithub();
-  if (!forceRefresh && cacheValido(cache.contributions)) {
+  const github = obterGithubIdentity();
+  const sameUser = String(cache.username || "").toLowerCase() === github.username.toLowerCase();
+
+  if (!forceRefresh && sameUser && cacheValido(cache.contributions)) {
     return { data: cache.contributions.data || null, origem: "cache", idadeMs: Date.now() - Number(cache.contributions.savedAt) };
   }
 
-  const response = await fetch(GITHUB_CONTRIB_API);
+  const response = await fetch(github.contribApi);
   if (!response.ok) throw new Error("Falha ao carregar contribuições");
   const data = await response.json();
 
+  cache.username = github.username;
   cache.contributions = {
     savedAt: Date.now(),
     data
@@ -903,6 +949,16 @@ function configurarControlesGithub() {
   }
 }
 
+async function refreshGithubDashboard(forceRefresh = false) {
+  const github = obterGithubIdentity();
+  if (forceRefresh) {
+    limparCacheGithub(github.username);
+  }
+  carregarPreferenciasGithub();
+  sincronizarControlesGithub();
+  await renderizarPainelGithub(forceRefresh);
+}
+
 function initRepositorios() {
   // Ordem de inicializacao: cards/recentes -> preferencias -> controles -> painel.
   configurarModalEdicaoRepos();
@@ -916,6 +972,7 @@ function initRepositorios() {
 
 window.renderizarRecentes = renderizarRecentes;
 window.initRepositorios = initRepositorios;
+window.refreshGithubDashboard = refreshGithubDashboard;
+window.getGithubIdentity = obterGithubIdentity;
 
 export { initRepositorios, renderizarRecentes };
-

@@ -721,6 +721,67 @@ function initShellInteractions() {
       });
     }
 
+    const githubProfileInput = document.getElementById('settings-github-profile-url');
+    const githubProfileSaveBtn = document.getElementById('settings-github-save-btn');
+    const githubProfileStatus = document.getElementById('settings-github-status');
+
+    function loadGithubSettingsField() {
+      if (!githubProfileInput || !window.Storage || typeof window.Storage.getProfileSettings !== 'function') return;
+      const profileSettings = window.Storage.getProfileSettings();
+      githubProfileInput.value = String(profileSettings.githubProfileUrl || '').trim();
+    }
+
+    loadGithubSettingsField();
+
+    if (githubProfileSaveBtn && githubProfileInput && githubProfileSaveBtn.dataset.boundClick !== '1') {
+      githubProfileSaveBtn.dataset.boundClick = '1';
+      githubProfileSaveBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const rawValue = String(githubProfileInput.value || '').trim();
+        const normalizedValue = normalizeGithubProfileUrl(rawValue);
+
+        if (rawValue && !normalizedValue) {
+          if (githubProfileStatus) {
+            githubProfileStatus.textContent = 'Use um link válido do GitHub, como https://github.com/seuusuario.';
+            githubProfileStatus.className = 'import-status error';
+          }
+          return;
+        }
+
+        try {
+          if (window.Storage && typeof window.Storage.saveProfileSettings === 'function') {
+            window.Storage.saveProfileSettings({ githubProfileUrl: normalizedValue });
+          }
+          githubProfileInput.value = normalizedValue;
+          if (typeof window.refreshGithubDashboard === 'function') {
+            await window.refreshGithubDashboard(true);
+          }
+          updateProfilePage();
+          if (githubProfileStatus) {
+            githubProfileStatus.textContent = normalizedValue
+              ? 'Perfil do GitHub atualizado com sucesso.'
+              : 'GitHub personalizado removido. O painel voltou ao perfil padrão.';
+            githubProfileStatus.className = 'import-status success';
+          }
+        } catch {
+          if (githubProfileStatus) {
+            githubProfileStatus.textContent = 'Não foi possível salvar o perfil do GitHub agora.';
+            githubProfileStatus.className = 'import-status error';
+          }
+        }
+      });
+    }
+
+    if (githubProfileInput && githubProfileInput.dataset.boundKeydown !== '1') {
+      githubProfileInput.dataset.boundKeydown = '1';
+      githubProfileInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (githubProfileSaveBtn) githubProfileSaveBtn.click();
+        }
+      });
+    }
+
     const refreshVersionsBtn = document.getElementById('btn-refresh-versions');
     if (refreshVersionsBtn && refreshVersionsBtn.dataset.boundClick !== '1') {
       refreshVersionsBtn.dataset.boundClick = '1';
@@ -963,6 +1024,43 @@ function initShellInteractions() {
     return 'https://' + raw;
   }
 
+  function extractGithubUsername(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    const simple = raw.replace(/^@+/, '').trim();
+    if (/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(simple)) return simple;
+
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+    try {
+      const parsed = new URL(withProtocol);
+      const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+      if (host !== 'github.com') return '';
+      const firstSegment = parsed.pathname.split('/').filter(Boolean)[0] || '';
+      return /^[a-z\d](?:[a-z\d-]{0,38})$/i.test(firstSegment) ? firstSegment : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function normalizeGithubProfileUrl(value) {
+    const username = extractGithubUsername(value);
+    return username ? 'https://github.com/' + username : '';
+  }
+
+  function getCurrentGithubUsername() {
+    if (window.getGithubIdentity && typeof window.getGithubIdentity === 'function') {
+      const identity = window.getGithubIdentity();
+      return String((identity && identity.username) || '').trim().toLowerCase();
+    }
+    if (window.Storage && typeof window.Storage.getProfileSettings === 'function') {
+      const profileSettings = window.Storage.getProfileSettings();
+      const username = extractGithubUsername(profileSettings.githubProfileUrl || '');
+      if (username) return username.toLowerCase();
+    }
+    return 'hrrymnz';
+  }
+
   function formatWebsiteDisplay(value) {
     const raw = String(value || '').trim();
     if (!raw) return '-';
@@ -1014,6 +1112,10 @@ function initShellInteractions() {
     } catch {
       cache = {};
     }
+
+    const expectedUsername = getCurrentGithubUsername();
+    const cachedUsername = String(cache.username || '').trim().toLowerCase();
+    if (cachedUsername !== expectedUsername) return 0;
 
     const contributionsData = cache && cache.contributions && cache.contributions.data;
     const days = contributionsData && Array.isArray(contributionsData.contributions)
