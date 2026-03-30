@@ -1554,7 +1554,7 @@
     const profileHeadlineCount = document.getElementById('profile-headline-count');
     if (profileHeadlineCount) {
       const contributionsTotal = getProfileContributionTotal();
-      profileHeadlineCount.textContent = contributionsTotal + ' contribuicoes';
+      profileHeadlineCount.textContent = contributionsTotal + ' contribuições';
     }
 
     const statPlaylists = document.getElementById('stat-playlists');
