@@ -784,9 +784,9 @@ function preencherGraficoContribuicoes(dias, total) {
   totalEl.textContent = String(total);
 
   const primeiraData = dias.length ? parseDataLocal(dias[0].date) : null;
-  // A grade visual da UI comeca na segunda-feira.
-  // O heatmap e desenhado com semana iniciando na segunda-feira.
-  const deslocamentoInicial = primeiraData ? ((primeiraData.getDay() + 6) % 7) : 0;
+  // A grade segue o padrao do GitHub: domingo na primeira linha.
+  // Os rótulos "Seg / Qua / Sex" já assumem esse alinhamento visual.
+  const deslocamentoInicial = primeiraData ? primeiraData.getDay() : 0;
   const totalCelulas = deslocamentoInicial + dias.length;
 
   // Define quantidade de semanas exibidas; minimo 5 para não colapsar visualmente.
@@ -796,8 +796,7 @@ function preencherGraficoContribuicoes(dias, total) {
 
   const formatterMes = new Intl.DateTimeFormat("pt-BR", { month: "short" });
   const mesesRenderizados = new Set();
-  let ultimaColunaRotulada = 0;
-  let ultimoLabelMes = null;
+  const colunasRotuladas = new Set();
 
   // Renderiza o nome do mes apenas quando entra em um novo mes no fluxo de dias.
   dias.forEach((day, idx) => {
@@ -806,48 +805,40 @@ function preencherGraficoContribuicoes(dias, total) {
     const semanaColuna = Math.floor((deslocamentoInicial + idx) / 7) + 1;
 
     if (!mesesRenderizados.has(mesKey)) {
-      // Quando a virada de mes cai na mesma coluna de semana, mantemos apenas
-      // o rótulo mais recente para evitar o "mês extra" sobreposto no topo.
-      if (semanaColuna === ultimaColunaRotulada && ultimoLabelMes) {
-        ultimoLabelMes.textContent = formatterMes.format(data).replace(".", "");
+      // Quando dois meses caem na mesma coluna de semana, deslocamos o rótulo
+      // mais novo para a próxima coluna livre para manter ambos visíveis.
+      let colunaRotulo = semanaColuna;
+      while (colunaRotulo <= colunas && colunasRotuladas.has(colunaRotulo)) {
+        colunaRotulo += 1;
+      }
+
+      if (colunaRotulo > colunas) {
         mesesRenderizados.add(mesKey);
         return;
       }
 
       const label = document.createElement("span");
       label.className = "contribution-month-label";
-      label.style.gridColumn = String(semanaColuna);
+      label.style.gridColumn = String(colunaRotulo);
       label.textContent = formatterMes.format(data).replace(".", "");
       mesesContainer.appendChild(label);
       mesesRenderizados.add(mesKey);
-      ultimaColunaRotulada = semanaColuna;
-      ultimoLabelMes = label;
+      colunasRotuladas.add(colunaRotulo);
     }
   });
 
-  for (let i = 0; i < deslocamentoInicial; i += 1) {
-    const placeholder = document.createElement("div");
-    placeholder.className = "contribution-day contribution-day-placeholder";
-    placeholder.setAttribute("aria-hidden", "true");
-    container.appendChild(placeholder);
-  }
-
   // Renderiza cada celula do heatmap com nivel de intensidade (0 a 4).
-  dias.forEach(day => {
+  dias.forEach((day, idx) => {
     const bloco = document.createElement("div");
     const level = Number(day.level) || 0;
     bloco.className = `contribution-day level-${Math.min(4, Math.max(0, level))}`;
     bloco.title = `${day.date} - ${day.count || 0} contribuições`;
+    if (idx === 0) {
+      bloco.style.gridColumn = "1";
+      bloco.style.gridRow = String(deslocamentoInicial + 1);
+    }
     container.appendChild(bloco);
   });
-
-  const preenchimentoFinal = (colunas * 7) - totalCelulas;
-  for (let i = 0; i < preenchimentoFinal; i += 1) {
-    const placeholder = document.createElement("div");
-    placeholder.className = "contribution-day contribution-day-placeholder";
-    placeholder.setAttribute("aria-hidden", "true");
-    container.appendChild(placeholder);
-  }
 }
 
 function renderizarGraficoContribuicoes(dataContribuicoes) {
