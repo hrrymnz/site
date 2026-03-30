@@ -306,7 +306,7 @@ function App() {
             </div>
 
             <div className="painel-commits-github">
-              <h3>Ultimos Commits</h3>
+              <h3>Últimos Commits</h3>
               <div className="painel-superficie">
                 <div className="github-commits-header">
                   <div className="github-controls">
