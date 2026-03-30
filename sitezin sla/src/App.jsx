@@ -496,7 +496,7 @@ function App() {
                 <section className="settings-modern-section settings-section-card settings-sync-card">
                   <header className="settings-section-card-head">
                     <h4>Sincronização</h4>
-                    <p>Status atual da conta e ultima vez em que os dados chegaram ao servidor.</p>
+                    <p>Status atual da conta e última vez em que os dados chegaram ao servidor.</p>
                   </header>
                   <div className="settings-sync-meta settings-sync-meta-card">
                     <small className="settings-sync-caption">Status</small>
@@ -504,7 +504,7 @@ function App() {
                       Pronto para sincronizar
                     </span>
                     <small id="sync-status-timestamp" className="settings-sync-timestamp" aria-live="polite">
-                      Ultima sync: -
+                      Última sync: -
                     </small>
                   </div>
                 </section>
@@ -512,7 +512,7 @@ function App() {
                 <section className="settings-modern-section settings-section-card settings-github-card">
                   <header className="settings-section-card-head">
                     <h4>GitHub</h4>
-                    <p>Escolha qual perfil alimenta o painel de contribuicoes e commits da pagina inicial.</p>
+                    <p>Escolha qual perfil alimenta o painel de contribuiçõe e commits da página inicial.</p>
                   </header>
                   <div className="settings-github-actions">
                     <input
@@ -529,7 +529,7 @@ function App() {
                 <section className="settings-modern-section settings-section-card settings-backup-card">
                   <header className="settings-section-card-head">
                     <h4>Backup</h4>
-                    <p>Exporte e importe seus dados sem perder informacoes.</p>
+                    <p>Exporte e importe seus dados sem perder informações.</p>
                   </header>
                   <div className="settings-pref-actions settings-backup-actions">
                     <button type="button" className="btn-export" id="btn-export">Exportar Backup (.json)</button>
