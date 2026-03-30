@@ -512,7 +512,7 @@ function App() {
                 <section className="settings-modern-section settings-section-card settings-github-card">
                   <header className="settings-section-card-head">
                     <h4>GitHub</h4>
-                    <p>Escolha qual perfil alimenta o painel de contribuiçõe e commits da página inicial.</p>
+                    <p>Escolha qual perfil alimenta o painel de contribuições e commits da página inicial.</p>
                   </header>
                   <div className="settings-github-actions">
                     <input
