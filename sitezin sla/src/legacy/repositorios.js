@@ -796,6 +796,8 @@ function preencherGraficoContribuicoes(dias, total) {
 
   const formatterMes = new Intl.DateTimeFormat("pt-BR", { month: "short" });
   const mesesRenderizados = new Set();
+  let ultimaColunaRotulada = 0;
+  let ultimoLabelMes = null;
 
   // Renderiza o nome do mes apenas quando entra em um novo mes no fluxo de dias.
   dias.forEach((day, idx) => {
@@ -804,12 +806,22 @@ function preencherGraficoContribuicoes(dias, total) {
     const semanaColuna = Math.floor((deslocamentoInicial + idx) / 7) + 1;
 
     if (!mesesRenderizados.has(mesKey)) {
+      // Quando a virada de mes cai na mesma coluna de semana, mantemos apenas
+      // o rótulo mais recente para evitar o "mês extra" sobreposto no topo.
+      if (semanaColuna === ultimaColunaRotulada && ultimoLabelMes) {
+        ultimoLabelMes.textContent = formatterMes.format(data).replace(".", "");
+        mesesRenderizados.add(mesKey);
+        return;
+      }
+
       const label = document.createElement("span");
       label.className = "contribution-month-label";
       label.style.gridColumn = String(semanaColuna);
       label.textContent = formatterMes.format(data).replace(".", "");
       mesesContainer.appendChild(label);
       mesesRenderizados.add(mesKey);
+      ultimaColunaRotulada = semanaColuna;
+      ultimoLabelMes = label;
     }
   });
 

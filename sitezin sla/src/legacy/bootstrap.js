@@ -1,4 +1,4 @@
-function initShellInteractions() {
+﻿function initShellInteractions() {
   // Mede sidebar e topbar reais para manter os offsets do layout fixo alinhados
   // com a interface atual, inclusive apos resize e troca de pagina.
   const syncShellLayoutMetrics = () => {
@@ -95,7 +95,7 @@ function initShellInteractions() {
       if (hash === 'notifications') {
         activateStandalonePage('notifications', {
           eraColor: 'settings',
-          title: 'Notificações'
+          title: 'Notificacoes'
         });
         return;
       }
@@ -120,7 +120,7 @@ function initShellInteractions() {
         e.preventDefault();
         activateStandalonePage('notifications', {
           eraColor: 'settings',
-          title: 'Notificações'
+          title: 'Notificacoes'
         });
       });
     }
@@ -723,7 +723,6 @@ function initShellInteractions() {
 
     const githubProfileInput = document.getElementById('settings-github-profile-url');
     const githubProfileSaveBtn = document.getElementById('settings-github-save-btn');
-    const githubProfileStatus = document.getElementById('settings-github-status');
 
     function loadGithubSettingsField() {
       if (!githubProfileInput || !window.Storage || typeof window.Storage.getProfileSettings !== 'function') return;
@@ -741,10 +740,7 @@ function initShellInteractions() {
         const normalizedValue = normalizeGithubProfileUrl(rawValue);
 
         if (rawValue && !normalizedValue) {
-          if (githubProfileStatus) {
-            githubProfileStatus.textContent = 'Use um link válido do GitHub, como https://github.com/seuusuario.';
-            githubProfileStatus.className = 'import-status error';
-          }
+          showAppToast('Use um link valido do GitHub, como https://github.com/seuusuario.', 'error');
           return;
         }
 
@@ -757,17 +753,14 @@ function initShellInteractions() {
             await window.refreshGithubDashboard(true);
           }
           updateProfilePage();
-          if (githubProfileStatus) {
-            githubProfileStatus.textContent = normalizedValue
+          showAppToast(
+            normalizedValue
               ? 'Perfil do GitHub atualizado com sucesso.'
-              : 'GitHub personalizado removido. O painel voltou ao perfil padrão.';
-            githubProfileStatus.className = 'import-status success';
-          }
+              : 'GitHub personalizado removido. O painel voltou ao perfil padrao.',
+            'success'
+          );
         } catch {
-          if (githubProfileStatus) {
-            githubProfileStatus.textContent = 'Não foi possível salvar o perfil do GitHub agora.';
-            githubProfileStatus.className = 'import-status error';
-          }
+          showAppToast('Nao foi possivel salvar o perfil do GitHub agora.', 'error');
         }
       });
     }
@@ -1574,8 +1567,45 @@ function initShellInteractions() {
     if (statTags) statTags.textContent = tagsCount;
   }
 
+  let appToastTimer = null;
+
+  function showAppToast(message, level = 'success') {
+    const toast = document.getElementById('app-toast');
+    const text = document.getElementById('app-toast-text');
+    if (!toast || !text) return;
+
+    text.textContent = String(message || '').trim();
+    toast.dataset.level = String(level || 'success');
+    toast.hidden = !text.textContent;
+    toast.classList.toggle('is-visible', !toast.hidden);
+
+    clearTimeout(appToastTimer);
+    if (toast.hidden) return;
+
+    appToastTimer = window.setTimeout(() => {
+      toast.classList.remove('is-visible');
+      toast.hidden = true;
+    }, 3000);
+  }
+
+  function formatSyncTimestamp(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'Ultima sync: -';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return 'Ultima sync: -';
+
+    const now = new Date();
+    const sameDay = date.toDateString() === now.toDateString();
+    const dayLabel = sameDay
+      ? 'hoje'
+      : date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const hourLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `Ultima sync: ${dayLabel} as ${hourLabel}`;
+  }
+
   function bindSyncStatusIndicator() {
     const indicator = document.getElementById('sync-status-indicator');
+    const timestamp = document.getElementById('sync-status-timestamp');
     if (!indicator || indicator.dataset.boundSyncStatus === '1') return;
 
     indicator.dataset.boundSyncStatus = '1';
@@ -1583,9 +1613,14 @@ function initShellInteractions() {
     const applySyncStatus = (detail = {}) => {
       const status = String(detail.status || 'idle');
       const message = String(detail.message || 'Pronto para sincronizar');
+      const lastSyncedAt = String(detail.lastSyncedAt || '');
       indicator.dataset.status = status;
       indicator.textContent = message;
       indicator.title = message;
+      if (timestamp) {
+        timestamp.textContent = formatSyncTimestamp(lastSyncedAt);
+        timestamp.title = lastSyncedAt || '';
+      }
     };
 
     window.addEventListener('storage-sync-status', (event) => {
@@ -1763,6 +1798,14 @@ function initShellInteractions() {
     refreshProfileHeader();
     refreshLocalVersions();
     updateProfilePage();
+    const githubProfileInput = document.getElementById('settings-github-profile-url');
+    if (githubProfileInput && window.Storage && typeof window.Storage.getProfileSettings === 'function') {
+      const profileSettings = window.Storage.getProfileSettings();
+      githubProfileInput.value = String(profileSettings.githubProfileUrl || '').trim();
+    }
+    if (typeof window.refreshGithubDashboard === 'function') {
+      window.refreshGithubDashboard(false).catch(() => {});
+    }
   }
 
   function bindRemoteStateRefresh() {
@@ -1976,6 +2019,9 @@ function initShellInteractions() {
 }
 
 export default initShellInteractions;
+
+
+
 
 
 

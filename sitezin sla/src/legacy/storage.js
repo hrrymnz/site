@@ -47,7 +47,8 @@ const Storage = {
   getSyncStatus() {
     return {
       status: this.syncStatus || "idle",
-      message: this.syncStatusMessage || "Pronto para sincronizar"
+      message: this.syncStatusMessage || "Pronto para sincronizar",
+      lastSyncedAt: String(this.lastRemoteUpdatedAt || "")
     };
   },
 

@@ -6264,33 +6264,40 @@ body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
 }
 
 #page-settings .settings-modern-section {
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 #page-settings .settings-modern-section h4 {
-  margin: 0 0 12px;
-  font-size: 1.02rem;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e6ebf5;
+  font-size: 1.08rem;
   color: #1f2937;
   font-weight: 700;
 }
 
 #page-settings .settings-pref-list {
-  border-top: 1px solid #e6ebf5;
+  display: grid;
+  gap: 12px;
 }
 
 #page-settings .settings-pref-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid #e6ebf5;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #e6ebf5;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
 #page-settings .settings-pref-copy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  flex: 1 1 280px;
 }
 
 #page-settings .settings-pref-copy strong {
@@ -6312,17 +6319,21 @@ body.app-theme-dark[data-era="evermore"] #page-evermore .x-tab.active {
 }
 
 #page-settings .settings-github-pref {
-  align-items: flex-start;
+  align-items: center;
 }
 
 #page-settings .settings-github-actions {
-  flex: 1 1 360px;
-  justify-content: flex-end;
+  flex: 1 1 420px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  justify-content: stretch;
 }
 
 #page-settings .settings-inline-input {
-  width: min(100%, 340px);
-  min-width: 260px;
+  width: 100%;
+  min-width: 0;
   border: 1px solid #d1d9ea;
   border-radius: 10px;
   background: #ffffff;
@@ -6407,9 +6418,18 @@ body.app-theme-dark .sync-status-indicator[data-status="local"] {
 }
 
 body.app-theme-dark #page-settings .settings-pref-list,
-body.app-theme-dark #page-settings .settings-pref-item,
 body.app-theme-dark #page-settings .settings-modern-actions {
   border-color: var(--border);
+}
+
+body.app-theme-dark #page-settings .settings-modern-section h4 {
+  border-color: var(--border);
+}
+
+body.app-theme-dark #page-settings .settings-pref-item {
+  background: var(--dark-panel);
+  border-color: var(--dark-border-strong);
+  box-shadow: none;
 }
 
 body.app-theme-dark #page-settings .settings-inline-input {
@@ -6485,7 +6505,7 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
 
   #page-settings .settings-github-actions {
     width: 100%;
-    justify-content: stretch;
+    grid-template-columns: 1fr;
   }
 
   #page-settings .settings-inline-input {
@@ -6507,6 +6527,61 @@ body.app-theme-dark #page-settings #btn-refresh-versions {
   #page-settings .settings-modern-actions > button {
     width: 100%;
   }
+}
+
+.settings-sync-timestamp {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.app-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #111827;
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+.app-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-toast[data-level="success"] {
+  background: rgba(31, 191, 130, 0.96);
+  color: #08140e;
+}
+
+.app-toast[data-level="error"] {
+  background: rgba(235, 83, 83, 0.96);
+  color: #ffffff;
+}
+
+body.app-theme-dark .app-toast {
+  background: color-mix(in oklab, var(--dark-panel) 86%, #000000 14%);
+  color: var(--text);
+  border: 1px solid var(--dark-border-strong);
+}
+
+body.app-theme-dark .app-toast[data-level="success"] {
+  background: rgba(31, 191, 130, 0.2);
+  color: #9ae7bf;
+  border-color: rgba(31, 191, 130, 0.35);
+}
+
+body.app-theme-dark .app-toast[data-level="error"] {
+  background: rgba(235, 83, 83, 0.18);
+  color: #ffb6b6;
+  border-color: rgba(235, 83, 83, 0.32);
 }
 
 /* ===== MOBILE OPTIMIZATIONS ===== */

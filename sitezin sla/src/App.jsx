@@ -492,73 +492,71 @@ function App() {
                 <p>Preferências, backup e histórico.</p>
               </header>
 
-              <section className="settings-modern-section">
-                <h4>Dados</h4>
-                <div className="settings-pref-list">
-                  <div className="settings-pref-item settings-sync-item">
-                    <div className="settings-pref-copy">
-                      <strong>Sincronização</strong>
-                      <span>Status atual de sincronização desta conta com o servidor.</span>
-                    </div>
-                    <div className="settings-sync-meta">
-                      <small className="settings-sync-caption">Status</small>
-                      <span id="sync-status-indicator" className="sync-status-indicator settings-sync-indicator" data-status="idle" aria-live="polite">
-                        Pronto para sincronizar
-                      </span>
-                    </div>
+              <div className="settings-sections-grid">
+                <section className="settings-modern-section settings-section-card settings-sync-card">
+                  <header className="settings-section-card-head">
+                    <h4>Sincronização</h4>
+                    <p>Status atual da conta e ultima vez em que os dados chegaram ao servidor.</p>
+                  </header>
+                  <div className="settings-sync-meta settings-sync-meta-card">
+                    <small className="settings-sync-caption">Status</small>
+                    <span id="sync-status-indicator" className="sync-status-indicator settings-sync-indicator" data-status="idle" aria-live="polite">
+                      Pronto para sincronizar
+                    </span>
+                    <small id="sync-status-timestamp" className="settings-sync-timestamp" aria-live="polite">
+                      Ultima sync: -
+                    </small>
                   </div>
-                  <div className="settings-pref-item settings-github-pref">
-                    <div className="settings-pref-copy">
-                      <strong>Perfil do GitHub</strong>
-                      <span>Use qualquer link do GitHub no painel de contribuições e commits da página inicial.</span>
-                    </div>
-                    <div className="settings-pref-actions settings-github-actions">
-                      <input
-                        type="url"
-                        id="settings-github-profile-url"
-                        className="settings-inline-input"
-                        placeholder="https://github.com/seuusuario"
-                        maxLength="200"
-                      />
-                      <button type="button" className="btn-import" id="settings-github-save-btn">Salvar GitHub</button>
-                    </div>
-                  </div>
-                  <div className="settings-pref-item">
-                    <div className="settings-pref-copy">
-                      <strong>Backup de dados</strong>
-                      <span>Exporte e importe seus dados sem perder informações.</span>
-                    </div>
-                    <div className="settings-pref-actions">
-                      <button type="button" className="btn-export" id="btn-export">Exportar Backup (.json)</button>
-                      <div className="import-wrapper">
-                        <button type="button" className="btn-import" id="btn-import">Importar Backup</button>
-                        <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p className="import-status" id="settings-github-status"></p>
-                <p className="import-status" id="import-status"></p>
-              </section>
+                </section>
 
-              <section className="settings-modern-section">
-                <h4>Histórico de versões</h4>
-                <div className="settings-pref-list">
-                  <div className="settings-pref-item">
-                    <div className="settings-pref-copy">
-                      <strong>Versões salvas</strong>
-                      <span>Até 5 versões locais e 5 versões do servidor para restauração rápida.</span>
+                <section className="settings-modern-section settings-section-card settings-github-card">
+                  <header className="settings-section-card-head">
+                    <h4>GitHub</h4>
+                    <p>Escolha qual perfil alimenta o painel de contribuicoes e commits da pagina inicial.</p>
+                  </header>
+                  <div className="settings-github-actions">
+                    <input
+                      type="url"
+                      id="settings-github-profile-url"
+                      className="settings-inline-input"
+                      placeholder="https://github.com/seuusuario"
+                      maxLength="200"
+                    />
+                    <button type="button" className="btn-import" id="settings-github-save-btn">Salvar GitHub</button>
+                  </div>
+                </section>
+
+                <section className="settings-modern-section settings-section-card settings-backup-card">
+                  <header className="settings-section-card-head">
+                    <h4>Backup</h4>
+                    <p>Exporte e importe seus dados sem perder informacoes.</p>
+                  </header>
+                  <div className="settings-pref-actions settings-backup-actions">
+                    <button type="button" className="btn-export" id="btn-export">Exportar Backup (.json)</button>
+                    <div className="import-wrapper">
+                      <button type="button" className="btn-import" id="btn-import">Importar Backup</button>
+                      <input type="file" id="import-file" accept=".json" style={{ display: 'none' }} />
+                    </div>
+                  </div>
+                  <p className="import-status" id="import-status"></p>
+                </section>
+
+                <section className="settings-modern-section settings-section-card settings-version-card">
+                  <header className="settings-section-card-head settings-section-card-head-row">
+                    <div>
+                      <h4>Histórico de versões</h4>
+                      <p>Até 5 versões locais e 5 versões do servidor para restauração rápida.</p>
                     </div>
                     <div className="settings-pref-actions">
                       <button type="button" className="btn-export" id="btn-refresh-versions">Atualizar lista</button>
                     </div>
-                  </div>
-                </div>
-                <ul id="local-versions-list" className="local-versions-list">
-                  <li className="local-version-empty">Nenhuma versão local encontrada.</li>
-                </ul>
-                <p className="import-status" id="versions-status"></p>
-              </section>
+                  </header>
+                  <ul id="local-versions-list" className="local-versions-list">
+                    <li className="local-version-empty">Nenhuma versão local encontrada.</li>
+                  </ul>
+                  <p className="import-status" id="versions-status"></p>
+                </section>
+              </div>
 
               <div className="settings-modern-actions">
                 <button type="button" className="settings-cancel-btn" id="settings-close-btn">Fechar</button>
@@ -773,6 +771,9 @@ function App() {
             <button type="button" className="modal-btn-confirm-delete" id="discard-profile-confirm">Descartar</button>
           </div>
         </div>
+      </div>
+      <div id="app-toast" className="app-toast" hidden aria-live="polite">
+        <span id="app-toast-text"></span>
       </div>
 	      <div className="modal-overlay" id="modal-edit-repo">
 	        <div className="modal-content">
