@@ -802,7 +802,7 @@ function preencherGraficoContribuicoes(dias, total) {
   mesesContainer.style.setProperty("--graph-columns", String(colunas));
 
   const formatterMes = new Intl.DateTimeFormat("pt-BR", { month: "short" });
-  const MIN_GAP_COLUNAS_ROTULO = 2;
+  const MIN_GAP_COLUNAS_ROTULO = 3;
   const mesesVisiveis = new Map();
 
   dias.forEach((day, idx) => {
@@ -820,21 +820,27 @@ function preencherGraficoContribuicoes(dias, total) {
   });
 
   const entradasMes = Array.from(mesesVisiveis.values());
-  let ultimaColunaRotulo = -Infinity;
+  const mesesFiltrados = [];
+  let colunaMaisNovaMantida = Infinity;
 
-  entradasMes.forEach((mes) => {
-    let semanaColuna = mes.realWeekColumn;
-    if ((semanaColuna - ultimaColunaRotulo) < MIN_GAP_COLUNAS_ROTULO) {
-      semanaColuna = ultimaColunaRotulo + MIN_GAP_COLUNAS_ROTULO;
+  // Mantemos os meses mais recentes ancorados na coluna real do primeiro dia
+  // visivel daquele mes. Se dois labels ficarem proximos demais, escondemos o
+  // mais antigo em vez de deslocar o mais novo.
+  for (let i = entradasMes.length - 1; i >= 0; i -= 1) {
+    const mes = entradasMes[i];
+    if ((colunaMaisNovaMantida - mes.realWeekColumn) < MIN_GAP_COLUNAS_ROTULO) {
+      continue;
     }
-    if (semanaColuna > colunas) return;
+    mesesFiltrados.push(mes);
+    colunaMaisNovaMantida = mes.realWeekColumn;
+  }
 
+  mesesFiltrados.reverse().forEach((mes) => {
     const label = document.createElement("span");
     label.className = "contribution-month-label";
-    label.style.gridColumn = String(semanaColuna);
+    label.style.gridColumn = String(mes.realWeekColumn);
     label.textContent = mes.text;
     mesesContainer.appendChild(label);
-    ultimaColunaRotulo = semanaColuna;
   });
 
   for (let i = 0; i < deslocamentoInicial; i += 1) {
