@@ -783,62 +783,82 @@ function preencherGraficoContribuicoes(dias, total) {
   mesesContainer.innerHTML = "";
   totalEl.textContent = String(total);
 
+  const diffEmDias = (inicio, fim) => Math.round((normalizarInicioDoDia(fim) - normalizarInicioDoDia(inicio)) / 86400000);
   const primeiraData = dias.length ? parseDataLocal(dias[0].date) : null;
-  // A grade segue o padrao do GitHub: domingo na primeira linha.
-  // Os rótulos "Seg / Qua / Sex" já assumem esse alinhamento visual.
-  const deslocamentoInicial = primeiraData ? primeiraData.getDay() : 0;
-  const totalCelulas = deslocamentoInicial + dias.length;
+  const ultimaData = dias.length ? parseDataLocal(dias[dias.length - 1].date) : null;
+  const inicioGrade = primeiraData ? new Date(primeiraData) : null;
+  const fimGrade = ultimaData ? new Date(ultimaData) : null;
 
-  // Define quantidade de semanas exibidas; minimo 5 para não colapsar visualmente.
+  if (inicioGrade) inicioGrade.setDate(inicioGrade.getDate() - inicioGrade.getDay());
+  if (fimGrade) fimGrade.setDate(fimGrade.getDate() + (6 - fimGrade.getDay()));
+
+  const deslocamentoInicial = primeiraData && inicioGrade ? diffEmDias(inicioGrade, primeiraData) : 0;
+  const preenchimentoFinal = ultimaData && fimGrade ? diffEmDias(ultimaData, fimGrade) : 0;
+  const totalCelulas = deslocamentoInicial + dias.length + preenchimentoFinal;
+
+  // Exibe semanas completas de domingo a sabado, como no GitHub.
   const colunas = Math.max(5, Math.ceil(totalCelulas / 7));
   container.style.setProperty("--graph-columns", String(colunas));
   mesesContainer.style.setProperty("--graph-columns", String(colunas));
 
   const formatterMes = new Intl.DateTimeFormat("pt-BR", { month: "short" });
-  const mesesRenderizados = new Set();
-  const colunasRotuladas = new Set();
+  const MIN_GAP_COLUNAS_ROTULO = 2;
+  const mesesVisiveis = new Map();
 
-  // Renderiza o nome do mes apenas quando entra em um novo mes no fluxo de dias.
   dias.forEach((day, idx) => {
     const data = parseDataLocal(day.date);
     const mesKey = data.getFullYear() + "-" + data.getMonth();
-    const semanaColuna = Math.floor((deslocamentoInicial + idx) / 7) + 1;
-
-    if (!mesesRenderizados.has(mesKey)) {
-      // Quando dois meses caem na mesma coluna de semana, deslocamos o rótulo
-      // mais novo para a próxima coluna livre para manter ambos visíveis.
-      let colunaRotulo = semanaColuna;
-      while (colunaRotulo <= colunas && colunasRotuladas.has(colunaRotulo)) {
-        colunaRotulo += 1;
-      }
-
-      if (colunaRotulo > colunas) {
-        mesesRenderizados.add(mesKey);
-        return;
-      }
-
-      const label = document.createElement("span");
-      label.className = "contribution-month-label";
-      label.style.gridColumn = String(colunaRotulo);
-      label.textContent = formatterMes.format(data).replace(".", "");
-      mesesContainer.appendChild(label);
-      mesesRenderizados.add(mesKey);
-      colunasRotuladas.add(colunaRotulo);
+    if (!mesesVisiveis.has(mesKey)) {
+      mesesVisiveis.set(mesKey, {
+        text: formatterMes.format(data).replace(".", ""),
+        firstIndex: idx,
+        visibleDays: 0,
+        realWeekColumn: Math.floor((deslocamentoInicial + idx) / 7) + 1
+      });
     }
+    mesesVisiveis.get(mesKey).visibleDays += 1;
   });
 
+  const entradasMes = Array.from(mesesVisiveis.values());
+  let ultimaColunaRotulo = -Infinity;
+
+  entradasMes.forEach((mes) => {
+    let semanaColuna = mes.realWeekColumn;
+    if ((semanaColuna - ultimaColunaRotulo) < MIN_GAP_COLUNAS_ROTULO) {
+      semanaColuna = ultimaColunaRotulo + MIN_GAP_COLUNAS_ROTULO;
+    }
+    if (semanaColuna > colunas) return;
+
+    const label = document.createElement("span");
+    label.className = "contribution-month-label";
+    label.style.gridColumn = String(semanaColuna);
+    label.textContent = mes.text;
+    mesesContainer.appendChild(label);
+    ultimaColunaRotulo = semanaColuna;
+  });
+
+  for (let i = 0; i < deslocamentoInicial; i += 1) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "contribution-day contribution-day-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+    container.appendChild(placeholder);
+  }
+
   // Renderiza cada celula do heatmap com nivel de intensidade (0 a 4).
-  dias.forEach((day, idx) => {
+  dias.forEach((day) => {
     const bloco = document.createElement("div");
     const level = Number(day.level) || 0;
     bloco.className = `contribution-day level-${Math.min(4, Math.max(0, level))}`;
     bloco.title = `${day.date} - ${day.count || 0} contribuições`;
-    if (idx === 0) {
-      bloco.style.gridColumn = "1";
-      bloco.style.gridRow = String(deslocamentoInicial + 1);
-    }
     container.appendChild(bloco);
   });
+
+  for (let i = 0; i < preenchimentoFinal; i += 1) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "contribution-day contribution-day-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+    container.appendChild(placeholder);
+  }
 }
 
 function renderizarGraficoContribuicoes(dataContribuicoes) {
