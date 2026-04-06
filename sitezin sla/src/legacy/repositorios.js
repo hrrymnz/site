@@ -17,19 +17,45 @@ const githubState = {
   limiteCommits: 8
 };
 
+function getAppStorage() {
+  if (typeof window === "undefined") return null;
+  const appStorage = window.Storage;
+  return appStorage && typeof appStorage.getAll === "function" ? appStorage : null;
+}
+
 function getReposRecentesKey() {
-  if (typeof Storage !== "undefined" && Storage.REPOS_RECENTES_KEY) return Storage.REPOS_RECENTES_KEY;
+  const appStorage = getAppStorage();
+  if (appStorage && appStorage.REPOS_RECENTES_KEY) return appStorage.REPOS_RECENTES_KEY;
   return "reposRecentes";
 }
 
 function getGithubPrefsKey() {
-  if (typeof Storage !== "undefined" && Storage.GITHUB_PREFS_KEY) return Storage.GITHUB_PREFS_KEY;
+  const appStorage = getAppStorage();
+  if (appStorage && appStorage.GITHUB_PREFS_KEY) return appStorage.GITHUB_PREFS_KEY;
   return "githubDashboardPrefs";
 }
 
 function getGithubCacheKey() {
-  if (typeof Storage !== "undefined" && Storage.GITHUB_CACHE_KEY) return Storage.GITHUB_CACHE_KEY;
+  const appStorage = getAppStorage();
+  if (appStorage && appStorage.GITHUB_CACHE_KEY) return appStorage.GITHUB_CACHE_KEY;
   return "githubDashboardCache";
+}
+
+function getPinnedReposKey() {
+  const appStorage = getAppStorage();
+  if (appStorage && appStorage.REPOS_PINNED_KEY) return appStorage.REPOS_PINNED_KEY;
+  return "reposPinned";
+}
+
+function readJsonStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed == null ? fallback : parsed;
+  } catch {
+    return fallback;
+  }
 }
 
 function extrairGithubUsername(valor) {
@@ -54,8 +80,9 @@ function extrairGithubUsername(valor) {
 }
 
 function obterGithubIdentity() {
-  const configuredUrl = (typeof Storage !== "undefined" && typeof Storage.getProfileSettings === "function")
-    ? String(Storage.getProfileSettings().githubProfileUrl || "").trim()
+  const appStorage = getAppStorage();
+  const configuredUrl = (appStorage && typeof appStorage.getProfileSettings === "function")
+    ? String(appStorage.getProfileSettings().githubProfileUrl || "").trim()
     : "";
   const username = extrairGithubUsername(configuredUrl) || DEFAULT_GITHUB_USER;
 
@@ -90,12 +117,17 @@ function parseDataLocal(chave) {
 const REPO_PIN_SLOTS = 2;
 
 // Historico local de acessos recentes a repositórios.
-let reposRecentes = JSON.parse(localStorage.getItem(getReposRecentesKey())) || [];
-let reposPinned = carregarReposFixados();
+let reposRecentes = [];
+let reposPinned = [];
+
+function carregarReposRecentes() {
+  return readJsonStorage(getReposRecentesKey(), []);
+}
 
 function sincronizarEstadoPersistido() {
-  if (typeof Storage !== "undefined" && typeof Storage.scheduleSync === "function") {
-    Storage.scheduleSync();
+  const appStorage = getAppStorage();
+  if (appStorage && typeof appStorage.scheduleSync === "function") {
+    appStorage.scheduleSync();
   }
 }
 
@@ -137,9 +169,10 @@ function obterDescricaoRepo(item) {
 }
 
 function obterReposFearless() {
-  if (typeof Storage === "undefined" || typeof Storage.getByCategory !== "function") return [];
+  const appStorage = getAppStorage();
+  if (!appStorage || typeof appStorage.getByCategory !== "function") return [];
 
-  return Storage.getByCategory("fearless")
+  return appStorage.getByCategory("fearless")
     .map((item) => ({
       id: item.id,
       title: item.title || "Item da Fearless",
@@ -184,9 +217,10 @@ function normalizeRepoSlot(repo, index, reposFearless) {
 
 function carregarReposFixados() {
   const reposFearless = obterReposFearless();
-  const saved = (typeof Storage !== "undefined" && typeof Storage.getPinnedRepos === "function")
-    ? Storage.getPinnedRepos()
-    : (JSON.parse(localStorage.getItem("reposPinned")) || []);
+  const appStorage = getAppStorage();
+  const saved = (appStorage && typeof appStorage.getPinnedRepos === "function")
+    ? appStorage.getPinnedRepos()
+    : readJsonStorage(getPinnedReposKey(), []);
 
   const normalized = Array.isArray(saved)
     ? saved.slice(0, REPO_PIN_SLOTS).map((repo, idx) => normalizeRepoSlot(repo, idx, reposFearless))
@@ -210,10 +244,11 @@ function salvarReposFixados(nextRepos) {
     descricao: String(repo?.descricao || "").trim()
   }));
 
-  if (typeof Storage !== "undefined" && typeof Storage.savePinnedRepos === "function") {
-    Storage.savePinnedRepos(reposPinned);
+  const appStorage = getAppStorage();
+  if (appStorage && typeof appStorage.savePinnedRepos === "function") {
+    appStorage.savePinnedRepos(reposPinned);
   } else {
-    localStorage.setItem("reposPinned", JSON.stringify(reposPinned));
+    localStorage.setItem(getPinnedReposKey(), JSON.stringify(reposPinned));
     sincronizarEstadoPersistido();
   }
 
@@ -241,13 +276,14 @@ function abrirRepositório(slug, nomeExibicao = "") {
 }
 
 function abrirItemFearlessFixado(itemId, fallbackUrl = "") {
-  const item = typeof Storage !== "undefined" && typeof Storage.getAll === "function"
-    ? Storage.getAll().find((entry) => entry.id === itemId)
+  const appStorage = getAppStorage();
+  const item = appStorage && typeof appStorage.getAll === "function"
+    ? appStorage.getAll().find((entry) => entry.id === itemId)
     : null;
   const safeUrl = sanitizeUrl(item?.url || fallbackUrl);
 
-  if (item && typeof Storage !== "undefined" && typeof Storage.trackAccess === "function") {
-    Storage.trackAccess(item.id);
+  if (item && appStorage && typeof appStorage.trackAccess === "function") {
+    appStorage.trackAccess(item.id);
   }
 
   if (safeUrl) {
@@ -452,9 +488,10 @@ function renderizarRecentes() {
   // 1) Itens internos com lastAccessed
   // 2) Complemento com repos recentes
   // 3) Completa ate 3 slots para manter o painel alinhado
+  const appStorage = getAppStorage();
   let recentesItens = [];
-  if (typeof Storage !== "undefined") {
-    recentesItens = Storage.getAll()
+  recentesItens = appStorage
+    ? appStorage.getAll()
       .filter(item => item.lastAccessed && /^https?:\/\//i.test(item.url || ""))
       .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
       .slice(0, 3)
@@ -465,8 +502,8 @@ function renderizarRecentes() {
         url: item.url,
         era: item.category,
         itemType: item.type || "link"
-      }));
-  }
+      }))
+    : [];
 
   const recentesRepos = reposRecentes
     .map((entry) => (typeof entry === "string" ? { slug: entry, titulo: entry } : entry))
@@ -562,8 +599,9 @@ function renderizarRecentes() {
       return;
     }
 
-    if (link.dataset.type === "item" && link.dataset.id && typeof Storage !== "undefined") {
-      Storage.trackAccess(link.dataset.id);
+    const appStorage = getAppStorage();
+    if (link.dataset.type === "item" && link.dataset.id && appStorage) {
+      appStorage.trackAccess(link.dataset.id);
       setTimeout(() => renderizarRecentes(), 100);
     }
   });
@@ -656,8 +694,9 @@ function definirStatusCache(mensagem) {
 }
 
 function notificarGithub(payload = {}) {
-  if (typeof Storage === "undefined" || typeof Storage.addNotification !== "function") return;
-  Storage.addNotification(payload);
+  const appStorage = getAppStorage();
+  if (!appStorage || typeof appStorage.addNotification !== "function") return;
+  appStorage.addNotification(payload);
 }
 
 function formatarTempoRelativo(msPassados) {
@@ -990,6 +1029,8 @@ async function refreshGithubDashboard(forceRefresh = false) {
 
 function initRepositorios() {
   // Ordem de inicializacao: cards/recentes -> preferencias -> controles -> painel.
+  reposRecentes = carregarReposRecentes();
+  reposPinned = carregarReposFixados();
   configurarModalEdicaoRepos();
   renderizarRepos();
   renderizarRecentes();

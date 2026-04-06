@@ -8,6 +8,42 @@
 // 6) Eventos dos cards + drag and drop
 // 7) Highlights da pagina Debut
 import { marked } from "marked";
+import DOMPurify from "dompurify";
+
+const MARKDOWN_ALLOWED_TAGS = [
+  "a",
+  "blockquote",
+  "br",
+  "code",
+  "del",
+  "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "strong",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
+  "ul"
+];
+
+const MARKDOWN_ALLOWED_ATTR = [
+  "href",
+  "title",
+  "target",
+  "rel"
+];
 
 const App = {
   currentEra: "debut",
@@ -36,7 +72,12 @@ const App = {
   escapeHtml(str) {
     // Evita injecao de HTML ao renderizar texto vindo de input/storage.
     if (!str) return "";
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   },
 
   sanitizeUrl(url) {
@@ -79,43 +120,27 @@ const App = {
   },
 
   sanitizeMarkdownHtml(html) {
+    const clean = DOMPurify.sanitize(String(html || ""), {
+      ALLOWED_TAGS: MARKDOWN_ALLOWED_TAGS,
+      ALLOWED_ATTR: MARKDOWN_ALLOWED_ATTR,
+      ALLOW_ARIA_ATTR: false,
+      ALLOW_DATA_ATTR: false,
+      KEEP_CONTENT: false,
+      ALLOW_UNKNOWN_PROTOCOLS: false
+    });
+
     const template = document.createElement("template");
-    template.innerHTML = String(html || "");
+    template.innerHTML = clean;
 
-    const blockedTags = new Set(["script", "style", "iframe", "object", "embed", "link", "meta"]);
-    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
-    const toRemove = [];
-
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const tagName = String(node.tagName || "").toLowerCase();
-      if (blockedTags.has(tagName)) {
-        toRemove.push(node);
-        continue;
+    template.content.querySelectorAll("a").forEach((link) => {
+      const safeHref = this.sanitizeUrl(link.getAttribute("href") || "");
+      if (!safeHref) {
+        link.removeAttribute("href");
+      } else {
+        link.setAttribute("href", safeHref);
+        link.setAttribute("target", "_blank");
+        link.setAttribute("rel", "noopener noreferrer");
       }
-
-      [...node.attributes].forEach((attr) => {
-        const name = String(attr.name || "").toLowerCase();
-        const value = String(attr.value || "");
-
-        if (name.startsWith("on")) {
-          node.removeAttribute(attr.name);
-          return;
-        }
-
-        if ((name === "href" || name === "src") && /^\s*javascript:/i.test(value)) {
-          node.removeAttribute(attr.name);
-          return;
-        }
-
-        if (name === "style") {
-          node.removeAttribute(attr.name);
-        }
-      });
-    }
-
-    toRemove.forEach((node) => {
-      if (node && node.parentNode) node.parentNode.removeChild(node);
     });
 
     return template.innerHTML;
@@ -343,30 +368,32 @@ const App = {
   },
 
   renderFearlessRepoCard(item, safeUrl) {
+    const safeId = this.escapeHtml(item.id);
     const descricao = item.content
       ? this.escapeHtml(item.content.slice(0, 120)) + (item.content.length > 120 ? "..." : "")
       : (safeUrl ? this.escapeHtml(this.formatHost(item.url)) : "Sem descrição");
 
-    return '<div class="item-card fearless-repo-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
+    return '<div class="item-card fearless-repo-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + safeId + '">' +
       '<div class="fearless-repo-top">' +
         '<small class="fearless-repo-label">REPO</small>' +
         '<div class="item-card-actions">' +
           (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-          '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
+          '<button class="item-btn-pin" data-id="' + safeId + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
             '<i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i>' +
           '</button>' +
-          '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
+          '<button class="item-btn-delete" data-id="' + safeId + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
         '</div>' +
       '</div>' +
       '<strong class="item-title fearless-repo-title">' + this.escapeHtml(item.title) + '</strong>' +
       '<p class="fearless-repo-desc">' + descricao + '</p>' +
-      (safeUrl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="item-url fearless-repo-link" data-id="' + item.id + '">Abrir repositório</a>' : '') +
+      (safeUrl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="item-url fearless-repo-link" data-id="' + safeId + '">Abrir repositório</a>' : '') +
       (item.tags.length ? '<div class="item-tags">' + item.tags.map(t => '<span class="item-tag" data-tag="' + this.escapeHtml(t) + '">' + this.escapeHtml(t) + '</span>').join("") + '</div>' : '') +
       '<div class="item-meta"><span>' + (item.accessCount || 0) + ' acessos</span></div>' +
     '</div>';
   },
 
   renderFolkloreMarkdownCard(item) {
+    const safeId = this.escapeHtml(item.id);
     const previewText = this.stripMarkdownToText(item.content).slice(0, 150);
     const preview = previewText ? this.escapeHtml(previewText) : "Sem conteudo";
     const updated = new Date(item.updatedAt || item.createdAt || Date.now());
@@ -374,15 +401,15 @@ const App = {
       ? ""
       : "Atualizado em " + updated.toLocaleDateString("pt-BR");
 
-    return '<div class="item-card folklore-md-card ' + (item.pinned ? "pinned" : "") + '" draggable="false" data-id="' + item.id + '">' +
+    return '<div class="item-card folklore-md-card ' + (item.pinned ? "pinned" : "") + '" draggable="false" data-id="' + safeId + '">' +
       '<div class="item-card-header">' +
         '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
         '<div class="item-card-actions">' +
           (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-          '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
+          '<button class="item-btn-pin" data-id="' + safeId + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
             '<i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i>' +
           '</button>' +
-          '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
+          '<button class="item-btn-delete" data-id="' + safeId + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
         '</div>' +
       '</div>' +
       '<strong class="item-title">' + this.escapeHtml(item.title || "Documento Markdown") + '</strong>' +
@@ -467,6 +494,7 @@ const App = {
   },
 
   renderSpeakNowPlaylistWidget(item, safeUrl) {
+    const safeId = this.escapeHtml(item.id);
     const entityUrl = this.getSpotifyEntityUrl(item.url);
     if (!entityUrl) return "";
 
@@ -474,22 +502,22 @@ const App = {
 
     const cache = this.getSpotifyCoverCache();
     const coverData = cache[entityUrl] || null;
-    const coverUrl = coverData && coverData.thumbnail_url ? this.escapeHtml(coverData.thumbnail_url) : "";
+    const coverUrl = coverData && coverData.thumbnail_url ? this.sanitizeUrl(coverData.thumbnail_url) : "";
 
     const coverMarkup = coverUrl
       ? '<img class="speak-widget-cover" src="' + coverUrl + '" alt="Capa da playlist" loading="lazy" decoding="async" />'
       : '<div class="speak-widget-cover-fallback"><i data-lucide="music-2"></i></div>';
 
-    return '<div class="item-card speak-widget-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + item.id + '">' +
+    return '<div class="item-card speak-widget-card ' + (item.pinned ? "pinned" : "") + '" draggable="true" data-id="' + safeId + '">' +
       '<div class="item-card-header">' +
         '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
         '<div class="item-card-actions">' +
           (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-          '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '"><i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i></button>' +
-          '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
+          '<button class="item-btn-pin" data-id="' + safeId + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '"><i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i></button>' +
+          '<button class="item-btn-delete" data-id="' + safeId + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
         '</div>' +
       '</div>' +
-      '<a href="' + (safeUrl || '#') + '" target="_blank" rel="noopener noreferrer" class="speak-widget-cover-link" data-id="' + item.id + '">' +
+      '<a href="' + (safeUrl || '#') + '" target="_blank" rel="noopener noreferrer" class="speak-widget-cover-link" data-id="' + safeId + '">' +
         '<div class="speak-widget-cover-wrap">' + coverMarkup + '</div>' +
       '</a>' +
       '<strong class="item-title">' + this.escapeHtml(item.title) + '</strong>' +
@@ -678,7 +706,7 @@ const App = {
               const safeUrl = this.sanitizeUrl(item.url);
               const href = safeUrl || "#";
               const target = safeUrl ? ' target="_blank" rel="noopener noreferrer"' : '';
-              return '<a href="' + href + '" class="search-result-item" data-id="' + item.id + '"' + target + '>' +
+              return '<a href="' + href + '" class="search-result-item" data-id="' + this.escapeHtml(item.id) + '"' + target + '>' +
                 '<span class="search-result-type">' + this.typeIcon(item.type) + '</span>' +
                 '<div class="search-result-info">' +
                   '<strong>' + this.highlightText(this.escapeHtml(item.title), query) + '</strong>' +
@@ -1452,6 +1480,7 @@ const App = {
 
     const draggableAttr = era === "folklore" ? "false" : "true";
     container.innerHTML = items.map(item => {
+      const safeId = this.escapeHtml(item.id);
       const safeUrl = this.sanitizeUrl(item.url);
       const isFearlessRepoItem = String(item.type || "").toLowerCase() === "repo"
         || /^https?:\/\/github\.com\//i.test(String(item.url || ""));
@@ -1465,19 +1494,19 @@ const App = {
         const widget = this.renderSpeakNowPlaylistWidget(item, safeUrl);
         if (widget) return widget;
       }
-      return '<div class="item-card ' + (item.pinned ? "pinned" : "") + '" draggable="' + draggableAttr + '" data-id="' + item.id + '">' +
+      return '<div class="item-card ' + (item.pinned ? "pinned" : "") + '" draggable="' + draggableAttr + '" data-id="' + safeId + '">' +
         '<div class="item-card-header">' +
           '<span class="item-type-icon">' + this.typeIcon(item.type) + '</span>' +
           '<div class="item-card-actions">' +
             (item.pinned ? '<span class="pin-indicator"><i data-lucide="pin"></i></span>' : '') +
-            '<button class="item-btn-pin" data-id="' + item.id + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
+            '<button class="item-btn-pin" data-id="' + safeId + '" title="' + (item.pinned ? "Desafixar" : "Fixar") + '">' +
               '<i data-lucide="' + (item.pinned ? 'pin-off' : 'pin') + '"></i>' +
             '</button>' +
-            '<button class="item-btn-delete" data-id="' + item.id + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
+            '<button class="item-btn-delete" data-id="' + safeId + '" title="Excluir"><i data-lucide="trash-2"></i></button>' +
           '</div>' +
         '</div>' +
         '<strong class="item-title">' + this.escapeHtml(item.title) + '</strong>' +
-        (safeUrl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="item-url" data-id="' + item.id + '">' + this.escapeHtml(this.formatHost(item.url)) + '</a>' : '') +
+        (safeUrl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="item-url" data-id="' + safeId + '">' + this.escapeHtml(this.formatHost(item.url)) + '</a>' : '') +
         (item.content ? '<p class="item-content-preview">' + this.escapeHtml(item.content.slice(0, 100)) + (item.content.length > 100 ? "..." : "") + '</p>' : '') +
         (item.tags.length ? '<div class="item-tags">' + item.tags.map(t => '<span class="item-tag" data-tag="' + this.escapeHtml(t) + '">' + this.escapeHtml(t) + '</span>').join("") + '</div>' : '') +
         '<div class="item-meta"><span>' + (item.accessCount || 0) + ' acessos</span></div>' +
@@ -2325,13 +2354,14 @@ const App = {
 
       if (visiblePinned.length) {
         pinnedContainer.innerHTML = visiblePinned.map(item => {
+          const safeId = this.escapeHtml(item.id);
           const safeUrl = this.sanitizeUrl(item.url);
           const eraBadge = this.renderEraBadge(item.category);
           const eraKey = this.normalizeEra(item.category);
 
           if (safeUrl) {
             return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
-              '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + item.id + '">' +
+              '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + safeId + '">' +
                 '<span>' + this.typeIcon(item.type) + '</span>' +
                 '<b class="plus">' + this.escapeHtml(item.title) + '</b>' +
               '</a>' +
@@ -2417,9 +2447,10 @@ const App = {
 
       if (visibleAccessed.length) {
         accessedContainer.innerHTML = visibleAccessed.map(item => {
+          const safeId = this.escapeHtml(item.id);
           const eraKey = this.normalizeEra(item.category);
           return '<li class="highlight-row era-' + this.escapeHtml(eraKey) + '">' +
-              '<a href="' + this.sanitizeUrl(item.url) + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + item.id + '">' +
+              '<a href="' + this.sanitizeUrl(item.url) + '" target="_blank" rel="noopener noreferrer" class="highlight-link-main" data-id="' + safeId + '">' +
                 '<span>' + this.typeIcon(item.type) + '</span>' +
                 '<b class="plus">' + this.escapeHtml(item.title) + '</b>' +
                 '<small class="highlight-access-count">' + (item.accessCount || 0) + 'x</small>' +

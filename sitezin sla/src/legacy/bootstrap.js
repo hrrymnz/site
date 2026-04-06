@@ -1522,10 +1522,14 @@
     // Data de inscricao (primeira vez que acessou)
     const profileJoined = document.getElementById('profile-joined');
     if (profileJoined) {
-      const joined = localStorage.getItem('profileJoinedDate');
+      const joined = (window.Storage && typeof window.Storage.getProfileJoinedDate === 'function')
+        ? window.Storage.getProfileJoinedDate()
+        : '';
       if (!joined) {
         const now = new Date().toLocaleDateString('pt-BR');
-        localStorage.setItem('profileJoinedDate', now);
+        if (window.Storage && typeof window.Storage.saveProfileJoinedDate === 'function') {
+          window.Storage.saveProfileJoinedDate(now);
+        }
         profileJoined.textContent = now;
       } else {
         profileJoined.textContent = joined;

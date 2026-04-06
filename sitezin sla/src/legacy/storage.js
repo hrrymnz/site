@@ -22,8 +22,10 @@ const Storage = {
   NOTIFICATIONS_KEY: "swiftNotifications",
   AVATAR_KEY: "swiftAvatar",
   HEADER_KEY: "swiftProfileHeader",
+  PROFILE_JOINED_KEY: "swiftProfileJoinedDate",
   STATE_META_KEY: "swiftStateMeta",
   STATE_SCOPE: "default",
+  LOCAL_NAMESPACE_VERSION: "v2",
   currentUserId: null,
   currentWorkspace: "default",
   workspacesEnabled: false,
@@ -101,6 +103,7 @@ const Storage = {
 
     this.applyKeyPrefix();
     this.migrateLegacyKeysIfNeeded();
+    this.repairScopedLocalState();
   },
 
   setWorkspace(workspaceId) {
@@ -110,6 +113,7 @@ const Storage = {
       this.lastRemoteUpdatedAt = "";
       this.applyKeyPrefix();
       this.migrateLegacyKeysIfNeeded();
+      this.repairScopedLocalState();
       return;
     }
 
@@ -121,12 +125,54 @@ const Storage = {
     }
     this.applyKeyPrefix();
     this.migrateLegacyKeysIfNeeded();
+    this.repairScopedLocalState();
+  },
+
+  normalizeLocalNamespaceSegment(value, fallback = "default") {
+    const normalized = String(value || "")
+      .trim()
+      .replace(/[^a-z0-9._-]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 96);
+    return normalized || fallback;
+  },
+
+  getLocalNamespacePrefix() {
+    const userPrefix = this.currentUserId
+      ? this.normalizeLocalNamespaceSegment(String(this.currentUserId).toLowerCase(), "anon")
+      : "anon";
+    const workspacePrefix = this.normalizeLocalNamespaceSegment(this.currentWorkspace || "default", "default");
+    return `swift_${this.LOCAL_NAMESPACE_VERSION}_${userPrefix}_${workspacePrefix}_`;
+  },
+
+  getLegacyKeyCandidates(baseKey) {
+    const candidates = [];
+    const workspacePrefix = this.normalizeLocalNamespaceSegment(this.currentWorkspace || "default", "default");
+    const shortUserPrefix = this.currentUserId ? String(this.currentUserId).slice(0, 8) : "";
+
+    if (shortUserPrefix) {
+      candidates.push(`${shortUserPrefix}_${workspacePrefix}_${baseKey}`);
+      candidates.push(`${shortUserPrefix}_${baseKey}`);
+    }
+
+    const globallyScopedKeys = new Set([
+      "reposPinned",
+      "reposRecentes",
+      "githubDashboardPrefs",
+      "githubDashboardCache",
+      "profileJoinedDate"
+    ]);
+
+    if (globallyScopedKeys.has(baseKey)) {
+      candidates.push(baseKey);
+    }
+
+    return [...new Set(candidates.filter(Boolean))];
   },
 
   applyKeyPrefix() {
-    const userPrefix = this.currentUserId ? this.currentUserId.slice(0, 8) : "anon";
     const workspacePrefix = this.currentWorkspace || "default";
-    const prefix = `${userPrefix}_${workspacePrefix}_`;
+    const prefix = this.getLocalNamespacePrefix();
     const remoteScope = !this.currentUserId
       ? "default"
       : (!this.workspacesEnabled || workspacePrefix === "default")
@@ -150,40 +196,44 @@ const Storage = {
     this.LOCAL_VERSIONS_KEY = prefix + "swiftLocalVersions";
     this.NOTIFICATIONS_KEY = prefix + "swiftNotifications";
     this.SYNC_NOTIFICATIONS_META_KEY = prefix + "swiftSyncNotificationsMeta";
+    this.PROFILE_JOINED_KEY = prefix + "swiftProfileJoinedDate";
     this.STATE_META_KEY = prefix + "swiftStateMeta";
   },
 
 
   migrateLegacyKeysIfNeeded() {
     if (!this.currentUserId) return;
-    if ((this.currentWorkspace || "default") !== "default") return;
-
-    const userPrefix = this.currentUserId.slice(0, 8) + "_";
     const legacyMap = [
-      [this.KEY, userPrefix + "swiftItems"],
-      [this.ORDER_KEY, userPrefix + "swiftItemsOrder"],
-      [this.FEARLESS_SEED_KEY, userPrefix + "fearlessDefaultSeeded"],
-      [this.REPOS_PINNED_KEY, userPrefix + "reposPinned"],
-      [this.REPOS_RECENTES_KEY, userPrefix + "reposRecentes"],
-      [this.GITHUB_PREFS_KEY, userPrefix + "githubDashboardPrefs"],
-      [this.GITHUB_CACHE_KEY, userPrefix + "githubDashboardCache"],
-      [this.PROFILE_SETTINGS_KEY, userPrefix + "swiftProfileSettings"],
-      [this.AVATAR_KEY, userPrefix + "swiftAvatar"],
-      [this.HEADER_KEY, userPrefix + "swiftProfileHeader"],
-      [this.UI_PREFS_KEY, userPrefix + "swiftUiPrefs"]
+      [this.KEY, "swiftItems"],
+      [this.ORDER_KEY, "swiftItemsOrder"],
+      [this.FEARLESS_SEED_KEY, "fearlessDefaultSeeded"],
+      [this.REPOS_PINNED_KEY, "reposPinned"],
+      [this.REPOS_RECENTES_KEY, "reposRecentes"],
+      [this.GITHUB_PREFS_KEY, "githubDashboardPrefs"],
+      [this.GITHUB_CACHE_KEY, "githubDashboardCache"],
+      [this.PROFILE_SETTINGS_KEY, "swiftProfileSettings"],
+      [this.AVATAR_KEY, "swiftAvatar"],
+      [this.HEADER_KEY, "swiftProfileHeader"],
+      [this.UI_PREFS_KEY, "swiftUiPrefs"],
+      [this.LOCAL_VERSIONS_KEY, "swiftLocalVersions"],
+      [this.NOTIFICATIONS_KEY, "swiftNotifications"],
+      [this.SYNC_NOTIFICATIONS_META_KEY, "swiftSyncNotificationsMeta"],
+      [this.STATE_META_KEY, "swiftStateMeta"],
+      [this.PROFILE_JOINED_KEY, "profileJoinedDate"]
     ];
 
-    legacyMap.forEach(([nextKey, legacyKey]) => {
-      const legacyValue = localStorage.getItem(legacyKey);
-      const nextValue = localStorage.getItem(nextKey);
+    legacyMap.forEach(([nextKey, baseKey]) => {
+      this.getLegacyKeyCandidates(baseKey).forEach((legacyKey) => {
+        const legacyValue = localStorage.getItem(legacyKey);
+        if (!legacyValue) return;
+        const currentValue = localStorage.getItem(nextKey);
 
-      if (!legacyValue) return;
-
-      // Idempotente: promove legado quando destino nao existe ou parece menos completo.
-      if (!nextValue || legacyValue.length > nextValue.length) {
-        localStorage.setItem(nextKey, legacyValue);
-        localStorage.setItem(`${legacyKey}_migrated_at`, new Date().toISOString());
-      }
+        // Idempotente: promove legado quando destino nao existe ou parece menos completo.
+        if (!currentValue || legacyValue.length > currentValue.length) {
+          localStorage.setItem(nextKey, legacyValue);
+          localStorage.setItem(`${legacyKey}_migrated_at`, new Date().toISOString());
+        }
+      });
     });
   },
   DEFAULT_FEARLESS_CARDS: [
@@ -395,6 +445,23 @@ const Storage = {
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   },
 
+  sanitizeItemId(rawId) {
+    const normalized = typeof rawId === "string" ? rawId.trim() : "";
+    if (!normalized) return "";
+    return /^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$/i.test(normalized) ? normalized : "";
+  },
+
+  generateUniqueItemId(existingIds = null) {
+    let nextId = this.generateId();
+    if (!(existingIds instanceof Set)) return nextId;
+
+    while (existingIds.has(nextId)) {
+      nextId = this.generateId();
+    }
+
+    return nextId;
+  },
+
   isExplicitUrl(value) {
     const raw = String(value || "").trim();
     if (!raw) return false;
@@ -450,13 +517,20 @@ const Storage = {
       });
   },
 
-  normalizeItem(raw) {
+  normalizeItem(raw, options = {}) {
     const base = raw && typeof raw === "object" ? raw : {};
     const normalized = { ...base };
+    const originalId = typeof base.id === "string" ? base.id.trim() : "";
+    const existingIds = options.existingIds instanceof Set ? options.existingIds : null;
+    const idMap = this.isPlainObject(options.idMap) ? options.idMap : null;
 
-    let id = typeof base.id === "string" ? base.id.trim() : "";
-    if (!id) {
-      id = this.generateId();
+    let id = this.sanitizeItemId(originalId);
+    if (!id || (existingIds && existingIds.has(id))) {
+      id = this.generateUniqueItemId(existingIds);
+    }
+    if (existingIds) existingIds.add(id);
+    if (originalId && idMap && !Object.prototype.hasOwnProperty.call(idMap, originalId)) {
+      idMap[originalId] = id;
     }
     normalized.id = id;
 
@@ -487,6 +561,30 @@ const Storage = {
     }
 
     return normalized;
+  },
+
+  normalizeItemsCollection(rawItems) {
+    if (!Array.isArray(rawItems)) {
+      return { items: [], idMap: {}, validIds: new Set(), changed: !!rawItems };
+    }
+
+    const existingIds = new Set();
+    const idMap = {};
+    let changed = false;
+    const items = rawItems.map((entry) => {
+      const normalized = this.normalizeItem(entry, { existingIds, idMap });
+      if (!changed) {
+        changed = JSON.stringify(entry && typeof entry === "object" ? entry : {}) !== JSON.stringify(normalized);
+      }
+      return normalized;
+    });
+
+    return {
+      items,
+      idMap,
+      validIds: new Set(items.map((item) => item.id).filter(Boolean)),
+      changed
+    };
   },
 
   isPlainObject(value) {
@@ -690,22 +788,27 @@ const Storage = {
 
     importedItems.forEach((rawItem) => {
       const item = this.normalizeItem(rawItem);
+      const originalId = typeof rawItem?.id === "string" ? rawItem.id.trim() : "";
 
       if (existingIds.has(item.id)) {
-        idMap[item.id] = item.id;
+        if (originalId) idMap[originalId] = item.id;
         return;
       }
 
       const identity = this.getItemIdentity(item);
       const matchedId = identity ? identityToId.get(identity) : "";
       if (matchedId) {
-        idMap[item.id] = matchedId;
+        if (originalId) idMap[originalId] = matchedId;
         return;
       }
 
+      if (existingIds.has(item.id)) {
+        item.id = this.generateUniqueItemId(existingIds);
+      }
       mergedItems.push(item);
       existingIds.add(item.id);
-      idMap[item.id] = item.id;
+      if (originalId) idMap[originalId] = item.id;
+      if (!originalId) idMap[item.id] = item.id;
       if (identity) {
         identityToId.set(identity, item.id);
       }
@@ -834,6 +937,11 @@ const Storage = {
     );
     localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(mergedUiPrefs));
 
+    const currentJoined = this.getProfileJoinedDate();
+    if (!currentJoined && data.profileJoinedDate) {
+      this.saveProfileJoinedDate(data.profileJoinedDate);
+    }
+
     if (data.fearlessSeeded === true || localStorage.getItem(this.FEARLESS_SEED_KEY) === "1") {
       localStorage.setItem(this.FEARLESS_SEED_KEY, "1");
     }
@@ -851,8 +959,42 @@ const Storage = {
     return { addedItemsCount: itemMerge.addedCount };
   },
 
+  normalizeStoredStateReferences(itemsCollection = null) {
+    const itemState = itemsCollection || this.normalizeItemsCollection(this.safeParse(this.KEY, []));
+    const validIds = itemState.validIds;
+    const idMap = itemState.idMap;
+    const normalizedOrders = this.normalizeOrderMap(this.safeParse(this.ORDER_KEY, {}), validIds, idMap);
+    const normalizedPinnedRepos = this.safeParse(this.REPOS_PINNED_KEY, [])
+      .map((repo) => this.normalizePinnedRepo(repo, idMap))
+      .filter(Boolean);
+    const normalizedRecentes = this.normalizeReposRecentes(this.safeParse(this.REPOS_RECENTES_KEY, []));
+
+    return {
+      items: itemState.items,
+      orders: normalizedOrders,
+      reposPinned: normalizedPinnedRepos,
+      reposRecentes: normalizedRecentes,
+      changed:
+        itemState.changed ||
+        JSON.stringify(this.safeParse(this.ORDER_KEY, {})) !== JSON.stringify(normalizedOrders) ||
+        JSON.stringify(this.safeParse(this.REPOS_PINNED_KEY, [])) !== JSON.stringify(normalizedPinnedRepos) ||
+        JSON.stringify(this.safeParse(this.REPOS_RECENTES_KEY, [])) !== JSON.stringify(normalizedRecentes)
+    };
+  },
+
+  repairScopedLocalState() {
+    const normalizedState = this.normalizeStoredStateReferences();
+    if (!normalizedState.changed) return false;
+
+    localStorage.setItem(this.KEY, JSON.stringify(normalizedState.items));
+    localStorage.setItem(this.ORDER_KEY, JSON.stringify(normalizedState.orders));
+    localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(normalizedState.reposPinned));
+    localStorage.setItem(this.REPOS_RECENTES_KEY, JSON.stringify(normalizedState.reposRecentes));
+    return true;
+  },
+
   getAll() {
-    return this.safeParse(this.KEY, []);
+    return this.normalizeItemsCollection(this.safeParse(this.KEY, [])).items;
   },
 
   getSnapshot() {
@@ -868,7 +1010,8 @@ const Storage = {
       workspace: this.currentWorkspace || "default",
       fearlessSeeded: localStorage.getItem(this.FEARLESS_SEED_KEY) === "1",
       avatar: this.getAvatar() || null,
-      profileHeader: this.getProfileHeader() || null
+      profileHeader: this.getProfileHeader() || null,
+      profileJoinedDate: this.getProfileJoinedDate() || null
     };
   },
 
@@ -878,22 +1021,28 @@ const Storage = {
     const importedItems = Array.isArray(data.items)
       ? data.items
       : (Array.isArray(data.swiftItems) ? data.swiftItems : null);
+    let normalizedItemState = null;
 
     if (importedItems) {
-      const normalizedItems = importedItems.map((item) => this.normalizeItem(item));
-      localStorage.setItem(this.KEY, JSON.stringify(normalizedItems));
+      normalizedItemState = this.normalizeItemsCollection(importedItems);
+      localStorage.setItem(this.KEY, JSON.stringify(normalizedItemState.items));
     }
 
     if (data.orders && typeof data.orders === "object") {
-      localStorage.setItem(this.ORDER_KEY, JSON.stringify(data.orders));
+      const validIds = normalizedItemState ? normalizedItemState.validIds : new Set(this.getAll().map((item) => item.id));
+      const idMap = normalizedItemState ? normalizedItemState.idMap : null;
+      localStorage.setItem(this.ORDER_KEY, JSON.stringify(this.normalizeOrderMap(data.orders, validIds, idMap)));
     }
 
     if (Array.isArray(data.reposPinned)) {
-      localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(data.reposPinned));
+      const idMap = normalizedItemState ? normalizedItemState.idMap : null;
+      localStorage.setItem(this.REPOS_PINNED_KEY, JSON.stringify(
+        data.reposPinned.map((repo) => this.normalizePinnedRepo(repo, idMap)).filter(Boolean)
+      ));
     }
 
     if (Array.isArray(data.reposRecentes)) {
-      localStorage.setItem(this.REPOS_RECENTES_KEY, JSON.stringify(data.reposRecentes));
+      localStorage.setItem(this.REPOS_RECENTES_KEY, JSON.stringify(this.normalizeReposRecentes(data.reposRecentes)));
     }
 
     if (data.githubPrefs && typeof data.githubPrefs === "object") {
@@ -930,6 +1079,12 @@ const Storage = {
         localStorage.removeItem(this.HEADER_KEY);
       }
     }
+
+    if (Object.prototype.hasOwnProperty.call(data, "profileJoinedDate")) {
+      this.saveProfileJoinedDate(data.profileJoinedDate || "");
+    }
+
+    this.repairScopedLocalState();
   },
 
   snapshotScore(snapshot) {
@@ -992,6 +1147,7 @@ const Storage = {
 
     this.lastVersionAt = Date.now();
     this.lastVersionSignature = this.buildSnapshotSignature(state);
+    return state;
   },
 
   getServerScopeCandidates() {
@@ -1572,6 +1728,29 @@ const Storage = {
   // ===== 7) SETTINGS PROFILE =====
   getProfileSettings() {
     return this.safeParse(this.PROFILE_SETTINGS_KEY, {});
+  },
+
+  normalizeProfileJoinedDate(rawValue) {
+    const value = String(rawValue || "").trim();
+    if (!value) return "";
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleDateString("pt-BR");
+  },
+
+  getProfileJoinedDate() {
+    return this.normalizeProfileJoinedDate(localStorage.getItem(this.PROFILE_JOINED_KEY) || "");
+  },
+
+  saveProfileJoinedDate(value) {
+    const normalized = this.normalizeProfileJoinedDate(value);
+    if (!normalized) {
+      localStorage.removeItem(this.PROFILE_JOINED_KEY);
+      return "";
+    }
+    localStorage.setItem(this.PROFILE_JOINED_KEY, normalized);
+    return normalized;
   },
 
   saveProfileSettings(profileData, options = {}) {
