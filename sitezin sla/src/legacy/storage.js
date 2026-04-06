@@ -87,6 +87,18 @@ const Storage = {
     return this.getSyncStatus();
   },
 
+  isNetworkLikeError(message) {
+    return /failed to fetch|networkerror|fetch resource|load failed|network request failed/i.test(String(message || ""));
+  },
+
+  formatRemoteError(error, fallback = "N?o foi poss?vel sincronizar com o servidor.") {
+    const rawMessage = String(error?.message || error || "").trim();
+    if (this.isNetworkLikeError(rawMessage)) {
+      return "N?o foi poss?vel conectar ao servidor no momento.";
+    }
+    return rawMessage || fallback;
+  },
+
   setUser(userId, workspacesEnabled = false) {
     this.currentUserId = userId;
     this.workspacesEnabled = !!workspacesEnabled;
@@ -1110,8 +1122,8 @@ const Storage = {
     this.setSyncStatus(this.hasSupabase ? "saving" : "local");
     clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
-      this.pushStateToServer().catch(() => {
-        this.setSyncStatus(this.hasSupabase ? "error" : "local");
+      this.pushStateToServer().catch((error) => {
+        this.setSyncStatus(this.hasSupabase ? "error" : "local", this.formatRemoteError(error));
         // Mantem funcionamento offline/local mesmo sem backend disponivel.
       });
     }, 300);
@@ -1143,7 +1155,7 @@ const Storage = {
       .from('app_state_versions')
       .insert({ scope: this.STATE_SCOPE, state, label });
 
-    if (error) throw new Error("Falha ao criar versao: " + error.message);
+    if (error) throw new Error("Falha ao criar versao: " + this.formatRemoteError(error));
 
     this.lastVersionAt = Date.now();
     this.lastVersionSignature = this.buildSnapshotSignature(state);
@@ -1293,7 +1305,7 @@ const Storage = {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw new Error("Falha ao listar versoes: " + error.message);
+    if (error) throw new Error("Falha ao listar versoes: " + this.formatRemoteError(error));
     return data;
   },
 
@@ -1348,7 +1360,7 @@ const Storage = {
 
     if (error) {
       this.setSyncStatus("error");
-      throw new Error("Falha ao salvar estado: " + error.message);
+      throw new Error("Falha ao salvar estado: " + this.formatRemoteError(error));
     }
 
     this.hasPendingSync = false;
@@ -1369,8 +1381,8 @@ const Storage = {
       this.hasPendingSync = false;
       this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
       return true;
-    } catch {
-      this.setSyncStatus(this.hasSupabase ? "error" : "local");
+    } catch (error) {
+      this.setSyncStatus(this.hasSupabase ? "error" : "local", this.formatRemoteError(error));
       return false;
     }
   },
@@ -1407,8 +1419,8 @@ const Storage = {
       this.lastVersionSignature = this.buildSnapshotSignature(this.getSnapshot());
       this.setSyncStatus("saved", "Atualizado do servidor");
       return true;
-    } catch {
-      this.setSyncStatus("error");
+    } catch (error) {
+      this.setSyncStatus("error", this.formatRemoteError(error));
       return false;
     } finally {
       this.remoteRefreshInFlight = false;
@@ -1439,8 +1451,8 @@ const Storage = {
           this.hasPendingSync = false;
           this.setSyncStatus(this.hasSupabase ? "saved" : "local", this.hasSupabase ? "Salvo no servidor" : "");
         }
-      } catch {
-        this.setSyncStatus(this.hasSupabase ? "error" : "local");
+      } catch (error) {
+        this.setSyncStatus(this.hasSupabase ? "error" : "local", this.formatRemoteError(error));
       }
     }
 

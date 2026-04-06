@@ -31,10 +31,15 @@ export default function LoginPage({
     }
   }, [isRecoveryMode]);
 
+  const isNetworkLikeError = (message) => /failed to fetch|networkerror|fetch resource|load failed/i.test(String(message || ''));
+
   const getFriendlyError = (message) => {
     if (message === 'Invalid login credentials') return 'E-mail ou senha incorretos';
     if (message?.toLowerCase().includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
-    if (message?.toLowerCase().includes('autenticacao indisponivel')) return 'Login indisponível agora. As chaves do Supabase não foram carregadas neste ambiente.';
+    if (message?.toLowerCase().includes('autenticacao indisponivel')) return 'Login indisponível no momento. Tente novamente mais tarde.';
+    if (isNetworkLikeError(message)) {
+      return 'Não foi possível conectar no momento. Tente novamente em instantes.';
+    }
     return message || 'Ocorreu um erro. Tente novamente.';
   };
 
@@ -97,7 +102,7 @@ export default function LoginPage({
           <p className="login-error">Sua sessão expirou por inatividade. Faça login novamente.</p>
         )}
         {authStatus === 'unavailable' && (
-          <p className="login-error">Login indisponível agora. As chaves do Supabase não foram carregadas neste ambiente.</p>
+          <p className="login-error">Login indisponível no momento. Tente novamente mais tarde.</p>
         )}
 
         <form onSubmit={handleSubmit} className="login-form">
