@@ -192,7 +192,8 @@ const App = {
 
   getRedListPreview(item, maxLength = 88) {
     const source = String(item && item.content ? item.content : "");
-    const compact = source.replace(/\s+/g, " ").trim();
+    const stripped = source.replace(/<[^>]*>?/gm, '');
+    const compact = stripped.replace(/\s+/g, " ").trim();
     if (!compact) return "Sem conteúdo";
     return compact.slice(0, Math.max(0, Number(maxLength) || 88));
   },
@@ -667,6 +668,31 @@ const App = {
     const input = document.getElementById("search-input");
     const results = document.getElementById("search-results");
     if (!input || !results) return;
+    const searchWrap = input.closest(".search");
+    const topbar = input.closest(".topbar");
+
+    const openSearchUI = () => {
+      if (!topbar) return;
+      topbar.classList.add("search-open");
+    };
+
+    const closeSearchUI = () => {
+      if (!topbar) return;
+      topbar.classList.remove("search-open");
+    };
+
+    if (searchWrap) {
+      // On mobile the field starts collapsed; clicking the icon area should open/focus it.
+      searchWrap.addEventListener("click", (event) => {
+        if (event.target.closest(".search-results")) return;
+        openSearchUI();
+        if (event.target !== input) input.focus();
+      });
+    }
+
+    input.addEventListener("focus", () => {
+      openSearchUI();
+    });
 
     let timer;
     input.addEventListener("input", () => {
@@ -730,6 +756,7 @@ const App = {
         this.navigateToEra(pageLink.dataset.era);
         results.classList.remove("visible");
         input.value = "";
+        closeSearchUI();
         return;
       }
 
@@ -746,6 +773,7 @@ const App = {
         Storage.trackAccess(item.dataset.id);
         results.classList.remove("visible");
         input.value = "";
+        closeSearchUI();
         this.renderDebutHighlights();
       }
     });
@@ -753,7 +781,27 @@ const App = {
     document.addEventListener("click", (e) => {
       if (!e.target.closest(".search")) {
         results.classList.remove("visible");
+        closeSearchUI();
       }
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        results.classList.remove("visible");
+        closeSearchUI();
+        input.blur();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (document.activeElement && document.activeElement.closest && document.activeElement.closest(".search")) {
+          return;
+        }
+        if (!results.matches(":hover")) {
+          closeSearchUI();
+        }
+      }, 0);
     });
   },
 

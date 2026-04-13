@@ -20,6 +20,7 @@ function App() {
     requestPasswordReset,
     updatePassword
   } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [appThemeMode, setAppThemeMode] = useState(() => {
     if (typeof window === 'undefined') return 'light';
     return localStorage.getItem('app_theme_mode') || localStorage.getItem('login_theme_mode') || 'light';
@@ -36,11 +37,41 @@ function App() {
 
   const handleSignOut = async () => {
     document.body.setAttribute('data-era', 'debut');
+    setSidebarOpen(false);
     if (window.location.hash) {
       history.replaceState(null, '', window.location.pathname + window.location.search);
     }
     await authSignOut();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+
+    const mediaQuery = window.matchMedia('(max-width: 980px)');
+    const syncSidebarState = () => {
+      if (!mediaQuery.matches) {
+        setSidebarOpen(false);
+      }
+    };
+
+    syncSidebarState();
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncSidebarState);
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(syncSidebarState);
+    }
+
+    window.addEventListener('resize', syncSidebarState);
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', syncSidebarState);
+      } else if (typeof mediaQuery.removeListener === 'function') {
+        mediaQuery.removeListener(syncSidebarState);
+      }
+      window.removeEventListener('resize', syncSidebarState);
+    };
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -119,7 +150,14 @@ function App() {
   }, [appThemeMode, user]);
 
   if (loading) {
-    return <div className="login-page"><div className="login-card"><p style={{textAlign:'center',color:'#8a93b2'}}>Carregando sessao...</p></div></div>;
+    return (
+      <div className="login-page">
+        <div className="login-card app-loading-card" role="status" aria-live="polite" aria-busy="true">
+          <div className="app-loading-spinner" aria-hidden="true"></div>
+          <p className="app-loading-text">Carregando sessão...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -136,9 +174,23 @@ function App() {
   }
 
   return (
-    <main className="dashboard">
+    <main className={sidebarOpen ? 'dashboard sidebar-open' : 'dashboard'}>
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Fechar menu lateral"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       {/* Sidebar fixa com navegacao principal e controles globais do usuario. */}
-      <aside className="sidebar">
+      <aside className="sidebar" id="app-sidebar" onClickCapture={(event) => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+        if (!window.matchMedia('(max-width: 980px)').matches) return;
+        if (event.target instanceof Element && event.target.closest('a,button')) {
+          setSidebarOpen(false);
+        }
+      }}>
         <div className="brand-row">
           <span className="brand-icon-slot" aria-hidden="true">
             <img src={brandVector} alt="" className="brand-icon-image" />
@@ -178,20 +230,28 @@ function App() {
             </button>
           </div>
           <span className="sidebar-email" id="sidebar-user-name">{sidebarUserHandle}</span>
-          <button className="logout-btn" onClick={handleSignOut}><i data-lucide="log-out"></i>Sair</button>
+          <button className="logout-btn" onClick={handleSignOut} aria-label="Sair da conta"><i data-lucide="log-out"></i>Sair</button>
         </div>
       </aside>
 
       <section className="content">
         {/* Topbar compartilhada entre as eras e paginas standalone. */}
         <header className="topbar">
-          <h2 id="topbar-title">Início</h2>
+          <div className="topbar-left">
+            <button
+              type="button"
+              className="mobile-sidebar-toggle"
+              aria-label={sidebarOpen ? 'Fechar menu lateral' : 'Abrir menu lateral'}
+              aria-expanded={sidebarOpen}
+              aria-controls="app-sidebar"
+              onClick={() => setSidebarOpen((current) => !current)}
+            >
+              <i data-lucide="menu"></i>
+              <span className="visually-hidden">Menu</span>
+            </button>
+            <h2 id="topbar-title">Início</h2>
+          </div>
           <div className="topbar-right">
-            <div className="search">
-              <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
-              <input type="text" className="search-input" id="search-input" placeholder="Pesquisar algo..." autoComplete="off" />
-              <div className="search-results" id="search-results"></div>
-            </div>
             {ENABLE_WORKSPACES && (
               <div className="workspace-switcher-wrap">
                 <label htmlFor="workspace-switcher">Workspace</label>
@@ -205,14 +265,19 @@ function App() {
               </div>
             )}
             <div className="topbar-icons">
-              <a href="#" className="icon topbar-settings-btn"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
+              <div className="search" aria-label="Pesquisar">
+                <span className="search-icon"><img loading="lazy" decoding="async" src="imagens, icons/topbar/magnifying-glass.svg" alt="" /></span>
+                <input type="text" className="search-input" id="search-input" placeholder="Pesquisar algo..." autoComplete="off" />
+                <div className="search-results" id="search-results"></div>
+              </div>
+              <a href="#" className="icon topbar-settings-btn" aria-label="Configurações"><img loading="lazy" decoding="async" src="imagens, icons/topbar/settings.svg" alt="Configurações" /></a>
               <div className="topbar-notifications-wrap">
                 <a href="#" className="icon topbar-notifications-btn" aria-label="Notificações">
                   <img loading="lazy" decoding="async" src="imagens, icons/topbar/notification.svg" alt="Notificações" />
                 </a>
                 <span className="notifications-badge" id="notifications-unread-badge" hidden>0</span>
               </div>
-              <a href="#" className="icon profile-icon"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
+              <a href="#" className="icon profile-icon" aria-label="Perfil"><img loading="lazy" decoding="async" src="imagens, icons/Sidebar/user 3 1.svg" alt="Perfil" /></a>
             </div>
           </div>
         </header>

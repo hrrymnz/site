@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { createClient as createRedisClient } from 'redis';
 import { Pool } from 'pg';
 
 dotenv.config();
@@ -9,6 +11,7 @@ dotenv.config();
 // autenticados para snapshots/versoes do estado da app.
 const app = express();
 const port = process.env.PORT || 3001;
+const host = String(process.env.HOST || '').trim();
 const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '')
   .split(',')
@@ -16,6 +19,12 @@ const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '')
   .filter(Boolean);
 const hasSupabaseAuthConfig = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
 const enableUnscopedItemsApi = process.env.ENABLE_UNSCOPED_ITEMS_API === 'true';
+if (isProduction && enableUnscopedItemsApi) {
+  throw new Error('ENABLE_UNSCOPED_ITEMS_API nao pode ser true em producao.');
+}
+if (isProduction && !allowedOrigins.length) {
+  throw new Error('ALLOWED_ORIGINS deve ser definido em producao.');
+}
 const maxRequestBodySize = String(process.env.MAX_REQUEST_BODY_SIZE || '10mb').trim() || '10mb';
 const maxSnapshotBytes = Number(process.env.MAX_SNAPSHOT_BYTES || 2 * 1024 * 1024);
 const maxStateVersionsPerScope = Math.min(
@@ -29,8 +38,76 @@ const maxVersionLabelLength = Math.min(
 const writeRateLimitWindowMs = Math.max(Number(process.env.WRITE_RATE_LIMIT_WINDOW_MS || 60_000), 1_000);
 const writeRateLimitMax = Math.max(Number(process.env.WRITE_RATE_LIMIT_MAX || 30), 1);
 const writeRateLimitStore = new Map();
+const redisUrl = String(process.env.REDIS_URL || '').trim();
+const redisRateLimitClient = redisUrl ? createRedisClient({ url: redisUrl }) : null;
+let redisRateLimitReady = false;
+
+function serializeLogError(error) {
+  if (!error) return null;
+
+  if (typeof error === 'string') {
+    return { message: error };
+  }
+
+  const payload = {
+    message: String(error.message || error),
+    code: error.code ? String(error.code) : undefined
+  };
+
+  if (!isProduction && error.stack) {
+    payload.stack = String(error.stack);
+  }
+
+  return payload;
+}
+
+function logEntry(level, event, details = {}) {
+  const entry = {
+    level,
+    event,
+    timestamp: new Date().toISOString(),
+    ...details
+  };
+
+  if (isProduction) {
+    const method = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+    console[method](JSON.stringify(entry));
+    return;
+  }
+
+  const method = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+  console[method](`[${level.toUpperCase()}] ${event}`, details);
+}
+
+function logInfo(event, details = {}) {
+  logEntry('info', event, details);
+}
+
+function logWarn(event, details = {}) {
+  logEntry('warn', event, details);
+}
+
+function logError(event, error, details = {}) {
+  logEntry('error', event, {
+    ...details,
+    error: serializeLogError(error)
+  });
+}
 
 app.disable('x-powered-by');
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'none'"]
+    }
+  },
+  hsts: isProduction,
+  referrerPolicy: { policy: 'no-referrer' }
+}));
 
 function isPlainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -192,6 +269,24 @@ async function pruneStateVersions(client, scope) {
   );
 }
 
+async function ensureRedisRateLimitReady() {
+  if (!redisRateLimitClient || redisRateLimitReady) return redisRateLimitReady;
+
+  try {
+    await redisRateLimitClient.connect();
+    redisRateLimitReady = true;
+    logInfo('REDIS_RATE_LIMIT_READY', { enabled: true });
+  } catch (error) {
+    redisRateLimitReady = false;
+    logWarn('REDIS_RATE_LIMIT_DISABLED', {
+      enabled: false,
+      error: serializeLogError(error)
+    });
+  }
+
+  return redisRateLimitReady;
+}
+
 // Middleware
 app.use(buildCorsMiddleware());
 app.use(express.json({ limit: maxRequestBodySize }));
@@ -210,13 +305,13 @@ const testConnection = () => {
     if (err) {
       retries++;
       if (retries < maxRetries) {
-        console.log(`Tentando conectar ao DB (${retries}/${maxRetries})...`);
+        logInfo('DB_CONNECT_RETRY', { attempt: retries, maxRetries });
         setTimeout(testConnection, 1000);
       } else {
-        console.error('❌ Falha ao conectar ao banco após', maxRetries, 'tentativas:', err);
+        logError('DB_CONNECT_FAILED', err, { attempts: maxRetries });
       }
     } else {
-      console.log('✅ Conectado ao PostgreSQL:', result.rows[0].now);
+      logInfo('DB_CONNECTED', { connectedAt: result.rows[0].now });
     }
   });
 };
@@ -326,7 +421,7 @@ app.get('/api/items', rejectUnscopedItemsApi, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    logError('ITEMS_FETCH_FAILED', err, { route: '/api/items' });
     res.status(500).json({ error: 'Erro ao buscar items' });
   }
 });
@@ -341,7 +436,7 @@ app.get('/api/items/:era', rejectUnscopedItemsApi, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    logError('ITEMS_BY_ERA_FETCH_FAILED', err, { route: '/api/items/:era' });
     res.status(500).json({ error: 'Erro ao buscar items' });
   }
 });
@@ -362,7 +457,7 @@ app.post('/api/items', rejectUnscopedItemsApi, rateLimitWrites, async (req, res)
     
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    logError('ITEM_CREATE_FAILED', err, { route: '/api/items' });
     res.status(500).json({ error: 'Erro ao criar item' });
   }
 });
@@ -384,7 +479,7 @@ app.put('/api/items/:id', rejectUnscopedItemsApi, rateLimitWrites, async (req, r
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    logError('ITEM_UPDATE_FAILED', err, { route: '/api/items/:id' });
     res.status(500).json({ error: 'Erro ao atualizar item' });
   }
 });
@@ -405,7 +500,7 @@ app.delete('/api/items/:id', rejectUnscopedItemsApi, rateLimitWrites, async (req
 
     res.json({ message: 'Item deletado com sucesso' });
   } catch (err) {
-    console.error(err);
+    logError('ITEM_DELETE_FAILED', err, { route: '/api/items/:id' });
     res.status(500).json({ error: 'Erro ao deletar item' });
   }
 });
@@ -428,7 +523,7 @@ app.get('/api/state/:scope', requireSupabaseAuth, requireOwnScope, async (req, r
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    logError('APP_STATE_FETCH_FAILED', err, { route: '/api/state/:scope' });
     res.status(500).json({ error: 'Erro ao buscar estado do app' });
   }
 });
@@ -450,7 +545,7 @@ app.put('/api/state/:scope', requireSupabaseAuth, requireOwnScope, rateLimitWrit
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    logError('APP_STATE_SAVE_FAILED', err, { route: '/api/state/:scope' });
     res.status(500).json({ error: 'Erro ao salvar estado do app' });
   }
 });
@@ -501,7 +596,7 @@ app.post('/api/state/:scope/versions', requireSupabaseAuth, requireOwnScope, rat
     if (transactionStarted) {
       await client.query('ROLLBACK');
     }
-    console.error(err);
+    logError('APP_STATE_VERSION_CREATE_FAILED', err, { route: '/api/state/:scope/versions' });
     res.status(500).json({ error: 'Erro ao criar versao do estado' });
   } finally {
     client.release();
@@ -526,7 +621,7 @@ app.get('/api/state/:scope/versions', requireSupabaseAuth, requireOwnScope, asyn
 
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    logError('APP_STATE_VERSIONS_LIST_FAILED', err, { route: '/api/state/:scope/versions' });
     res.status(500).json({ error: 'Erro ao listar versoes do estado' });
   }
 });
@@ -549,7 +644,7 @@ app.get('/api/state/:scope/versions/:versionId', requireSupabaseAuth, requireOwn
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    logError('APP_STATE_VERSION_FETCH_FAILED', err, { route: '/api/state/:scope/versions/:versionId' });
     res.status(500).json({ error: 'Erro ao buscar versao do estado' });
   }
 });
@@ -606,7 +701,7 @@ app.post('/api/state/:scope/versions/:versionId/restore', requireSupabaseAuth, r
     if (transactionStarted) {
       await client.query('ROLLBACK');
     }
-    console.error(err);
+    logError('APP_STATE_VERSION_RESTORE_FAILED', err, { route: '/api/state/:scope/versions/:versionId/restore' });
     res.status(500).json({ error: 'Erro ao restaurar versao do estado' });
   } finally {
     client.release();
@@ -614,6 +709,11 @@ app.post('/api/state/:scope/versions/:versionId/restore', requireSupabaseAuth, r
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+await ensureRedisRateLimitReady();
+
+app.listen(port, host || undefined, () => {
+  logInfo('SERVER_STARTED', {
+    url: `http://${host || 'localhost'}:${port}`,
+    localOnly: !isProduction
+  });
 });

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase.js';
 
 // Hook central de autenticacao: encapsula sessao, timeout por inatividade e
 // fluxos de login/cadastro/recuperacao para o restante da app.
-const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const SESSION_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 const SUPABASE_UNAVAILABLE_MESSAGE = 'Autenticacao indisponivel no momento. Verifique a configuracao do Supabase.';
 
 const ensureSupabase = () => {
@@ -131,6 +131,7 @@ export function useAuth() {
     ensureSupabase();
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw error;
+    await supabase.auth.signOut();
     setIsRecoveryMode(false);
     return data;
   };

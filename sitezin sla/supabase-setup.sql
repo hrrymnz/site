@@ -7,7 +7,7 @@
   -- Tabela de estado do app (snapshot completo do frontend)
   create table if not exists public.app_state (
     id serial primary key,
-    scope varchar(100) unique not null,
+    scope uuid unique not null,
     state jsonb not null default '{}'::jsonb,
     updated_at timestamp with time zone default now()
   );
@@ -15,7 +15,7 @@
   -- Historico de versoes para rollback
   create table if not exists public.app_state_versions (
     id bigserial primary key,
-    scope varchar(100) not null,
+    scope uuid not null,
     state jsonb not null,
     label varchar(255),
     created_at timestamp with time zone default now()
@@ -51,7 +51,7 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_insert_own"
@@ -60,7 +60,7 @@
   to authenticated
   with check (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_update_own"
@@ -69,11 +69,11 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   )
   with check (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_delete_own"
@@ -82,7 +82,7 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_versions_select_own"
@@ -91,7 +91,7 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_versions_insert_own"
@@ -100,7 +100,7 @@
   to authenticated
   with check (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_versions_update_own"
@@ -109,11 +109,11 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   )
   with check (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
   create policy "app_state_versions_delete_own"
@@ -122,41 +122,170 @@
   to authenticated
   using (
     auth.uid() is not null
-    and scope = auth.uid()::text
+    and scope::text = auth.uid()::text
   );
 
-  -- Opcional, mas util para evitar escopos invalidos.
-  -- Este passo so e aplicado automaticamente se nao houver linhas legadas.
-  -- Se houver dados antigos (ex.: "<user_id>:default"), o bloco apenas ignora
-  -- a criacao do CHECK para nao quebrar a execucao inteira do script.
-  do $$
+  -- Mantem updated_at consistente sem depender do frontend/backend.
+  create or replace function public.set_updated_at()
+  returns trigger
+  language plpgsql
+  as $$
   begin
-    if not exists (
-      select 1
-      from pg_constraint
-      where conname = 'app_state_scope_uuid_like'
-    ) and not exists (
-      select 1
+    new.updated_at = now();
+    return new;
+  end;
+  $$;
+
+  drop trigger if exists trg_app_state_set_updated_at on public.app_state;
+  create trigger trg_app_state_set_updated_at
+  before update on public.app_state
+  for each row
+  execute function public.set_updated_at();
+
+  -- Limpeza opcional de historico para controlar crescimento da tabela.
+  -- Uso:
+  -- select public.prune_app_state_versions();
+  -- select public.prune_app_state_versions(100, interval '365 days');
+  create or replace function public.prune_app_state_versions(
+    p_keep_per_scope integer default 50,
+    p_max_age interval default interval '180 days'
+  )
+  returns integer
+  language plpgsql
+  security definer
+  set search_path = public
+  as $$
+  declare
+    v_deleted integer := 0;
+  begin
+    if p_keep_per_scope < 1 then
+      raise exception 'p_keep_per_scope deve ser >= 1';
+    end if;
+
+    with ranked as (
+      select
+        id,
+        scope,
+        created_at,
+        row_number() over (partition by scope order by created_at desc, id desc) as rn
+      from public.app_state_versions
+    ),
+    to_delete as (
+      select id
+      from ranked
+      where rn > p_keep_per_scope
+         or created_at < now() - p_max_age
+    )
+    delete from public.app_state_versions v
+    using to_delete d
+    where v.id = d.id;
+
+    get diagnostics v_deleted = row_count;
+    return v_deleted;
+  end;
+  $$;
+
+  -- Migracao segura de scope TEXT/VARCHAR para UUID.
+  -- O cast so acontece quando todos os valores sao convertiveis, evitando quebra parcial.
+  do $$
+  declare
+    v_app_state_data_type text;
+    v_versions_data_type text;
+    v_invalid_count integer;
+  begin
+    select c.data_type
+    into v_app_state_data_type
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = 'app_state'
+      and c.column_name = 'scope';
+
+    if v_app_state_data_type <> 'uuid' then
+      -- Normaliza legados no formato <uuid>:default quando aplicavel.
+      update public.app_state
+      set scope = split_part(scope::text, ':', 1)
+      where scope::text like '%:%'
+        and split_part(scope::text, ':', 1) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+
+      select count(*)
+      into v_invalid_count
       from public.app_state
-      where scope !~* '^[0-9a-f-]{36}$'
-    ) then
-      alter table public.app_state
-        add constraint app_state_scope_uuid_like
-        check (scope ~* '^[0-9a-f-]{36}$');
+      where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+
+      if v_invalid_count = 0 then
+        alter table public.app_state
+          alter column scope type uuid using scope::uuid;
+      else
+        raise notice 'app_state.scope nao convertido para UUID: % valor(es) invalidos.', v_invalid_count;
+      end if;
+    end if;
+
+    select c.data_type
+    into v_versions_data_type
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = 'app_state_versions'
+      and c.column_name = 'scope';
+
+    if v_versions_data_type <> 'uuid' then
+      update public.app_state_versions
+      set scope = split_part(scope::text, ':', 1)
+      where scope::text like '%:%'
+        and split_part(scope::text, ':', 1) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+
+      select count(*)
+      into v_invalid_count
+      from public.app_state_versions
+      where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+
+      if v_invalid_count = 0 then
+        alter table public.app_state_versions
+          alter column scope type uuid using scope::uuid;
+      else
+        raise notice 'app_state_versions.scope nao convertido para UUID: % valor(es) invalidos.', v_invalid_count;
+      end if;
     end if;
 
     if not exists (
       select 1
       from pg_constraint
-      where conname = 'app_state_versions_scope_uuid_like'
+      where conname = 'app_state_scope_uuid_v4_like'
+    ) and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'app_state'
+        and column_name = 'scope'
+        and data_type <> 'uuid'
+    ) and not exists (
+      select 1
+      from public.app_state
+      where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    ) then
+      alter table public.app_state
+        add constraint app_state_scope_uuid_v4_like
+        check (scope::text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$');
+    end if;
+
+    if not exists (
+      select 1
+      from pg_constraint
+      where conname = 'app_state_versions_scope_uuid_v4_like'
+    ) and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'app_state_versions'
+        and column_name = 'scope'
+        and data_type <> 'uuid'
     ) and not exists (
       select 1
       from public.app_state_versions
-      where scope !~* '^[0-9a-f-]{36}$'
+      where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
     ) then
       alter table public.app_state_versions
-        add constraint app_state_versions_scope_uuid_like
-        check (scope ~* '^[0-9a-f-]{36}$');
+        add constraint app_state_versions_scope_uuid_v4_like
+        check (scope::text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$');
     end if;
   end $$;
 
@@ -168,10 +297,10 @@
   -- Diagnostico rapido:
   --
   -- select scope from public.app_state
-  -- where scope !~* '^[0-9a-f-]{36}$';
+  -- where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
   --
   -- select scope from public.app_state_versions
-  -- where scope !~* '^[0-9a-f-]{36}$';
+  -- where scope::text !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
   --
   -- Exemplo de migracao (somente se workspaces estiverem desativados):
   --
