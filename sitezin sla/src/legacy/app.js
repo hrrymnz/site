@@ -15,6 +15,7 @@ const MARKDOWN_ALLOWED_TAGS = [
   "blockquote",
   "br",
   "code",
+  "details",
   "del",
   "em",
   "h1",
@@ -24,11 +25,18 @@ const MARKDOWN_ALLOWED_TAGS = [
   "h5",
   "h6",
   "hr",
+  "img",
+  "input",
+  "kbd",
   "li",
   "ol",
   "p",
   "pre",
+  "s",
   "strong",
+  "sub",
+  "summary",
+  "sup",
   "table",
   "tbody",
   "td",
@@ -39,8 +47,13 @@ const MARKDOWN_ALLOWED_TAGS = [
 ];
 
 const MARKDOWN_ALLOWED_ATTR = [
+  "alt",
+  "checked",
+  "disabled",
   "href",
   "title",
+  "src",
+  "type",
   "target",
   "rel"
 ];
@@ -125,7 +138,7 @@ const App = {
       ALLOWED_ATTR: MARKDOWN_ALLOWED_ATTR,
       ALLOW_ARIA_ATTR: false,
       ALLOW_DATA_ATTR: false,
-      KEEP_CONTENT: false,
+      KEEP_CONTENT: true,
       ALLOW_UNKNOWN_PROTOCOLS: false
     });
 
@@ -141,6 +154,29 @@ const App = {
         link.setAttribute("target", "_blank");
         link.setAttribute("rel", "noopener noreferrer");
       }
+    });
+
+    template.content.querySelectorAll("img").forEach((image) => {
+      const safeSrc = this.sanitizeUrl(image.getAttribute("src") || "");
+      if (!safeSrc) {
+        image.remove();
+        return;
+      }
+      image.setAttribute("src", safeSrc);
+      image.setAttribute("loading", "lazy");
+      image.setAttribute("decoding", "async");
+      if (!image.getAttribute("alt")) image.setAttribute("alt", "");
+    });
+
+    template.content.querySelectorAll('input').forEach((input) => {
+      const inputType = String(input.getAttribute("type") || "").toLowerCase();
+      if (inputType !== "checkbox") {
+        input.remove();
+        return;
+      }
+      input.setAttribute("type", "checkbox");
+      input.setAttribute("disabled", "");
+      input.setAttribute("tabindex", "-1");
     });
 
     return template.innerHTML;

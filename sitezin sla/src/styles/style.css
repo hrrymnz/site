@@ -1870,6 +1870,15 @@ body.app-theme-dark .folklore-markdown-body code {
   color: var(--text);
 }
 
+body.app-theme-dark .folklore-markdown-body blockquote {
+  color: var(--muted);
+  border-left-color: var(--dark-border-strong);
+}
+
+body.app-theme-dark .folklore-markdown-body hr {
+  border-top-color: var(--dark-border-strong);
+}
+
 body.app-theme-dark .folklore-markdown-body a {
   color: #7fc8ff;
 }
@@ -2315,6 +2324,14 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
   background: #fff;
 }
 
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
@@ -2340,6 +2357,53 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
 .markdown-body ol,
 .markdown-body blockquote {
   margin: 0 0 1em;
+}
+
+.markdown-body p,
+.markdown-body li,
+.markdown-body blockquote,
+.markdown-body strong,
+.markdown-body em,
+.markdown-body del,
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body summary {
+  color: inherit;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.45rem;
+}
+
+.markdown-body ul {
+  list-style: disc;
+}
+
+.markdown-body ol {
+  list-style: decimal;
+}
+
+.markdown-body li {
+  margin: 0.26em 0;
+}
+
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+}
+
+.markdown-body blockquote {
+  padding-left: 1rem;
+  border-left: 3px solid #d1d5db;
+  color: #4b5563;
+}
+
+.markdown-body hr {
+  margin: 1.5em 0;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
 }
 
 .markdown-body code {
@@ -2384,6 +2448,26 @@ body.app-theme-dark .highlight-list .highlight-row.era-settings {
 
 .markdown-body a:hover {
   text-decoration: underline;
+}
+
+.markdown-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 12px;
+}
+
+.markdown-body input[type="checkbox"] {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  pointer-events: none;
+  accent-color: var(--accent);
+}
+
+.markdown-body li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.2rem;
 }
 
 @media (max-width: 980px) {
