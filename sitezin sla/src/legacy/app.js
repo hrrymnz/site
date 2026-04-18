@@ -1361,6 +1361,15 @@ const App = {
   },
 
   renderEra(era) {
+    if (era === "lover") {
+      if (typeof window.initLoverMedia === "function") {
+        window.initLoverMedia();
+      } else if (window.LoverMedia && typeof window.LoverMedia.render === "function") {
+        window.LoverMedia.render();
+      }
+      return;
+    }
+
     const container = document.getElementById("items-" + era);
     const tagsContainer = document.getElementById("tags-" + era);
     if (!container) return;

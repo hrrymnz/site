@@ -14,7 +14,6 @@ const LoverMedia = {
   selectedType: 'all',
   searchQuery: '',
   viewerItemId: '',
-  isBound: false,
   initRetries: 0,
 
   get Storage() {
@@ -81,11 +80,7 @@ const LoverMedia = {
       }
       return;
     }
-    this.patchLegacyRenderer();
-    if (!this.isBound) {
-      this.bindUi();
-      this.isBound = true;
-    }
+    this.bindUi();
     this.cleanupDuplicateItems();
     this.ensureDefaultFolderSelection();
     this.render();
@@ -97,7 +92,7 @@ const LoverMedia = {
     const originalRenderEra = this.App.renderEra.bind(this.App);
     this.App.renderEra = (era) => {
       if (era === 'lover') {
-        this.render();
+        this.init();
         return;
       }
       originalRenderEra(era);

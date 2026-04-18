@@ -1792,6 +1792,9 @@
     if (window.App && typeof window.App.renderAllEras === 'function') {
       window.App.renderAllEras();
     }
+    if (typeof window.initLoverMedia === 'function') {
+      window.initLoverMedia();
+    }
     if (window.App && typeof window.App.renderDebutHighlights === 'function') {
       window.App.renderDebutHighlights();
     }
