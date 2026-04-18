@@ -949,18 +949,25 @@ const App = {
       if (category === "red") return;
 
       let mediaType = "";
+      let mediaKind = "";
       let folderId = "";
       if (category === "lover") {
-        mediaType = /youtube\.com|youtu\.be|vimeo\.com/i.test(String(url || ""))
-          ? "embed"
-          : "link";
+        const normalizedUrl = String(url || "").trim().toLowerCase();
+        if (/youtube\.com|youtu\.be|vimeo\.com/i.test(normalizedUrl)) {
+          mediaType = "embed";
+        } else if (/^data:image\//.test(normalizedUrl) || /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[?#].*)?$/i.test(normalizedUrl)) {
+          mediaType = "image";
+          mediaKind = "image";
+        } else {
+          mediaType = "link";
+        }
         if (window.LoverMedia) {
           const selectedFolderId = String(window.LoverMedia.selectedFolderId || "");
           folderId = selectedFolderId && !selectedFolderId.startsWith("__") ? selectedFolderId : "";
         }
       }
 
-      Storage.addItem({ type, title, url, content, tags, pinned, category, mediaType, folderId });
+      Storage.addItem({ type, title, url, content, tags, pinned, category, mediaType, mediaKind, folderId });
       form.reset();
       modal.classList.remove("visible");
       this.renderEra(category);
@@ -1809,6 +1816,7 @@ const App = {
         e.preventDefault();
         App.pendingDeleteNoteId = null;
         App.pendingDeleteContext = null;
+        App.resetDeleteNoteModal(modal);
         modal.classList.remove("visible");
         return;
       }
@@ -1819,7 +1827,11 @@ const App = {
         const ctx = App.pendingDeleteContext || (fallbackId ? { itemId: fallbackId, era: "red", clearRedSelection: true } : null);
 
         if (ctx && ctx.itemId) {
-          Storage.deleteItem(ctx.itemId);
+          if (typeof ctx.onConfirm === "function") {
+            ctx.onConfirm(ctx);
+          } else {
+            Storage.deleteItem(ctx.itemId);
+          }
 
           if (ctx.era === "red" || ctx.clearRedSelection) {
             App.redSelectedNoteId = "";
@@ -1843,9 +1855,25 @@ const App = {
 
         App.pendingDeleteNoteId = null;
         App.pendingDeleteContext = null;
+        App.resetDeleteNoteModal(modal);
         modal.classList.remove("visible");
       }
     });
+  },
+
+  resetDeleteNoteModal(modal = document.getElementById("modal-delete-note")) {
+    if (!modal) return;
+    modal.removeAttribute("data-delete-era");
+
+    const titleEl = modal.querySelector(".modal-header h3");
+    const messageEl = modal.querySelector(".modal-delete-note-message");
+    const cancelBtn = modal.querySelector("#modal-delete-note-cancel");
+    const confirmBtn = modal.querySelector("#modal-delete-note-confirm");
+
+    if (titleEl) titleEl.textContent = "Excluir item";
+    if (messageEl) messageEl.textContent = "Excluir este item? Esta ação não pode ser desfeita.";
+    if (cancelBtn) cancelBtn.textContent = "Cancelar";
+    if (confirmBtn) confirmBtn.textContent = "Excluir";
   },
 
   openDeleteNoteModal(noteId, options = {}) {
@@ -1860,11 +1888,23 @@ const App = {
     App.pendingDeleteContext = {
       itemId: noteId,
       era,
-      clearRedSelection: !!options.clearRedSelection
+      clearRedSelection: !!options.clearRedSelection,
+      onConfirm: typeof options.onConfirm === "function" ? options.onConfirm : null
     };
 
     const modal = document.getElementById("modal-delete-note");
     if (modal) {
+      const titleEl = modal.querySelector(".modal-header h3");
+      const messageEl = modal.querySelector(".modal-delete-note-message");
+      const cancelBtn = modal.querySelector("#modal-delete-note-cancel");
+      const confirmBtn = modal.querySelector("#modal-delete-note-confirm");
+      const themeEra = options.themeEra || era;
+
+      modal.setAttribute("data-delete-era", themeEra);
+      if (titleEl) titleEl.textContent = String(options.title || "Excluir item");
+      if (messageEl) messageEl.textContent = String(options.message || "Excluir este item? Esta ação não pode ser desfeita.");
+      if (cancelBtn) cancelBtn.textContent = String(options.cancelLabel || "Cancelar");
+      if (confirmBtn) confirmBtn.textContent = String(options.confirmLabel || "Excluir");
       modal.classList.add("visible");
     }
     if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();

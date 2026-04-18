@@ -47,6 +47,26 @@ const Storage = {
     return !!supabase;
   },
 
+  shouldLogLoverDebug() {
+    if (typeof window === "undefined") return false;
+    return window.location.hash === "#lover" || window.__POLAROOM_DEBUG_LOVER === true;
+  },
+
+  logLoverDebug(message, payload = null) {
+    if (!this.shouldLogLoverDebug() || typeof console === "undefined") return;
+    if (payload == null) {
+      console.log(`[LoverDebug][Storage] ${message}`);
+      return;
+    }
+    console.log(`[LoverDebug][Storage] ${message}`, payload);
+  },
+
+  countLoverItems(items = []) {
+    return Array.isArray(items)
+      ? items.filter((item) => item && item.category === "lover").length
+      : 0;
+  },
+
   getSyncStatus() {
     return {
       status: this.syncStatus || "idle",
@@ -558,9 +578,10 @@ const Storage = {
     normalized.category = (base.category != null ? String(base.category) : "debut").trim() || "debut";
     normalized.tags = this.normalizeTags(base.tags);
     normalized.folderId = base.folderId != null ? String(base.folderId).trim() : "";
-    normalized.mediaType = ["link", "upload", "embed"].includes(String(base.mediaType || "").trim())
+    normalized.mediaType = ["link", "upload", "embed", "image"].includes(String(base.mediaType || "").trim())
       ? String(base.mediaType).trim()
       : "link";
+    normalized.mediaKind = base.mediaKind != null ? String(base.mediaKind).trim() : "";
     normalized.storagePath = base.storagePath != null ? String(base.storagePath).trim() : "";
     normalized.thumbnail = base.thumbnail != null ? String(base.thumbnail).trim() : "";
     normalized.duration = Number.isFinite(Number(base.duration)) ? Number(base.duration) : 0;
@@ -1118,6 +1139,8 @@ const Storage = {
 
   applySnapshot(data) {
     if (!data || typeof data !== "object") return;
+    const localBefore = this.getAll();
+    const loverBefore = this.countLoverItems(localBefore);
 
     const importedItems = Array.isArray(data.items)
       ? data.items
@@ -1197,6 +1220,13 @@ const Storage = {
     }
 
     this.repairScopedLocalState();
+
+    const localAfter = this.getAll();
+    this.logLoverDebug("applySnapshot()", {
+      loverBefore,
+      loverAfter: this.countLoverItems(localAfter),
+      importedLoverItems: this.countLoverItems(importedItems || [])
+    });
   },
 
   snapshotScore(snapshot) {
@@ -1217,6 +1247,10 @@ const Storage = {
 
   scheduleSync() {
     // Toda mudanca local renova o "updatedAt" antes de entrar na fila de sync remota.
+    this.logLoverDebug("scheduleSync()", {
+      hasPendingSyncBefore: this.hasPendingSync,
+      loverItems: this.countLoverItems(this.getAll())
+    });
     this.setLocalStateUpdatedAt();
     this.hasPendingSync = true;
     this.setSyncStatus(this.hasSupabase ? "saving" : "local");
@@ -1451,6 +1485,10 @@ const Storage = {
       return;
     }
     const snapshot = this.getSnapshot();
+    this.logLoverDebug("pushStateToServer() start", {
+      loverItems: this.countLoverItems(snapshot.items),
+      hasPendingSync: this.hasPendingSync
+    });
     const updatedAt = this.setLocalStateUpdatedAt(this.getLocalStateUpdatedAt() || new Date().toISOString());
     this.setSyncStatus("saving");
 
@@ -1467,6 +1505,10 @@ const Storage = {
     this.lastRemoteUpdatedAt = updatedAt;
     this.setLocalStateUpdatedAt(updatedAt);
     this.setSyncStatus("saved");
+    this.logLoverDebug("pushStateToServer() success", {
+      updatedAt,
+      loverItems: this.countLoverItems(snapshot.items)
+    });
     this.maybeScheduleVersion(snapshot, "auto");
   },
 
@@ -1488,7 +1530,14 @@ const Storage = {
   },
 
   async refreshFromServer() {
-    if (!this.hasSupabase || this.hasPendingSync || this.remoteRefreshInFlight) return false;
+    if (!this.hasSupabase || this.hasPendingSync || this.remoteRefreshInFlight) {
+      this.logLoverDebug("refreshFromServer() skipped", {
+        hasSupabase: this.hasSupabase,
+        hasPendingSync: this.hasPendingSync,
+        remoteRefreshInFlight: this.remoteRefreshInFlight
+      });
+      return false;
+    }
 
     this.remoteRefreshInFlight = true;
     try {
@@ -1496,12 +1545,25 @@ const Storage = {
       if (!record || !record.state) return false;
 
       const remoteUpdatedAt = String(record.updated_at || "");
-      const localSignature = this.buildSnapshotSignature(this.getSnapshot());
+      const localSnapshot = this.getSnapshot();
+      const localSignature = this.buildSnapshotSignature(localSnapshot);
       const remoteSignature = this.buildSnapshotSignature(record.state);
+      const localLoverItems = this.countLoverItems(localSnapshot.items);
+      const remoteLoverItems = this.countLoverItems(record.state.items);
+
+      this.logLoverDebug("refreshFromServer() fetched snapshot", {
+        localLoverItems,
+        remoteLoverItems,
+        remoteUpdatedAt
+      });
 
       if (remoteSignature === localSignature) {
         this.lastRemoteUpdatedAt = remoteUpdatedAt || this.lastRemoteUpdatedAt;
         this.setSyncStatus("saved", "Salvo no servidor");
+        this.logLoverDebug("refreshFromServer() no-op: same signature", {
+          remoteUpdatedAt,
+          localLoverItems
+        });
         return false;
       }
 
@@ -1509,6 +1571,10 @@ const Storage = {
       const nextRemoteMs = remoteUpdatedAt ? new Date(remoteUpdatedAt).getTime() : 0;
 
       if (knownRemoteMs && nextRemoteMs && nextRemoteMs <= knownRemoteMs) {
+        this.logLoverDebug("refreshFromServer() skipped: stale remote timestamp", {
+          knownRemoteMs,
+          nextRemoteMs
+        });
         return false;
       }
 
@@ -1518,9 +1584,16 @@ const Storage = {
       this.hasPendingSync = false;
       this.lastVersionSignature = this.buildSnapshotSignature(this.getSnapshot());
       this.setSyncStatus("saved", "Atualizado do servidor");
+      this.logLoverDebug("refreshFromServer() applied remote snapshot", {
+        remoteUpdatedAt,
+        loverItemsAfterApply: this.countLoverItems(this.getAll())
+      });
       return true;
     } catch (error) {
       this.setSyncStatus("error", this.formatRemoteError(error));
+      this.logLoverDebug("refreshFromServer() error", {
+        message: this.formatRemoteError(error)
+      });
       return false;
     } finally {
       this.remoteRefreshInFlight = false;
@@ -1577,6 +1650,12 @@ const Storage = {
       normalizedState.validIds,
       normalizedState.idMap
     );
+
+    this.logLoverDebug("save()", {
+      label,
+      totalItems: normalizedState.items.length,
+      loverItems: this.countLoverItems(normalizedState.items)
+    });
 
     localStorage.setItem(this.KEY, JSON.stringify(normalizedState.items));
     localStorage.setItem(this.ORDER_KEY, JSON.stringify(normalizedOrders));
@@ -1697,6 +1776,7 @@ const Storage = {
       category: data.category || "debut",
       folderId: data.folderId || "",
       mediaType: data.mediaType || "link",
+      mediaKind: data.mediaKind || "",
       storagePath: data.storagePath || "",
       thumbnail: data.thumbnail || "",
       duration: Number.isFinite(Number(data.duration)) ? Number(data.duration) : 0,
@@ -1737,7 +1817,17 @@ const Storage = {
   },
 
   deleteItem(id) {
-    this.save(this.getAll().filter(i => i.id !== id));
+    const before = this.getAll();
+    const after = before.filter(i => i.id !== id);
+    this.logLoverDebug("deleteItem()", {
+      id,
+      totalBefore: before.length,
+      totalAfter: after.length,
+      loverBefore: this.countLoverItems(before),
+      loverAfter: this.countLoverItems(after),
+      removed: before.length !== after.length
+    });
+    this.save(after, "delete-item");
   },
 
   getByCategory(category) {

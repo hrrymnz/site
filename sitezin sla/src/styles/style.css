@@ -5157,6 +5157,69 @@ body.app-theme-dark #modal-delete-note .modal-btn-confirm-delete:hover {
   filter: none;
 }
 
+#modal-delete-note[data-delete-era] {
+  --delete-era-accent: #c0392b;
+}
+
+#modal-delete-note[data-delete-era] .modal-btn-cancel {
+  background: #fff;
+  color: color-mix(in oklab, var(--delete-era-accent) 42%, #43313b 58%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 30%, white 70%);
+}
+
+#modal-delete-note[data-delete-era] .modal-btn-cancel:hover {
+  background: color-mix(in oklab, var(--delete-era-accent) 8%, white 92%);
+}
+
+#modal-delete-note[data-delete-era] .modal-btn-confirm-delete {
+  background: color-mix(in oklab, var(--delete-era-accent) 16%, white 84%);
+  color: color-mix(in oklab, var(--delete-era-accent) 76%, #4e2335 24%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 34%, white 66%);
+}
+
+#modal-delete-note[data-delete-era] .modal-btn-confirm-delete:hover {
+  background: color-mix(in oklab, var(--delete-era-accent) 22%, white 78%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 48%, white 52%);
+  filter: none;
+}
+
+body.app-theme-dark #modal-delete-note[data-delete-era] .modal-btn-cancel {
+  background: color-mix(in oklab, var(--dark-elevated) 90%, var(--delete-era-accent) 10%);
+  color: color-mix(in oklab, var(--delete-era-accent) 18%, #ffffff 82%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 28%, var(--border) 72%);
+}
+
+body.app-theme-dark #modal-delete-note[data-delete-era] .modal-btn-cancel:hover {
+  background: color-mix(in oklab, var(--dark-elevated) 82%, var(--delete-era-accent) 18%);
+}
+
+body.app-theme-dark #modal-delete-note[data-delete-era] .modal-btn-confirm-delete {
+  background: color-mix(in oklab, var(--delete-era-accent) 18%, transparent 82%);
+  color: color-mix(in oklab, var(--delete-era-accent) 48%, #ffffff 52%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 44%, transparent 56%);
+}
+
+body.app-theme-dark #modal-delete-note[data-delete-era] .modal-btn-confirm-delete:hover {
+  background: color-mix(in oklab, var(--delete-era-accent) 26%, transparent 74%);
+  border-color: color-mix(in oklab, var(--delete-era-accent) 58%, transparent 42%);
+  filter: none;
+}
+
+#modal-delete-note[data-delete-era="debut"] { --delete-era-accent: #7ca84e; }
+#modal-delete-note[data-delete-era="fearless"] { --delete-era-accent: #c9a84c; }
+#modal-delete-note[data-delete-era="speak-now"] { --delete-era-accent: #8b5cf6; }
+#modal-delete-note[data-delete-era="red"] { --delete-era-accent: #c0392b; }
+#modal-delete-note[data-delete-era="1989"] { --delete-era-accent: #5ba4cf; }
+#modal-delete-note[data-delete-era="reputation"] { --delete-era-accent: #5b6470; }
+#modal-delete-note[data-delete-era="lover"] { --delete-era-accent: #e891b7; }
+#modal-delete-note[data-delete-era="folklore"] { --delete-era-accent: #8a8378; }
+#modal-delete-note[data-delete-era="evermore"] { --delete-era-accent: #cc621b; }
+#modal-delete-note[data-delete-era="settings"] { --delete-era-accent: #3349ff; }
+
+body.app-theme-dark #modal-delete-note[data-delete-era="reputation"] {
+  --delete-era-accent: #c6ced9;
+}
+
 @media (max-width: 980px) {
   .red-notes-shell {
     grid-template-columns: 1fr;
@@ -7692,12 +7755,22 @@ body.app-theme-dark .app-toast[data-level="error"] {
 }
 
 .lover-media-shell.is-onboarding .lover-media-main {
-  min-height: 0;
+  min-height: 520px;
   padding: 0;
   border: 0;
   background: transparent;
   border-radius: 0;
-  display: block;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  place-items: center;
+}
+
+.lover-media-shell.is-onboarding .lover-media-grid {
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lover-folders-header,
@@ -7813,6 +7886,7 @@ body.app-theme-dark .app-toast[data-level="error"] {
 
 .lover-onboarding-empty {
   min-height: clamp(220px, 42vh, 360px);
+  margin: 0 auto;
 }
 
 .era-empty--lover .era-empty-icon {
@@ -7851,6 +7925,14 @@ body.app-theme-dark .app-toast[data-level="error"] {
 .lover-card-preview img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+.lover-card-preview--image {
+  background: color-mix(in oklab, var(--accent-light) 38%, white 62%);
+}
+
+.lover-card-preview--image img {
   object-fit: cover;
 }
 
@@ -7954,6 +8036,15 @@ body.app-theme-dark .app-toast[data-level="error"] {
   height: 100%;
   min-height: 56vh;
   border: 0;
+}
+
+.lover-viewer-media img {
+  max-width: 100%;
+  max-height: 76vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .lover-open-external {

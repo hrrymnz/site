@@ -1,12 +1,13 @@
 import { getPublicMediaUrl, uploadMedia } from '../lib/media.js';
 
 const MAX_UPLOAD_MB = Number(import.meta.env.VITE_LOVER_UPLOAD_MAX_MB || 200);
-const ACCEPTED_MEDIA_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+const IMAGE_URL_PATTERN = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(?:[?#].*)?$/i;
 const LOVER_EMPTY_STATE = {
   icon: 'heart',
   title: 'Seus cantos favoritos da internet',
   subtitle: 'Os sites que voce abre so pra relaxar',
-  subtitleSecondary: 'Adicione um link ou envie um video para liberar pastas, filtros e organizacao.'
+  subtitleSecondary: 'Adicione um link, imagem ou envie um arquivo para liberar pastas, filtros e organizacao.'
 };
 
 const LoverMedia = {
@@ -15,6 +16,20 @@ const LoverMedia = {
   searchQuery: '',
   viewerItemId: '',
   initRetries: 0,
+
+  shouldDebug() {
+    if (typeof window === 'undefined') return false;
+    return window.location.hash === '#lover' || window.__POLAROOM_DEBUG_LOVER === true;
+  },
+
+  debug(message, payload = null) {
+    if (!this.shouldDebug() || typeof console === 'undefined') return;
+    if (payload == null) {
+      console.log(`[LoverDebug] ${message}`);
+      return;
+    }
+    console.log(`[LoverDebug] ${message}`, payload);
+  },
 
   get Storage() {
     return window.Storage;
@@ -101,12 +116,35 @@ const LoverMedia = {
   },
 
   bindUi() {
+    const shell = document.getElementById('lover-media-shell');
     const addFolderBtn = document.getElementById('lover-add-folder-btn');
     const addLinkBtn = document.getElementById('lover-add-link-btn');
     const uploadBtn = document.getElementById('lover-upload-btn');
     const uploadInput = document.getElementById('lover-upload-input');
     const searchInput = document.getElementById('lover-search-input');
     const grid = document.getElementById('lover-media-grid');
+
+    if (shell && shell.dataset.boundDebugCapture !== '1') {
+      shell.dataset.boundDebugCapture = '1';
+      this.debug('shell capture listener attached');
+      shell.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+
+        const actionButton = target.closest('[data-action]');
+        const previewButton = target.closest('.lover-card-preview');
+        if (!actionButton && !previewButton) return;
+
+        const card = target.closest('.lover-media-card');
+        this.debug('shell captured click', {
+          targetTag: target.tagName,
+          targetClass: target.className || '',
+          action: actionButton ? (actionButton.getAttribute('data-action') || '') : 'open',
+          itemId: card ? (card.getAttribute('data-id') || '') : '',
+          defaultPrevented: event.defaultPrevented
+        });
+      }, true);
+    }
 
     if (addFolderBtn && addFolderBtn.dataset.bound !== '1') {
       addFolderBtn.dataset.bound = '1';
@@ -137,6 +175,7 @@ const LoverMedia = {
     }
     if (grid && grid.dataset.bound !== '1') {
       grid.dataset.bound = '1';
+      this.debug('grid delegated listener attached');
       grid.addEventListener('click', (event) => {
         const target = event.target instanceof Element
           ? event.target
@@ -151,6 +190,14 @@ const LoverMedia = {
         const itemIdentity = card ? (card.getAttribute('data-identity') || '') : '';
         const action = actionButton.getAttribute('data-action') || '';
         if (!itemId) return;
+
+        this.debug('grid delegated click', {
+          action,
+          itemId,
+          itemIdentity,
+          targetTag: target.tagName,
+          targetClass: target.className || ''
+        });
 
         event.preventDefault();
         event.stopPropagation();
@@ -184,7 +231,45 @@ const LoverMedia = {
   inferMediaType(url = '') {
     const lower = String(url || '').toLowerCase();
     if (/youtube\.com|youtu\.be|vimeo\.com/.test(lower)) return 'embed';
+    if (this.isImageUrl(lower)) return 'image';
     return 'link';
+  },
+
+  isImageUrl(url = '') {
+    const value = String(url || '').trim().toLowerCase();
+    if (!value) return false;
+    return value.startsWith('data:image/') || IMAGE_URL_PATTERN.test(value);
+  },
+
+  isImageFile(file) {
+    if (!file) return false;
+    const mime = String(file.type || '').toLowerCase();
+    if (mime.startsWith('image/')) return true;
+    return this.isImageUrl(String(file.name || '').toLowerCase());
+  },
+
+  isAcceptedUpload(file) {
+    if (!file) return false;
+    const mime = String(file.type || '').toLowerCase();
+    if (mime.startsWith('image/')) return true;
+    if (ACCEPTED_VIDEO_TYPES.includes(mime)) return true;
+    return /\.(mp4|webm|mov|avi|mkv|png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(String(file.name || ''));
+  },
+
+  getItemFilterType(item = {}) {
+    const mediaType = String(item.mediaType || '').trim().toLowerCase();
+    if (mediaType === 'embed') return 'embed';
+    if (mediaType === 'image' || item.mediaKind === 'image' || this.isImageUrl(item.url)) return 'image';
+    if (mediaType === 'upload' || item.storagePath) return 'upload';
+    return 'link';
+  },
+
+  getItemBadge(item = {}) {
+    const filterType = this.getItemFilterType(item);
+    if (filterType === 'image') return 'Imagem';
+    if (filterType === 'embed') return 'Embed';
+    if (filterType === 'upload') return 'Upload';
+    return 'Link';
   },
 
   getEmbedUrl(url = '') {
@@ -213,16 +298,26 @@ const LoverMedia = {
 
   buildCard(item) {
     const thumb = item.thumbnail || '';
-    const mediaType = item.mediaType || this.inferMediaType(item.url);
-    const badge = mediaType === 'upload' ? 'Upload' : (mediaType === 'embed' ? 'Embed' : 'Link');
+    const mediaType = this.getItemFilterType(item);
+    const badge = this.getItemBadge(item);
     const identity = this.getDuplicateSignature(item);
+    const previewImage = mediaType === 'image'
+      ? (item.url || thumb)
+      : thumb;
+    const previewClass = mediaType === 'image'
+      ? 'lover-card-preview lover-card-preview--image'
+      : 'lover-card-preview';
+    const fallbackIcon = mediaType === 'image' ? 'image' : 'film';
+    const overlayIcon = mediaType === 'link' ? 'arrow-up-right' : 'play';
     return (
       `<article class="lover-media-card" data-id="${this.App.escapeHtml(item.id)}" data-identity="${this.App.escapeHtml(identity)}">` +
-        `<button type="button" class="lover-card-preview" data-action="open">` +
-          (thumb
-            ? `<img src="${this.App.escapeHtml(thumb)}" alt="" loading="lazy" decoding="async" />`
-            : `<span class="lover-card-fallback"><i data-lucide="film"></i></span>`) +
-          `<span class="lover-card-play"><i data-lucide="play"></i></span>` +
+        `<button type="button" class="${previewClass}" data-action="open">` +
+          (previewImage
+            ? `<img src="${this.App.escapeHtml(previewImage)}" alt="" loading="lazy" decoding="async" />`
+            : `<span class="lover-card-fallback"><i data-lucide="${fallbackIcon}"></i></span>`) +
+          (mediaType === 'image'
+            ? ''
+            : `<span class="lover-card-play"><i data-lucide="${overlayIcon}"></i></span>`) +
         `</button>` +
         `<div class="lover-card-body">` +
           `<strong>${this.App.escapeHtml(item.title || 'Sem titulo')}</strong>` +
@@ -240,15 +335,17 @@ const LoverMedia = {
     const folderFilter = this.selectedFolderId;
     return this.Storage.getByCategory('lover')
       .filter((item) => {
-        const resolvedMediaType = item.mediaType && item.mediaType !== 'link'
-          ? item.mediaType
-          : this.inferMediaType(item.url);
+        const resolvedMediaType = this.getItemFilterType(item);
         if (folderFilter !== '__all__') {
           const itemFolder = String(item.folderId || '').trim();
           if (folderFilter === '__none__' && itemFolder) return false;
           if (folderFilter !== '__none__' && itemFolder !== folderFilter) return false;
         }
-        if (this.selectedType !== 'all' && resolvedMediaType !== this.selectedType) return false;
+        if (this.selectedType === 'upload') {
+          if (!(item.mediaType === 'upload' || item.storagePath)) return false;
+        } else if (this.selectedType !== 'all' && resolvedMediaType !== this.selectedType) {
+          return false;
+        }
         if (this.searchQuery) {
           const haystack = `${item.title || ''} ${(item.tags || []).join(' ')} ${item.url || ''}`.toLowerCase();
           if (!haystack.includes(this.searchQuery)) return false;
@@ -320,6 +417,7 @@ const LoverMedia = {
     const options = [
       { id: 'all', label: 'Todos' },
       { id: 'upload', label: 'Uploads' },
+      { id: 'image', label: 'Imagens' },
       { id: 'link', label: 'Links' },
       { id: 'embed', label: 'Embeds' }
     ];
@@ -341,6 +439,14 @@ const LoverMedia = {
     const allItems = this.Storage.getByCategory('lover');
     const items = this.getFilteredItems();
     const hasItems = allItems.length > 0;
+
+    this.debug('renderGrid', {
+      allItems: allItems.length,
+      filteredItems: items.length,
+      selectedFolderId: this.selectedFolderId,
+      selectedType: this.selectedType,
+      searchQuery: this.searchQuery
+    });
 
     if (!hasItems) {
       container.innerHTML =
@@ -402,6 +508,7 @@ const LoverMedia = {
         deleteButton.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
+          this.debug('direct delete click', { itemId, itemIdentity });
           this.deleteItem(itemId, itemIdentity);
         });
       }
@@ -495,15 +602,27 @@ const LoverMedia = {
     });
   },
 
+  async readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Nao foi possivel ler a imagem.'));
+      reader.readAsDataURL(file);
+    });
+  },
+
   async uploadFile(file) {
     if (!file) return;
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
       window.alert(`Arquivo excede ${MAX_UPLOAD_MB}MB.`);
       return;
     }
-    if (file.type && !ACCEPTED_MEDIA_TYPES.includes(file.type)) {
-      // Extensao ainda pode ser valida; seguiremos em frente.
+    if (!this.isAcceptedUpload(file)) {
+      window.alert('Tipo de arquivo nao suportado. Envie video ou imagem.');
+      return;
     }
+
+    const isImage = this.isImageFile(file);
 
     const tempId = this.Storage.generateId();
     const uploadingItem = this.Storage.addItem({
@@ -511,11 +630,12 @@ const LoverMedia = {
       type: 'link',
       title: file.name,
       category: 'lover',
-      mediaType: 'upload',
+      mediaType: isImage ? 'image' : 'upload',
+      mediaKind: isImage ? 'image' : 'video',
       folderId: this.selectedFolderId.startsWith('__') ? '' : this.selectedFolderId,
       url: '',
       thumbnail: '',
-      tags: ['upload'],
+      tags: isImage ? ['upload', 'imagem'] : ['upload'],
       content: 'Enviando arquivo...'
     });
     this.render();
@@ -527,29 +647,62 @@ const LoverMedia = {
       const path = `${userId}/${folderId}/${this.Storage.generateId()}.${extension}`;
       await uploadMedia(file, path);
       const publicUrl = getPublicMediaUrl(path);
-      const thumbnail = await this.captureVideoThumbnail(publicUrl);
+      const thumbnail = isImage ? publicUrl : await this.captureVideoThumbnail(publicUrl);
       this.Storage.updateItem(uploadingItem.id, {
         storagePath: path,
         url: publicUrl,
         content: '',
         thumbnail,
-        mediaType: 'upload'
+        mediaType: isImage ? 'image' : 'upload',
+        mediaKind: isImage ? 'image' : 'video'
       });
     } catch (error) {
+      const message = String(error?.message || '');
+      if (isImage && /bucket not found/i.test(message)) {
+        try {
+          const localDataUrl = await this.readFileAsDataUrl(file);
+          this.Storage.updateItem(uploadingItem.id, {
+            storagePath: '',
+            url: localDataUrl,
+            content: '',
+            thumbnail: localDataUrl,
+            mediaType: 'image',
+            mediaKind: 'image',
+            tags: ['upload', 'imagem', 'local']
+          });
+          window.alert('O bucket de midia nao existe no Supabase ainda. A imagem foi salva apenas no navegador atual.');
+          this.render();
+          return;
+        } catch (fallbackError) {
+          window.alert(String(fallbackError?.message || 'Nao foi possivel salvar a imagem localmente.'));
+        }
+      }
       this.Storage.updateItem(uploadingItem.id, {
         content: 'Falha no upload'
       });
-      window.alert(String(error?.message || 'Erro no upload.'));
+      window.alert(/bucket not found/i.test(message)
+        ? 'O bucket de midia do Supabase nao foi encontrado. Configure o bucket polaroom-media para uploads.'
+        : String(error?.message || 'Erro no upload.'));
     }
     this.render();
   },
 
   deleteItem(itemId, fallbackIdentity = '') {
     const allItems = this.Storage.getAll();
+    const loverBefore = this.Storage.getByCategory('lover');
     const currentItem = allItems.find((entry) => entry.id === itemId);
     const currentIdentity = currentItem
       ? this.getDuplicateSignature(currentItem)
       : String(fallbackIdentity || '').trim();
+
+    this.debug('deleteItem requested', {
+      itemId,
+      fallbackIdentity,
+      currentIdentity,
+      totalItemsBefore: allItems.length,
+      loverItemsBefore: loverBefore.length,
+      itemFound: !!currentItem
+    });
 
     if (!currentIdentity && !currentItem) return;
 
@@ -559,25 +712,74 @@ const LoverMedia = {
           .map((entry) => entry.id)
       : [];
 
-    const hasDuplicates = duplicateIds.length > 0;
-    const confirmMessage = hasDuplicates
-      ? 'Excluir esta midia? As duplicatas identicas dela tambem serao removidas.'
-      : 'Excluir esta midia?';
-    if (!window.confirm(confirmMessage)) return;
+    this.debug('deleteItem duplicates resolved', {
+      itemId,
+      duplicateIds,
+      hasDuplicates: duplicateIds.length > 0
+    });
 
-    if (typeof this.Storage.save === 'function' && currentIdentity) {
-      const idsToRemove = new Set([itemId, ...duplicateIds].filter(Boolean));
-      const remainingItems = this.Storage.getAll().filter((entry) => {
-        if (idsToRemove.has(entry.id)) return false;
-        if (entry.category === 'lover' && this.getDuplicateSignature(entry) === currentIdentity) return false;
-        return true;
-      });
-      this.Storage.save(remainingItems, 'lover-delete-duplicates');
-    } else {
-      this.Storage.deleteItem(itemId);
+    const hasDuplicates = duplicateIds.length > 0;
+    if (!this.App || typeof this.App.openDeleteNoteModal !== 'function') {
+      this.debug('deleteItem aborted: delete modal unavailable', { itemId });
+      return;
     }
-    this.render();
-    if (this.viewerItemId === itemId) this.closeViewer();
+
+    const confirmMessage = hasDuplicates
+      ? 'Excluir esta mídia? As duplicatas idênticas dela também serão removidas.'
+      : 'Excluir esta mídia? Esta ação não pode ser desfeita.';
+
+    this.App.openDeleteNoteModal(itemId, {
+      era: 'lover',
+      themeEra: 'lover',
+      message: confirmMessage,
+      onConfirm: () => {
+        if (typeof this.Storage.save === 'function' && currentIdentity) {
+          const idsToRemove = new Set([itemId, ...duplicateIds].filter(Boolean));
+          const remainingItems = this.Storage.getAll().filter((entry) => {
+            if (idsToRemove.has(entry.id)) return false;
+            if (entry.category === 'lover' && this.getDuplicateSignature(entry) === currentIdentity) return false;
+            return true;
+          });
+          this.debug('deleteItem using Storage.save()', {
+            itemId,
+            idsToRemove: Array.from(idsToRemove),
+            remainingItems: remainingItems.length
+          });
+          this.Storage.save(remainingItems, 'lover-delete-duplicates');
+        } else {
+          this.debug('deleteItem using Storage.deleteItem()', { itemId });
+          this.Storage.deleteItem(itemId);
+        }
+
+        const loverAfter = this.Storage.getByCategory('lover');
+        this.debug('deleteItem immediate result', {
+          itemId,
+          loverItemsBefore: loverBefore.length,
+          loverItemsAfter: loverAfter.length,
+          removedLocally: loverAfter.length !== loverBefore.length
+        });
+
+        window.setTimeout(() => {
+          const afterTick = this.Storage.getByCategory('lover');
+          this.debug('deleteItem after 0ms tick', {
+            itemId,
+            loverItems: afterTick.length,
+            itemStillExists: afterTick.some((entry) => entry.id === itemId)
+          });
+        }, 0);
+
+        window.setTimeout(() => {
+          const afterDelay = this.Storage.getByCategory('lover');
+          this.debug('deleteItem after 1000ms', {
+            itemId,
+            loverItems: afterDelay.length,
+            itemStillExists: afterDelay.some((entry) => entry.id === itemId)
+          });
+        }, 1000);
+
+        if (this.viewerItemId === itemId) this.closeViewer();
+      }
+    });
   },
 
   moveItem(itemId) {
@@ -626,9 +828,12 @@ const LoverMedia = {
     const footer = modal.querySelector('#lover-viewer-footer');
     if (!media || !footer) return;
     const mediaType = item.mediaType || this.inferMediaType(item.url);
+    const displayType = this.getItemFilterType(item);
     const embedUrl = this.getEmbedUrl(item.url);
 
-    if (mediaType === 'upload') {
+    if (displayType === 'image') {
+      media.innerHTML = `<img src="${this.App.escapeHtml(item.url || item.thumbnail || '')}" alt="${this.App.escapeHtml(item.title || 'imagem')}" />`;
+    } else if (mediaType === 'upload') {
       media.innerHTML = `<video src="${this.App.escapeHtml(item.url || '')}" controls autoplay playsinline></video>`;
     } else if (mediaType === 'embed' && embedUrl) {
       media.innerHTML = `<iframe src="${this.App.escapeHtml(embedUrl)}" title="${this.App.escapeHtml(item.title || 'video')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;

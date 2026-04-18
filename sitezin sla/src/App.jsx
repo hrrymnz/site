@@ -508,7 +508,7 @@ function App() {
                 <div className="lover-toolbar-actions">
                   <button type="button" className="lover-main-btn" id="lover-add-link-btn">+ Link</button>
                   <button type="button" className="lover-main-btn" id="lover-upload-btn">↑ Upload</button>
-                  <input type="file" id="lover-upload-input" accept=".mp4,.webm,.mov,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska" hidden />
+                  <input type="file" id="lover-upload-input" accept=".mp4,.webm,.mov,.avi,.mkv,.png,.jpg,.jpeg,.gif,.webp,.avif,.bmp,.svg,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,image/*" hidden />
                 </div>
                 <div className="lover-toolbar-filters" id="lover-media-filters"></div>
                 <div className="lover-search-wrap">
