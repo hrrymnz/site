@@ -7844,6 +7844,8 @@ body.app-theme-dark .app-toast[data-level="error"] {
   position: relative;
   display: grid;
   place-items: center;
+  z-index: 0;
+  cursor: pointer;
 }
 
 .lover-card-preview img {
@@ -7873,6 +7875,8 @@ body.app-theme-dark .app-toast[data-level="error"] {
   display: flex;
   gap: 8px;
   padding: 0 10px 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .lover-card-actions button {
@@ -7882,6 +7886,10 @@ body.app-theme-dark .app-toast[data-level="error"] {
   border-radius: 8px;
   padding: 5px 8px;
   font-size: 0.75rem;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .lover-empty-grid {

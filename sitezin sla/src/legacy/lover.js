@@ -143,7 +143,12 @@ const LoverMedia = {
     if (grid && grid.dataset.bound !== '1') {
       grid.dataset.bound = '1';
       grid.addEventListener('click', (event) => {
-        const actionButton = event.target.closest('[data-action]');
+        const target = event.target instanceof Element
+          ? event.target
+          : (event.target && event.target.parentElement ? event.target.parentElement : null);
+        if (!target) return;
+
+        const actionButton = target.closest('[data-action]');
         if (!actionButton) return;
 
         const card = actionButton.closest('.lover-media-card');
@@ -370,6 +375,42 @@ const LoverMedia = {
       return;
     }
     container.innerHTML = items.map((item) => this.buildCard(item)).join('');
+    container.querySelectorAll('.lover-media-card').forEach((card) => {
+      const itemId = card.getAttribute('data-id') || '';
+      const itemIdentity = card.getAttribute('data-identity') || '';
+      if (!itemId) return;
+
+      const previewButton = card.querySelector('.lover-card-preview');
+      const moveButton = card.querySelector('[data-action="move"]');
+      const deleteButton = card.querySelector('[data-action="delete"]');
+
+      if (previewButton && previewButton.dataset.bound !== '1') {
+        previewButton.dataset.bound = '1';
+        previewButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.openViewer(itemId);
+        });
+      }
+
+      if (moveButton && moveButton.dataset.bound !== '1') {
+        moveButton.dataset.bound = '1';
+        moveButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.moveItem(itemId);
+        });
+      }
+
+      if (deleteButton && deleteButton.dataset.bound !== '1') {
+        deleteButton.dataset.bound = '1';
+        deleteButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.deleteItem(itemId, itemIdentity);
+        });
+      }
+    });
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   },
 
