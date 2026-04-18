@@ -1039,7 +1039,17 @@ const Storage = {
   },
 
   getAll() {
-    return this.normalizeItemsCollection(this.safeParse(this.KEY, [])).items;
+    const normalizedState = this.normalizeItemsCollection(this.safeParse(this.KEY, []));
+    const rawOrders = this.safeParse(this.ORDER_KEY, {});
+    const normalizedOrders = this.normalizeOrderMap(rawOrders, normalizedState.validIds, normalizedState.idMap);
+    const ordersChanged = JSON.stringify(rawOrders) !== JSON.stringify(normalizedOrders);
+
+    if (normalizedState.changed || ordersChanged) {
+      localStorage.setItem(this.KEY, JSON.stringify(normalizedState.items));
+      localStorage.setItem(this.ORDER_KEY, JSON.stringify(normalizedOrders));
+    }
+
+    return normalizedState.items;
   },
 
   getFolders(category = "lover") {

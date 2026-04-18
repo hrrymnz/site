@@ -137,8 +137,11 @@ const LoverMedia = {
     const thumb = item.thumbnail || '';
     const mediaType = item.mediaType || this.inferMediaType(item.url);
     const badge = mediaType === 'upload' ? 'Upload' : (mediaType === 'embed' ? 'Embed' : 'Link');
+    const identity = typeof this.Storage.getItemIdentity === 'function'
+      ? this.Storage.getItemIdentity(item)
+      : '';
     return (
-      `<article class="lover-media-card" data-id="${this.App.escapeHtml(item.id)}">` +
+      `<article class="lover-media-card" data-id="${this.App.escapeHtml(item.id)}" data-identity="${this.App.escapeHtml(identity)}">` +
         `<button type="button" class="lover-card-preview" data-action="open">` +
           (thumb
             ? `<img src="${this.App.escapeHtml(thumb)}" alt="" loading="lazy" decoding="async" />`
@@ -293,11 +296,12 @@ const LoverMedia = {
     container.innerHTML = items.map((item) => this.buildCard(item)).join('');
     container.querySelectorAll('.lover-media-card').forEach((card) => {
       const itemId = card.getAttribute('data-id');
+      const itemIdentity = card.getAttribute('data-identity') || '';
       if (!itemId) return;
       const openBtn = card.querySelector('[data-action="open"]');
       if (openBtn) openBtn.addEventListener('click', () => this.openViewer(itemId));
       card.querySelectorAll('button[data-action="move"]').forEach((btn) => btn.addEventListener('click', () => this.moveItem(itemId)));
-      card.querySelectorAll('button[data-action="delete"]').forEach((btn) => btn.addEventListener('click', () => this.deleteItem(itemId)));
+      card.querySelectorAll('button[data-action="delete"]').forEach((btn) => btn.addEventListener('click', () => this.deleteItem(itemId, itemIdentity)));
     });
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   },
@@ -437,12 +441,15 @@ const LoverMedia = {
     this.render();
   },
 
-  deleteItem(itemId) {
-    const currentItem = this.Storage.getAll().find((entry) => entry.id === itemId);
-    if (!currentItem) return;
+  deleteItem(itemId, fallbackIdentity = '') {
+    const allItems = this.Storage.getAll();
+    const currentItem = allItems.find((entry) => entry.id === itemId);
+    const currentIdentity = currentItem && typeof this.Storage.getItemIdentity === 'function'
+      ? this.Storage.getItemIdentity(currentItem)
+      : String(fallbackIdentity || '').trim();
 
-    const canCompareIdentity = typeof this.Storage.getItemIdentity === 'function';
-    const currentIdentity = canCompareIdentity ? this.Storage.getItemIdentity(currentItem) : '';
+    if (!currentIdentity && !currentItem) return;
+
     const duplicateIds = currentIdentity
       ? this.Storage.getByCategory('lover')
           .filter((entry) => entry.id !== itemId && this.Storage.getItemIdentity(entry) === currentIdentity)
@@ -455,9 +462,13 @@ const LoverMedia = {
       : 'Excluir esta midia?';
     if (!window.confirm(confirmMessage)) return;
 
-    if (hasDuplicates && typeof this.Storage.save === 'function') {
-      const idsToRemove = new Set([itemId, ...duplicateIds]);
-      const remainingItems = this.Storage.getAll().filter((entry) => !idsToRemove.has(entry.id));
+    if (typeof this.Storage.save === 'function' && currentIdentity) {
+      const idsToRemove = new Set([itemId, ...duplicateIds].filter(Boolean));
+      const remainingItems = this.Storage.getAll().filter((entry) => {
+        if (idsToRemove.has(entry.id)) return false;
+        if (typeof this.Storage.getItemIdentity === 'function' && this.Storage.getItemIdentity(entry) === currentIdentity) return false;
+        return true;
+      });
       this.Storage.save(remainingItems, 'lover-delete-duplicates');
     } else {
       this.Storage.deleteItem(itemId);
