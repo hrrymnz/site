@@ -23,6 +23,7 @@ const Storage = {
   AVATAR_KEY: "swiftAvatar",
   HEADER_KEY: "swiftProfileHeader",
   PROFILE_JOINED_KEY: "swiftProfileJoinedDate",
+  FOLDERS_KEY: "swiftFolders",
   STATE_META_KEY: "swiftStateMeta",
   STATE_SCOPE: "default",
   LOCAL_NAMESPACE_VERSION: "v2",
@@ -209,6 +210,7 @@ const Storage = {
     this.NOTIFICATIONS_KEY = prefix + "swiftNotifications";
     this.SYNC_NOTIFICATIONS_META_KEY = prefix + "swiftSyncNotificationsMeta";
     this.PROFILE_JOINED_KEY = prefix + "swiftProfileJoinedDate";
+    this.FOLDERS_KEY = prefix + "swiftFolders";
     this.STATE_META_KEY = prefix + "swiftStateMeta";
   },
 
@@ -230,6 +232,7 @@ const Storage = {
       [this.LOCAL_VERSIONS_KEY, "swiftLocalVersions"],
       [this.NOTIFICATIONS_KEY, "swiftNotifications"],
       [this.SYNC_NOTIFICATIONS_META_KEY, "swiftSyncNotificationsMeta"],
+      [this.FOLDERS_KEY, "swiftFolders"],
       [this.STATE_META_KEY, "swiftStateMeta"],
       [this.PROFILE_JOINED_KEY, "profileJoinedDate"]
     ];
@@ -554,6 +557,13 @@ const Storage = {
     normalized.content = base.content != null ? String(base.content) : "";
     normalized.category = (base.category != null ? String(base.category) : "debut").trim() || "debut";
     normalized.tags = this.normalizeTags(base.tags);
+    normalized.folderId = base.folderId != null ? String(base.folderId).trim() : "";
+    normalized.mediaType = ["link", "upload", "embed"].includes(String(base.mediaType || "").trim())
+      ? String(base.mediaType).trim()
+      : "link";
+    normalized.storagePath = base.storagePath != null ? String(base.storagePath).trim() : "";
+    normalized.thumbnail = base.thumbnail != null ? String(base.thumbnail).trim() : "";
+    normalized.duration = Number.isFinite(Number(base.duration)) ? Number(base.duration) : 0;
 
     if (type === "checklist") {
       const checklist = Array.isArray(base.checklistItems) ? base.checklistItems : [];
@@ -573,6 +583,16 @@ const Storage = {
     }
 
     return normalized;
+  },
+
+  normalizeFolder(raw) {
+    const base = raw && typeof raw === "object" ? raw : {};
+    const id = this.sanitizeItemId(base.id) || this.generateId();
+    const name = String(base.name || "").trim() || "Sem nome";
+    const color = String(base.color || "").trim() || "#e891b7";
+    const createdAt = String(base.createdAt || new Date().toISOString()).trim();
+    const order = Number.isFinite(Number(base.order)) ? Number(base.order) : Date.now();
+    return { id, name, color, createdAt, order };
   },
 
   normalizeItemsCollection(rawItems) {
@@ -949,6 +969,19 @@ const Storage = {
     );
     localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(mergedUiPrefs));
 
+    const currentFoldersMap = this.normalizePlainObject(this.safeParse(this.FOLDERS_KEY, {}));
+    const importedFoldersMap = this.normalizePlainObject(data.folders);
+    const mergedFoldersMap = { ...currentFoldersMap };
+    Object.entries(importedFoldersMap).forEach(([category, folders]) => {
+      if (!Array.isArray(folders)) return;
+      const safeCategory = String(category || "").trim();
+      if (!safeCategory) return;
+      if (!Array.isArray(mergedFoldersMap[safeCategory]) || !mergedFoldersMap[safeCategory].length) {
+        mergedFoldersMap[safeCategory] = folders.map((entry, idx) => this.normalizeFolder({ ...entry, order: idx }));
+      }
+    });
+    localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(mergedFoldersMap));
+
     const currentJoined = this.getProfileJoinedDate();
     if (!currentJoined && data.profileJoinedDate) {
       this.saveProfileJoinedDate(data.profileJoinedDate);
@@ -1009,6 +1042,51 @@ const Storage = {
     return this.normalizeItemsCollection(this.safeParse(this.KEY, [])).items;
   },
 
+  getFolders(category = "lover") {
+    const normalizedCategory = String(category || "lover").trim() || "lover";
+    const raw = this.normalizePlainObject(this.safeParse(this.FOLDERS_KEY, {}));
+    const list = Array.isArray(raw[normalizedCategory]) ? raw[normalizedCategory] : [];
+    return list
+      .map((entry) => this.normalizeFolder(entry))
+      .sort((a, b) => a.order - b.order);
+  },
+
+  saveFolders(category = "lover", folders = []) {
+    const normalizedCategory = String(category || "lover").trim() || "lover";
+    const map = this.normalizePlainObject(this.safeParse(this.FOLDERS_KEY, {}));
+    const normalized = Array.isArray(folders)
+      ? folders.map((entry, idx) => this.normalizeFolder({ ...entry, order: idx }))
+      : [];
+    map[normalizedCategory] = normalized;
+    localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(map));
+    this.scheduleSync();
+    this.createLocalVersion(`${normalizedCategory}-folders-update`);
+    return normalized;
+  },
+
+  addFolder(category = "lover", folder = {}) {
+    const current = this.getFolders(category);
+    const created = this.normalizeFolder({
+      ...folder,
+      order: current.length,
+      createdAt: new Date().toISOString()
+    });
+    this.saveFolders(category, [...current, created]);
+    return created;
+  },
+
+  deleteFolder(category = "lover", folderId = "") {
+    const safeFolderId = String(folderId || "").trim();
+    if (!safeFolderId) return;
+    const remainingFolders = this.getFolders(category).filter((folder) => folder.id !== safeFolderId);
+    this.saveFolders(category, remainingFolders);
+    const updates = this.getAll().map((item) => {
+      if (item.category !== category || item.folderId !== safeFolderId) return item;
+      return { ...item, folderId: "" };
+    });
+    this.save(updates, `${category}-folder-delete`);
+  },
+
   getSnapshot() {
     return {
       items: this.getAll(),
@@ -1019,6 +1097,7 @@ const Storage = {
       githubCache: this.safeParse(this.GITHUB_CACHE_KEY, {}),
       profileSettings: this.getProfileSettings(),
       uiPrefs: this.getUiPrefs(),
+      folders: this.normalizePlainObject(this.safeParse(this.FOLDERS_KEY, {})),
       workspace: this.currentWorkspace || "default",
       fearlessSeeded: localStorage.getItem(this.FEARLESS_SEED_KEY) === "1",
       avatar: this.getAvatar() || null,
@@ -1071,6 +1150,17 @@ const Storage = {
 
     if (data.uiPrefs && typeof data.uiPrefs === "object") {
       localStorage.setItem(this.UI_PREFS_KEY, JSON.stringify(data.uiPrefs));
+    }
+
+    if (data.folders && typeof data.folders === "object") {
+      const normalizedFoldersMap = {};
+      Object.entries(data.folders).forEach(([category, folders]) => {
+        if (!Array.isArray(folders)) return;
+        const safeCategory = String(category || "").trim();
+        if (!safeCategory) return;
+        normalizedFoldersMap[safeCategory] = folders.map((entry, idx) => this.normalizeFolder({ ...entry, order: idx }));
+      });
+      localStorage.setItem(this.FOLDERS_KEY, JSON.stringify(normalizedFoldersMap));
     }
 
     if (data.fearlessSeeded === true) {
@@ -1583,6 +1673,11 @@ const Storage = {
       content: data.content || "",
       tags: this.normalizeTags(data.tags || []),
       category: data.category || "debut",
+      folderId: data.folderId || "",
+      mediaType: data.mediaType || "link",
+      storagePath: data.storagePath || "",
+      thumbnail: data.thumbnail || "",
+      duration: Number.isFinite(Number(data.duration)) ? Number(data.duration) : 0,
       pinned: data.pinned || false,
       accessCount: 0,
       pinnedAt: data.pinned ? new Date().toISOString() : "",

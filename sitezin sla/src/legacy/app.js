@@ -899,6 +899,11 @@ const App = {
     const form = document.getElementById("form-add-item");
     if (!modal || !form) return;
 
+    if (form.dataset.boundAddItemModal === "1") {
+      return;
+    }
+    form.dataset.boundAddItemModal = "1";
+
     modal.querySelector(".modal-close").addEventListener("click", () => {
       modal.classList.remove("visible");
     });
@@ -943,7 +948,19 @@ const App = {
       // Red usa fluxo dedicado (nota/checklist), sem criacao generica via modal global.
       if (category === "red") return;
 
-      Storage.addItem({ type, title, url, content, tags, pinned, category });
+      let mediaType = "";
+      let folderId = "";
+      if (category === "lover") {
+        mediaType = /youtube\.com|youtu\.be|vimeo\.com/i.test(String(url || ""))
+          ? "embed"
+          : "link";
+        if (window.LoverMedia) {
+          const selectedFolderId = String(window.LoverMedia.selectedFolderId || "");
+          folderId = selectedFolderId && !selectedFolderId.startsWith("__") ? selectedFolderId : "";
+        }
+      }
+
+      Storage.addItem({ type, title, url, content, tags, pinned, category, mediaType, folderId });
       form.reset();
       modal.classList.remove("visible");
       this.renderEra(category);
@@ -1003,6 +1020,8 @@ const App = {
   setupAddButtons() {
     document.querySelectorAll(".btn-add-item").forEach(btn => {
       if (btn.id === "btn-upload-folklore-md") return;
+      if (btn.dataset.boundOpenModal === "1") return;
+      btn.dataset.boundOpenModal = "1";
       btn.addEventListener("click", () => this.openModal(btn.dataset.era));
     });
   },

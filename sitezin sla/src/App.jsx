@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './styles/style.css';
 import { useAuth } from './hooks/useAuth.js';
 import LoginPage from './components/LoginPage.jsx';
@@ -81,10 +81,11 @@ function App() {
 
     // So inicializa a app legada depois de termos usuario e hidratar o estado.
     const boot = async () => {
-      const [{ default: Storage }, { initLegacyApp }, { initRepositorios }, { default: initShellInteractions }] = await Promise.all([
+      const [{ default: Storage }, { initLegacyApp }, { initRepositorios }, { initLoverMedia }, { default: initShellInteractions }] = await Promise.all([
         import('./legacy/storage.js'),
         import('./legacy/app.js'),
         import('./legacy/repositorios.js'),
+        import('./legacy/lover.js'),
         import('./legacy/bootstrap.js')
       ]);
 
@@ -111,6 +112,7 @@ function App() {
       initLegacyApp();
       initShellInteractions();
       initRepositorios();
+      initLoverMedia();
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
@@ -138,6 +140,13 @@ function App() {
       cancelled = true;
     };
   }, [user?.id, loading]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window !== 'undefined' && typeof window.initLoverMedia === 'function') {
+      window.initLoverMedia();
+    }
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -472,7 +481,34 @@ function App() {
         </div>
         <div className="era-page" id="page-1989"><div className="era-toolbar"><div className="era-tags" id="tags-1989"></div><button className="btn-add-item" data-era="1989">+ Novo Item</button></div><div className="era-items" id="items-1989"></div></div>
         <div className="era-page" id="page-reputation"><div className="era-toolbar"><div className="era-tags" id="tags-reputation"></div><button className="btn-add-item" data-era="reputation">+ Novo Item</button></div><div className="era-items" id="items-reputation"></div></div>
-        <div className="era-page" id="page-lover"><div className="era-toolbar"><div className="era-tags" id="tags-lover"></div><button className="btn-add-item" data-era="lover">+ Novo Item</button></div><div className="era-items" id="items-lover"></div></div>
+        <div className="era-page" id="page-lover">
+          <section className="lover-media-shell" id="lover-media-shell">
+            <aside className="lover-folders-sidebar">
+              <div className="lover-folders-header">
+                <strong>Pastas</strong>
+                <button type="button" className="lover-icon-btn" id="lover-add-folder-btn" title="Nova pasta">
+                  <i data-lucide="plus"></i>
+                </button>
+              </div>
+              <div className="lover-folders-list" id="lover-folders-list"></div>
+            </aside>
+            <div className="lover-media-main">
+              <div className="lover-media-toolbar">
+                <div className="lover-toolbar-actions">
+                  <button type="button" className="lover-main-btn" id="lover-add-link-btn">+ Link</button>
+                  <button type="button" className="lover-main-btn" id="lover-upload-btn">↑ Upload</button>
+                  <input type="file" id="lover-upload-input" accept=".mp4,.webm,.mov,.avi,.mkv,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska" hidden />
+                </div>
+                <div className="lover-toolbar-filters" id="lover-media-filters"></div>
+                <div className="lover-search-wrap">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="lover-search-input" placeholder="Buscar mídia..." />
+                </div>
+              </div>
+              <div className="lover-media-grid" id="lover-media-grid"></div>
+            </div>
+          </section>
+        </div>
         <div className="era-page" id="page-folklore">
           <div className="era-toolbar">
             <div className="era-tags" id="tags-folklore"></div>
