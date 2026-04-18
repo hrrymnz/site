@@ -25,6 +25,54 @@ const LoverMedia = {
     return window.App;
   },
 
+  getDuplicateSignature(item) {
+    const mediaType = item.mediaType || this.inferMediaType(item.url);
+    return [
+      'lover',
+      String(mediaType || '').trim().toLowerCase(),
+      String(item.folderId || '').trim().toLowerCase(),
+      String(item.title || '').trim().toLowerCase(),
+      String(item.url || '').trim().toLowerCase()
+    ].join('::');
+  },
+
+  cleanupDuplicateItems() {
+    if (!this.Storage || typeof this.Storage.getAll !== 'function' || typeof this.Storage.save !== 'function') {
+      return false;
+    }
+
+    const allItems = this.Storage.getAll();
+    const seen = new Set();
+    const nextItems = [];
+    let removedCount = 0;
+
+    allItems.forEach((item) => {
+      if (item.category !== 'lover') {
+        nextItems.push(item);
+        return;
+      }
+
+      const signature = this.getDuplicateSignature(item);
+      if (!signature || !item.url) {
+        nextItems.push(item);
+        return;
+      }
+
+      if (seen.has(signature)) {
+        removedCount += 1;
+        return;
+      }
+
+      seen.add(signature);
+      nextItems.push(item);
+    });
+
+    if (!removedCount) return false;
+
+    this.Storage.save(nextItems, 'lover-dedupe');
+    return true;
+  },
+
   init() {
     if (!this.Storage || !this.App) {
       if (this.initRetries < 20) {
@@ -38,6 +86,7 @@ const LoverMedia = {
       this.bindUi();
       this.isBound = true;
     }
+    this.cleanupDuplicateItems();
     this.ensureDefaultFolderSelection();
     this.render();
     this.initRetries = 0;
@@ -62,6 +111,7 @@ const LoverMedia = {
     const uploadBtn = document.getElementById('lover-upload-btn');
     const uploadInput = document.getElementById('lover-upload-input');
     const searchInput = document.getElementById('lover-search-input');
+    const grid = document.getElementById('lover-media-grid');
 
     if (addFolderBtn && addFolderBtn.dataset.bound !== '1') {
       addFolderBtn.dataset.bound = '1';
@@ -88,6 +138,34 @@ const LoverMedia = {
       searchInput.addEventListener('input', () => {
         this.searchQuery = String(searchInput.value || '').trim().toLowerCase();
         this.renderGrid();
+      });
+    }
+    if (grid && grid.dataset.bound !== '1') {
+      grid.dataset.bound = '1';
+      grid.addEventListener('click', (event) => {
+        const actionButton = event.target.closest('[data-action]');
+        if (!actionButton) return;
+
+        const card = actionButton.closest('.lover-media-card');
+        const itemId = card ? card.getAttribute('data-id') : '';
+        const itemIdentity = card ? (card.getAttribute('data-identity') || '') : '';
+        const action = actionButton.getAttribute('data-action') || '';
+        if (!itemId) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (action === 'open') {
+          this.openViewer(itemId);
+          return;
+        }
+        if (action === 'move') {
+          this.moveItem(itemId);
+          return;
+        }
+        if (action === 'delete') {
+          this.deleteItem(itemId, itemIdentity);
+        }
       });
     }
   },
@@ -137,9 +215,7 @@ const LoverMedia = {
     const thumb = item.thumbnail || '';
     const mediaType = item.mediaType || this.inferMediaType(item.url);
     const badge = mediaType === 'upload' ? 'Upload' : (mediaType === 'embed' ? 'Embed' : 'Link');
-    const identity = typeof this.Storage.getItemIdentity === 'function'
-      ? this.Storage.getItemIdentity(item)
-      : '';
+    const identity = this.getDuplicateSignature(item);
     return (
       `<article class="lover-media-card" data-id="${this.App.escapeHtml(item.id)}" data-identity="${this.App.escapeHtml(identity)}">` +
         `<button type="button" class="lover-card-preview" data-action="open">` +
@@ -294,15 +370,6 @@ const LoverMedia = {
       return;
     }
     container.innerHTML = items.map((item) => this.buildCard(item)).join('');
-    container.querySelectorAll('.lover-media-card').forEach((card) => {
-      const itemId = card.getAttribute('data-id');
-      const itemIdentity = card.getAttribute('data-identity') || '';
-      if (!itemId) return;
-      const openBtn = card.querySelector('[data-action="open"]');
-      if (openBtn) openBtn.addEventListener('click', () => this.openViewer(itemId));
-      card.querySelectorAll('button[data-action="move"]').forEach((btn) => btn.addEventListener('click', () => this.moveItem(itemId)));
-      card.querySelectorAll('button[data-action="delete"]').forEach((btn) => btn.addEventListener('click', () => this.deleteItem(itemId, itemIdentity)));
-    });
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
   },
 
@@ -444,15 +511,15 @@ const LoverMedia = {
   deleteItem(itemId, fallbackIdentity = '') {
     const allItems = this.Storage.getAll();
     const currentItem = allItems.find((entry) => entry.id === itemId);
-    const currentIdentity = currentItem && typeof this.Storage.getItemIdentity === 'function'
-      ? this.Storage.getItemIdentity(currentItem)
+    const currentIdentity = currentItem
+      ? this.getDuplicateSignature(currentItem)
       : String(fallbackIdentity || '').trim();
 
     if (!currentIdentity && !currentItem) return;
 
     const duplicateIds = currentIdentity
       ? this.Storage.getByCategory('lover')
-          .filter((entry) => entry.id !== itemId && this.Storage.getItemIdentity(entry) === currentIdentity)
+          .filter((entry) => entry.id !== itemId && this.getDuplicateSignature(entry) === currentIdentity)
           .map((entry) => entry.id)
       : [];
 
@@ -466,7 +533,7 @@ const LoverMedia = {
       const idsToRemove = new Set([itemId, ...duplicateIds].filter(Boolean));
       const remainingItems = this.Storage.getAll().filter((entry) => {
         if (idsToRemove.has(entry.id)) return false;
-        if (typeof this.Storage.getItemIdentity === 'function' && this.Storage.getItemIdentity(entry) === currentIdentity) return false;
+        if (entry.category === 'lover' && this.getDuplicateSignature(entry) === currentIdentity) return false;
         return true;
       });
       this.Storage.save(remainingItems, 'lover-delete-duplicates');
