@@ -34,10 +34,12 @@ const LoverMedia = {
       return;
     }
     this.patchLegacyRenderer();
-    this.bindUi();
+    if (!this.isBound) {
+      this.bindUi();
+      this.isBound = true;
+    }
     this.ensureDefaultFolderSelection();
     this.render();
-    this.isBound = true;
     this.initRetries = 0;
   },
 
@@ -436,8 +438,30 @@ const LoverMedia = {
   },
 
   deleteItem(itemId) {
-    if (!window.confirm('Excluir esta midia?')) return;
-    this.Storage.deleteItem(itemId);
+    const currentItem = this.Storage.getAll().find((entry) => entry.id === itemId);
+    if (!currentItem) return;
+
+    const canCompareIdentity = typeof this.Storage.getItemIdentity === 'function';
+    const currentIdentity = canCompareIdentity ? this.Storage.getItemIdentity(currentItem) : '';
+    const duplicateIds = currentIdentity
+      ? this.Storage.getByCategory('lover')
+          .filter((entry) => entry.id !== itemId && this.Storage.getItemIdentity(entry) === currentIdentity)
+          .map((entry) => entry.id)
+      : [];
+
+    const hasDuplicates = duplicateIds.length > 0;
+    const confirmMessage = hasDuplicates
+      ? 'Excluir esta midia? As duplicatas identicas dela tambem serao removidas.'
+      : 'Excluir esta midia?';
+    if (!window.confirm(confirmMessage)) return;
+
+    if (hasDuplicates && typeof this.Storage.save === 'function') {
+      const idsToRemove = new Set([itemId, ...duplicateIds]);
+      const remainingItems = this.Storage.getAll().filter((entry) => !idsToRemove.has(entry.id));
+      this.Storage.save(remainingItems, 'lover-delete-duplicates');
+    } else {
+      this.Storage.deleteItem(itemId);
+    }
     this.render();
     if (this.viewerItemId === itemId) this.closeViewer();
   },

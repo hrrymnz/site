@@ -1561,7 +1561,15 @@ const Storage = {
   },
 
   save(items, label = "change") {
-    localStorage.setItem(this.KEY, JSON.stringify(items));
+    const normalizedState = this.normalizeItemsCollection(Array.isArray(items) ? items : []);
+    const normalizedOrders = this.normalizeOrderMap(
+      this.safeParse(this.ORDER_KEY, {}),
+      normalizedState.validIds,
+      normalizedState.idMap
+    );
+
+    localStorage.setItem(this.KEY, JSON.stringify(normalizedState.items));
+    localStorage.setItem(this.ORDER_KEY, JSON.stringify(normalizedOrders));
     this.scheduleSync();
     this.createLocalVersion(label);
   },
@@ -1665,8 +1673,12 @@ const Storage = {
   // ===== 1) CRUD BASICO =====
   addItem(data) {
     const items = this.getAll();
+    const preferredId = this.sanitizeItemId(data && data.id);
+    const nextId = preferredId && !items.some((item) => item.id === preferredId)
+      ? preferredId
+      : this.generateId();
     const newItem = {
-      id: this.generateId(),
+      id: nextId,
       type: data.type || "link",
       title: data.title || "",
       url: data.url || "",
@@ -1723,12 +1735,19 @@ const Storage = {
     const order = this.getOrder(category);
     if (!order.length) return items;
     const ordered = [];
+    const seenIds = new Set();
     order.forEach(id => {
       const item = items.find(i => i.id === id);
-      if (item) ordered.push(item);
+      if (item && !seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        ordered.push(item);
+      }
     });
     items.forEach(i => {
-      if (!order.includes(i.id)) ordered.push(i);
+      if (!seenIds.has(i.id)) {
+        seenIds.add(i.id);
+        ordered.push(i);
+      }
     });
     return ordered;
   },
@@ -1784,8 +1803,15 @@ const Storage = {
   // ===== 5) ORDENACAO POR ERA =====
   getOrder(category) {
     // Ordem customizada por era: { fearless: [id1, id2...], red: [...] }
-    const orders = this.safeParse(this.ORDER_KEY, {});
-    return orders[category] || [];
+    const rawOrders = this.safeParse(this.ORDER_KEY, {});
+    const validIds = new Set(this.getAll().map((item) => item.id));
+    const normalizedOrders = this.normalizeOrderMap(rawOrders, validIds);
+
+    if (JSON.stringify(rawOrders) !== JSON.stringify(normalizedOrders)) {
+      localStorage.setItem(this.ORDER_KEY, JSON.stringify(normalizedOrders));
+    }
+
+    return normalizedOrders[category] || [];
   },
 
   saveOrder(category, orderedIds) {

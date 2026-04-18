@@ -142,11 +142,22 @@ function App() {
   }, [user?.id, loading]);
 
   useEffect(() => {
-    if (!user) return;
-    if (typeof window !== 'undefined' && typeof window.initLoverMedia === 'function') {
-      window.initLoverMedia();
-    }
-  });
+    if (!user || typeof window === 'undefined') return undefined;
+
+    const syncLoverPage = () => {
+      if (window.location.hash !== '#lover') return;
+      if (typeof window.initLoverMedia === 'function') {
+        window.initLoverMedia();
+      }
+    };
+
+    syncLoverPage();
+    window.addEventListener('hashchange', syncLoverPage);
+
+    return () => {
+      window.removeEventListener('hashchange', syncLoverPage);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
